@@ -483,40 +483,81 @@ export function pickTierPrice(tiers, qty) {
  * @returns {{ line: number, code: string, qty: number, designators?: string, comment?: string, footprint?: string }[]}
  */
 export function parseBomCsv(text) {
+  return parseBomCsvDetailed(text).rows
+}
+
+/**
+ * Detailed variant of {@link parseBomCsv}: also reports the lines that carried
+ * no recognisable LCSC code, so the audit can say "7 of 20 lines were not
+ * costed" instead of silently dropping them.
+ * @param {string} text
+ * @returns {{
+ *   rows: { line: number, code: string, qty: number, designators?: string, comment?: string, footprint?: string }[],
+ *   skipped: { line: number, raw?: string, comment?: string, designators?: string }[],
+ * }}
+ */
+export function parseBomCsvDetailed(text) {
   const lines = String(text)
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line !== '' && !line.startsWith('#'))
-  if (lines.length === 0) return []
+  if (lines.length === 0) return { rows: [], skipped: [] }
   const delimiter = pickDelimiter(lines[0])
   const cells = lines.map((line) => splitCsvLine(line, delimiter))
   const header = classifyHeader(cells[0])
+  const headerLooksTabular =
+    header.qtyIndex !== undefined ||
+    header.designatorsIndex !== undefined ||
+    header.footprintIndex !== undefined ||
+    header.commentIndex !== undefined
+  const trustedCodeColumn = header.codeIndex !== undefined
+  let codeIndex = header.codeIndex
+  let qtyIndex = header.qtyIndex
+  if (codeIndex === undefined && headerLooksTabular) {
+    // Header names were not enough: fell back to sniffing the columns by content
+    // instead of scanning whole rows (which picked up footprints like C0603).
+    codeIndex = detectCodeColumn(cells.slice(1))
+    if (codeIndex !== undefined && qtyIndex === undefined) {
+      qtyIndex = detectQuantityColumn(cells.slice(1), codeIndex)
+    }
+  }
   /** @type {{ line: number, code: string, qty: number, designators?: string, comment?: string, footprint?: string }[]} */
   const rows = []
-  if (header.hasCode) {
+  /** @type {{ line: number, raw?: string, comment?: string, designators?: string }[]} */
+  const skipped = []
+  if (codeIndex !== undefined) {
     for (let index = 1; index < cells.length; index += 1) {
       const row = cells[index]
-      const code = normalizeCode(row[header.codeIndex] ?? '')
-      if (code === undefined) continue
-      const qty = parseQty(header.qtyIndex === undefined ? undefined : row[header.qtyIndex])
+      const code = normalizeCode(row[codeIndex] ?? '')
+      const comment = optionally(header.commentIndex, row[header.commentIndex])
+      const designators = optionally(header.designatorsIndex, row[header.designatorsIndex])
+      if (code === undefined) {
+        skipped.push(clean({ line: index + 1, comment, designators }))
+        continue
+      }
+      const qty = parseQty(qtyIndex === undefined ? undefined : row[qtyIndex])
       rows.push(
         clean({
           line: index + 1,
           code,
           qty,
-          designators: optionally(header.designatorsIndex, row[header.designatorsIndex]),
-          comment: optionally(header.commentIndex, row[header.commentIndex]),
+          designators,
+          comment,
           footprint: optionally(header.footprintIndex, row[header.footprintIndex]),
         }),
       )
     }
-    return rows
+    if (trustedCodeColumn || rows.length > 0) return { rows, skipped }
   }
   for (let index = 0; index < cells.length; index += 1) {
     const row = cells[index]
     const joined = row.join(' ')
     const found = joined.match(LCSC_CODE_SEARCH_RE)
-    if (found === null) continue
+    if (found === null) {
+      // index 0 is assumed to be a header when nothing matched it
+      if (index > 0 && joined.trim() !== '') skipped.push(clean({ line: index + 1, raw: joined.slice(0, 160) }))
+      continue
+    }
     const code = normalizeCode(found[0])
     if (code === undefined) continue
     const rest = row.filter((cell) => !/^C\d{4,8}$/i.test(cell.trim()))
@@ -537,7 +578,7 @@ export function parseBomCsv(text) {
     }
     rows.push(clean({ line: index + 1, code, qty, designators }))
   }
-  return rows
+  return { rows, skipped }
 }
 
 /** @param {string} line @returns {',' | ';' | '\t'} */
@@ -602,13 +643,86 @@ function classifyHeader(cells) {
   cells.forEach((cell, index) => {
     const key = cell.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, ' ').trim()
     if (key === '') return
-    if (result.codeIndex === undefined && /(^| )(lcsc|jlc)( |$)|part ?(number|no|code)|料号|编号|^c ?号$/.test(key)) result.codeIndex = index
+    if (result.codeIndex === undefined && /(^| )(lcsc|jlc)( |$)|supplier ?part|part ?(number|no|code)|料号|编号|^c ?号$/.test(key)) result.codeIndex = index
     else if (result.qtyIndex === undefined && /qty|quantity|数量|用量|个数|count/.test(key)) result.qtyIndex = index
     else if (result.designatorsIndex === undefined && /designator|ref ?des|references|位号/.test(key)) result.designatorsIndex = index
-    else if (result.commentIndex === undefined && /comment|description|名称|注释|value|型号/.test(key)) result.commentIndex = index
+    else if (result.commentIndex === undefined && /comment|description|name|名称|注释|value|型号/.test(key)) result.commentIndex = index
     else if (result.footprintIndex === undefined && /footprint|package|封装/.test(key)) result.footprintIndex = index
   })
   return { hasCode: result.codeIndex !== undefined, ...result }
+}
+
+/**
+ * Pick the column that actually holds LCSC codes when the header names are
+ * unrecognised (the standard 立创EDA / JLCPCB BOM export uses "Supplier Part",
+ * which older builds did not match — the row scanner then mistook footprints
+ * such as `C0603` for part numbers).
+ *
+ * Scores by share of `/^C\d{4,8}$/` values, breaking ties by the number of
+ * distinct codes and then by the right-most column, so a footprint column
+ * ("C0603" repeated, few distinct) never wins over the supplier column.
+ * @param {string[][]} rows data rows, header excluded
+ * @returns {number | undefined}
+ */
+function detectCodeColumn(rows) {
+  const width = rows.reduce((max, row) => Math.max(max, row.length), 0)
+  /** @type {{ index: number, ratio: number, distinct: number } | undefined} */
+  let best
+  for (let index = 0; index < width; index += 1) {
+    let matched = 0
+    let filled = 0
+    const distinct = new Set()
+    for (const row of rows) {
+      const value = (row[index] ?? '').trim()
+      if (value === '') continue
+      filled += 1
+      if (/^C\d{4,8}$/i.test(value)) {
+        matched += 1
+        distinct.add(value.toUpperCase())
+      }
+    }
+    if (filled === 0 || matched < 2) continue
+    const ratio = matched / filled
+    if (ratio < 0.6) continue
+    const better =
+      best === undefined ||
+      ratio > best.ratio + 1e-9 ||
+      (Math.abs(ratio - best.ratio) < 1e-9 &&
+        (distinct.size > best.distinct || (distinct.size === best.distinct && index > best.index)))
+    if (better) best = { index, ratio, distinct: distinct.size }
+  }
+  return best === undefined ? undefined : best.index
+}
+
+/**
+ * Pick the quantity column when it is not named recognisably: the right-most
+ * column that is almost entirely positive integers. Preferring the right-most
+ * match keeps `Quantity` ahead of a leading row-id column.
+ * @param {string[][]} rows
+ * @param {number} excludeIndex
+ * @returns {number | undefined}
+ */
+function detectQuantityColumn(rows, excludeIndex) {
+  const width = rows.reduce((max, row) => Math.max(max, row.length), 0)
+  /** @type {{ index: number, ratio: number } | undefined} */
+  let best
+  for (let index = 0; index < width; index += 1) {
+    if (index === excludeIndex) continue
+    let positive = 0
+    let filled = 0
+    for (const row of rows) {
+      const value = (row[index] ?? '').trim()
+      if (value === '') continue
+      filled += 1
+      const number = Number(value)
+      if (Number.isInteger(number) && number > 0) positive += 1
+    }
+    if (filled === 0 || positive < 2) continue
+    const ratio = positive / filled
+    if (ratio < 0.8) continue
+    if (best === undefined || ratio > best.ratio || (ratio === best.ratio && index > best.index)) best = { index, ratio }
+  }
+  return best === undefined ? undefined : best.index
 }
 
 /** @param {unknown} value @returns {number} */

@@ -26,7 +26,7 @@ import {
   createLcscService,
   normalizeConfig,
   normalizeCode,
-  parseBomCsv,
+  parseBomCsvDetailed,
   pickTierPrice,
 } from './data.js'
 
@@ -954,6 +954,12 @@ export async function findParts(service, args, options = {}) {
 /** @param {unknown} input @returns {{ line: number, code: string, qty: number, designators?: string, comment?: string }[]} */
 function parseBomInput(input) {
   if (typeof input === 'string') {
+    const head = input.slice(0, 8)
+    if (head.startsWith('PK\u0003\u0004') || head.startsWith('PK\u0005\u0006') || head.startsWith('<?xml')) {
+      throw new Error(
+        'audit_lcsc_bom 收到的是 xlsx/二进制内容而不是 BOM 文本：请先在 Excel 里「另存为」CSV/TSV（或转成 CSV 文本）再传入',
+      )
+    }
     const text = input.trim()
     if (text === '') throw new Error('audit_lcsc_bom requires a non-empty BOM string')
     if (text.startsWith('[') || text.startsWith('{')) {
@@ -963,18 +969,22 @@ function parseBomInput(input) {
       } catch {
         parsed = undefined
       }
-      if (Array.isArray(parsed)) return parseBomRows(parsed)
-      if (isRecord(parsed) && Array.isArray(parsed.rows)) return parseBomRows(parsed.rows)
+      if (Array.isArray(parsed)) return { rows: parseBomRows(parsed), skipped: [] }
+      if (isRecord(parsed) && Array.isArray(parsed.rows)) return { rows: parseBomRows(parsed.rows), skipped: [] }
     }
-    return parseBomCsv(text).map((row) => ({
-      line: row.line,
-      code: normalizeCode(row.code) ?? '',
-      qty: Math.max(1, asInteger(row.qty) ?? 1),
-      designators: row.designators,
-      comment: row.comment,
-    }))
+    const detailed = parseBomCsvDetailed(text)
+    return {
+      skipped: detailed.skipped,
+      rows: detailed.rows.map((row) => ({
+        line: row.line,
+        code: normalizeCode(row.code) ?? '',
+        qty: Math.max(1, asInteger(row.qty) ?? 1),
+        designators: row.designators,
+        comment: row.comment,
+      })),
+    }
   }
-  if (Array.isArray(input)) return parseBomRows(input)
+  if (Array.isArray(input)) return { rows: parseBomRows(input), skipped: [] }
   throw new Error('audit_lcsc_bom requires `bom` as CSV text or an array of {lcsc/code, qty} rows')
 }
 
@@ -1098,8 +1108,12 @@ export async function findAlternative(service, item, originalNeed, options = {})
  * @param {{ signal?: AbortSignal }} [options]
  */
 export async function auditBom(service, args, options = {}) {
-  const rows = parseBomInput(args.bom)
-  if (rows.length === 0) throw new Error('audit_lcsc_bom parsed 0 rows from the BOM input')
+  const { rows, skipped } = parseBomInput(args.bom)
+  if (rows.length === 0) {
+    throw new Error(
+      `audit_lcsc_bom parsed 0 rows from the BOM input${skipped.length > 0 ? `（其中 ${skipped.length} 行缺少可识别的 LCSC 编号）` : ''}`,
+    )
+  }
   const assembly = args.assembly === 'smt' ? 'smt' : 'hand'
   const boards = clampInteger(args.boards, 1, 100000, 1)
   const includeCny = args.include_cny === true
@@ -1112,7 +1126,20 @@ export async function auditBom(service, args, options = {}) {
   const infoEntries = await mapLimit(codes, 3, async (code) => {
     try {
       const result = await service.searchRaw(code, { pageSize: 5, signal: options.signal })
-      const hit = result.items.find((candidate) => String(candidate.code).toUpperCase() === code) ?? result.items[0]
+      // Never accept a fuzzy hit as if it were the requested part: JLCPCB search
+      // is keyword-based, so searching a code that is not a real part (e.g. the
+      // footprint string "C0603") returns thousands of unrelated components.
+      const hit = result.items.find((candidate) => String(candidate.code).toUpperCase() === code)
+      if (hit === undefined) {
+        const nearest = result.items[0]
+        return [
+          code,
+          undefined,
+          nearest === undefined
+            ? 'not found in JLCPCB library'
+            : `exact LCSC code not in JLCPCB library; rejected nearest fuzzy hit ${nearest.code} (${nearest.model ?? '?'})`,
+        ]
+      }
       return [code, hit]
     } catch (error) {
       return [code, undefined, error instanceof Error ? error.message : String(error)]
@@ -1228,11 +1255,13 @@ export async function auditBom(service, args, options = {}) {
   const cnyCovered = auditRows.filter((row) => row.unit_cny !== undefined).length
   const summary = {
     lines: auditRows.length,
+    lines_in_bom: auditRows.length + skipped.length,
+    skipped_lines: skipped.length,
     unique_parts: codes.length,
     verified: auditRows.filter((row) => row.status === 'verified').length,
     no_stock: auditRows.filter((row) => row.status === 'NO-STOCK').length,
     not_found: auditRows.filter((row) => row.status === 'NOT-FOUND').length,
-    base_parts: codes.length - extendedUnique.size,
+    base_parts: auditRows.filter((row) => row.library === 'base').length,
     expand_parts: extendedUnique.size,
     extended_fee_per_order_usd: money(extendedFee),
     components_usd: money(componentUsd),
@@ -1255,6 +1284,21 @@ export async function auditBom(service, args, options = {}) {
   }
   notes.push('优选扩展库（Preferred Extended）分类未在公开接口暴露，若需免上料费请到嘉立创 SMT 下单页确认。')
 
+  if (skipped.length > 0) {
+    const list = skipped
+      .slice(0, 30)
+      .map((row) => {
+        const label = asString(row.comment) ?? asString(row.raw) ?? ''
+        return `${row.designators === undefined ? '' : `${row.designators} `}${label}`.trim()
+      })
+      .filter((text) => text !== '')
+      .join('；')
+    notes.push(
+      `BOM 中有 ${skipped.length} 行没有可识别的 LCSC 编号，未计入成本：${list}${skipped.length > 30 ? ' 等' : ''}`,
+    )
+    hints.push('以上行需先选型（补上 LCSC 编号）再重新审计，否则单板成本会偏低。')
+  }
+
   return {
     assembly,
     boards,
@@ -1264,6 +1308,7 @@ export async function auditBom(service, args, options = {}) {
       const alternative = alternatives.get(row.lcsc)
       return alternative === undefined ? row : { ...row, alternative }
     }),
+    skipped: skipped.slice(0, 50),
     errors,
     hints,
     notes,
@@ -1300,7 +1345,8 @@ export function renderAuditText(value) {
   const summary = isRecord(value.summary) ? value.summary : {}
   const rows = Array.isArray(value.rows) ? value.rows : []
   const lines = [
-    `BOM audit [${value.assembly}] boards=${value.boards}: ${summary.lines ?? 0} lines, ${summary.unique_parts ?? 0} unique | base ${summary.base_parts ?? 0} / expand ${summary.expand_parts ?? 0}`,
+    `BOM audit [${value.assembly}] boards=${value.boards}: ${summary.lines ?? 0} lines, ${summary.unique_parts ?? 0} unique | base ${summary.base_parts ?? 0} / expand ${summary.expand_parts ?? 0}` +
+      (summary.skipped_lines > 0 ? ` | ${summary.skipped_lines} line(s) skipped (no LCSC code)` : ''),
     `components USD ${summary.components_usd ?? 0} + extended fee USD ${summary.extended_fee_per_order_usd ?? 0} = USD ${summary.total_usd ?? 0}` +
       (summary.cny_covered_lines > 0 ? ` | CNY ${summary.components_cny ?? 0} (${summary.cny_covered_lines} lines)` : '') +
       (summary.components_cny_estimate > 0 ? ` | CNY est. ≈ ${summary.components_cny_estimate} (估算参考)` : ''),
