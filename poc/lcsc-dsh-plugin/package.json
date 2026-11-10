@@ -14,7 +14,7 @@
     "diy"
   ],
   "license": "MIT",
-  "author": "BOM_assitant contributors",
+  "author": "Stellifex",
   "type": "module",
   "main": "index.js",
   "exports": {
@@ -42,7 +42,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/example/bom-assistant.git",
+    "url": "git+https://github.com/ste1lifex/BOM_assitant.git",
     "directory": "poc/lcsc-dsh-plugin"
+  },
+  "homepage": "https://github.com/ste1lifex/BOM_assitant#readme",
+  "bugs": {
+    "url": "https://github.com/ste1lifex/BOM_assitant/issues"
   }
 }
