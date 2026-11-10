@@ -1546,6 +1546,7 @@ export function createToolDefinitions(service) {
             currency: { type: 'string' },
             summary: { type: 'object' },
             rows: { type: 'array', items: { type: 'object' } },
+            skipped: { type: 'array', items: { type: 'object' } },
             errors: { type: 'array', items: { type: 'string' } },
             hints: { type: 'array', items: { type: 'string' } },
             notes: { type: 'array', items: { type: 'string' } },

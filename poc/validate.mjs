@@ -447,6 +447,30 @@ check(
   auditHandFixture.rows[0].subtotal_usd === 0.0089 * 10,
   auditHandFixture.rows[0].subtotal_usd,
 )
+
+// The host rejects tool output containing a top-level key the tool's output
+// schema does not declare (`additionalProperties: false`), and the failure only
+// shows up through the real tool layer — calling auditBom() directly hides it.
+// Guard every key the tools actually return against the declared schema.
+section('tool output schema conformance')
+
+/** @param {ReturnType<typeof createToolDefinitions>} defs @param {string} toolName @param {Record<string, unknown>} value */
+function undeclaredKeys(defs, toolName, value) {
+  const definition = defs.find((entry) => entry.name === toolName)
+  const declared = Object.keys(definition?.output?.schema?.properties ?? {})
+  return Object.keys(value).filter((key) => !declared.includes(key))
+}
+
+check(
+  'find output declares every returned key',
+  undeclaredKeys(definitions, 'find_lcsc_parts', synthetic).length === 0,
+  undeclaredKeys(definitions, 'find_lcsc_parts', synthetic),
+)
+check(
+  'audit output declares every returned key',
+  undeclaredKeys(definitions, 'audit_lcsc_bom', auditFixture).length === 0,
+  undeclaredKeys(definitions, 'audit_lcsc_bom', auditFixture),
+)
 /** @param {unknown} value @returns {boolean} */
 function isLossless(value) {
   if (value === null || value === undefined) return value !== undefined
