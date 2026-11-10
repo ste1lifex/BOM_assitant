@@ -60,6 +60,8 @@
 
 - `summary.lines_in_bom`：BOM 实际行数（含没编号的）
 - `summary.skipped_lines` + `skipped[]`：没有 LCSC 编号的行，逐行给出 `line` / `designators` / `comment`
+- 每行 `stock_source` / `price_source`：该行价格与库存分别取自 `jlcpcb-smt` / `lcsc.com` / `item.szlcsc.com` 中的哪一个
+- `summary.library_unknown`：查得到但不在嘉立创 SMT 库里的行数（手焊可另买）
 
 **没有 LCSC 编号的行不会被静默丢弃**，而是列进 `skipped` 并在 `notes` 里点名。
 看到 `skipped_lines > 0` 就说明：**这个总价一定偏低**（缺的料没算进去）。
@@ -106,14 +108,27 @@ CNY 链路是 `EasyEDA API（C 号 → 国内商品 id）→ item.szlcsc.com 页
 它不是实时汇率，也不区分品类：**MCU / 连接器 / 继电器 / 电源模块**这类国内外定价差大的料，误差会明显大于 1.6%。
 可以在 bundle config 里改，但改了也只是更贴近某个项目的历史样本。
 
-### 4. 立创商城有货 ≠ 嘉立创 SMT 可供
+### 4. 三个仓库，三种库存；手焊要看的那一个**当前拿不到**
 
-两套库存体系。实测例子：
+这是本插件最容易被误读的地方，务必看清：
 
-- `C7429632`（ZX-XH2.54-2PZZ）、`C190071`（TDK 100nF）：立创商城有货，**JLCPCB SMT 库查不到** → 插件报 `NOT-FOUND`；
-- 反过来，SMT 库有库存也不代表你下单时还在。
+| 仓库 | 谁在用 | 数据源 | 当前可达 |
+|---|---|---|---|
+| 立创商城**国内站**（szlcsc） | **手焊 DIY 真正下单的地方** | `EasyEDA API → item.szlcsc.com` | ❌ EasyEDA 403，链路第一环就断 |
+| 立创商城**国际站**（lcsc.com） | 海外零售 | `lcsc.com` 商品页 `stockNumber` | ✅ 可读，但那是**国际仓** |
+| 嘉立创 **SMT 备料仓**（JLCPCB） | 贴片打样 | JLCPCB SMT 元件接口 | ✅ 可读 |
 
-`NOT-FOUND` 只说明「拿不到 SMT 报价」，**不等于买不到**。
+**国际站库存 ≠ 国内仓库存**。实测反例：`C15849`（三星 1uF 0603）在 lcsc.com 的 `stockNumber` 是 **0**，而嘉立创 SMT 有 **12,462,062** 颗——拿国际站的 0 当"立创商城无货"就是错的。
+
+所以 `audit_lcsc_bom` 的实际口径是：
+
+- `assembly=smt`：价格 + 库存都取嘉立创 SMT 备料仓（贴片场景本来就该这么算）；
+- `assembly=hand`：**价格**取立创商城零售阶梯价（lcsc.com，比 SMT 批量价更接近你结账的价）；**库存仍取嘉立创 SMT 数**——因为立创国内站不可达、国际站又不能冒充；
+- 每行都带 `stock_source` / `price_source`，**看清来源再用**；
+- 立创有货、SMT 不供的料（如 `C7429632`：lcsc.com 375,100 颗），手焊模式会用 lcsc.com 兜底，不再误报 `NOT-FOUND`；
+- 反过来 `NOT-FOUND` 只说明「三个来源都没查到」，**不等于买不到**。
+
+> 结论：**手焊模式下输出里的「库存」并不是立创商城库存**。这是数据源限制，不是没接线——国内站那条链被挡死了。
 
 ### 5. 没有 LCSC 编号的料永远算不出价格
 

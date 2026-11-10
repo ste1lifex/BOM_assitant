@@ -1102,6 +1102,49 @@ export async function findAlternative(service, item, originalNeed, options = {})
 }
 
 /**
+ * Reduce the data layer's source-aware `part()` detail into the flat shape the
+ * auditor consumes.
+ *
+ * The two warehouses are not interchangeable: hand soldering buys from the LCSC
+ * store (lcsc.com / 立创商城), while assembly="smt" is limited to JLCPCB's SMT
+ * parts library. A part can exist in one and not the other, and their stock
+ * counts are unrelated.
+ * @param {Record<string, unknown>} detail
+ * @param {'hand' | 'smt'} assembly
+ */
+function itemFromPartDetail(detail, assembly) {
+  const stock = isRecord(detail.stock) ? detail.stock : {}
+  const countOf = (key) => (isRecord(stock[key]) ? asInteger(stock[key].count) : undefined)
+  const intl = countOf('intl')
+  const domestic = countOf('domestic')
+  const jlc = countOf('jlcpcb')
+  // Stock source preference, identical for both modes: the verifiable JLCPCB
+  // SMT count first, then lcsc.com's *international* warehouse, then domestic.
+  // Hand buyers draw on the LCSC store, but lcsc.com only reports its
+  // international allocation — many domestic-stocked parts read 0 there
+  // (measured C15849: lcsc.com 0 vs JLCPCB 12.46M) — and the domestic stock page
+  // is blocked, so we keep the verifiable count and label its source rather than
+  // passing an international-warehouse 0 off as "立创商城无库存".
+  const order = [['jlcpcb-smt', jlc], ['lcsc.com', intl], ['item.szlcsc.com', domestic]]
+  const picked = order.find(([, value]) => value !== undefined)
+  const prices = isRecord(detail.prices) ? detail.prices : {}
+  const usd = isRecord(prices.usd) ? prices.usd : undefined
+  const identity = isRecord(detail.identity) ? detail.identity : {}
+  return {
+    code: asString(detail.code) ?? '',
+    model: asString(identity.model),
+    brand: asString(identity.brand),
+    package: asString(detail.package) ?? asString(identity.package),
+    libraryType: asString(detail.libraryType),
+    minPurchaseNum: asInteger(detail.minPurchaseNum),
+    stock: picked === undefined ? undefined : picked[1],
+    stockSource: picked === undefined ? undefined : picked[0],
+    priceSource: usd === undefined ? undefined : asString(usd.source),
+    priceUsdTiers: usd !== undefined && Array.isArray(usd.tiers) ? usd.tiers : [],
+  }
+}
+
+/**
  * Audit an existing BOM.
  * @param {ReturnType<typeof createLcscService>} service
  * @param {Record<string, unknown>} args
@@ -1123,8 +1166,21 @@ export async function auditBom(service, args, options = {}) {
   const usdToCnyFactor = asNumber(service.settings?.usdToCnyFactor) ?? 6.0
 
   const codes = [...new Set(rows.map((row) => row.code).filter((code) => code !== ''))]
+  // Hand assembly buys parts from the LCSC store, so it must read the LCSC
+  // availability; SMT assembly can only use JLCPCB's own SMT library. Using one
+  // warehouse's stock number for the other mode reports the wrong inventory, and
+  // worse, marks LCSC-stocked parts as NOT-FOUND just because SMT does not carry
+  // them.
+  const useLcscStore = assembly === 'hand' && typeof service.part === 'function'
   const infoEntries = await mapLimit(codes, 3, async (code) => {
     try {
+      if (useLcscStore) {
+        const detail = await service.part(code, { includeCny: false, signal: options.signal })
+        if (detail === undefined || asString(detail.status) === 'NOT-FOUND') {
+          return [code, undefined, 'not found in the LCSC store or the JLCPCB SMT library']
+        }
+        return [code, itemFromPartDetail(detail, assembly)]
+      }
       const result = await service.searchRaw(code, { pageSize: 5, signal: options.signal })
       // Never accept a fuzzy hit as if it were the requested part: JLCPCB search
       // is keyword-based, so searching a code that is not a real part (e.g. the
@@ -1180,10 +1236,15 @@ export async function auditBom(service, args, options = {}) {
         qty,
         designators: row.designators,
         status: 'NOT-FOUND',
-        flags: ['LCSC 编号在嘉立创元件库中未找到'],
+        flags: [
+          assembly === 'hand'
+            ? '立创商城与嘉立创 SMT 库均未查到该编号'
+            : 'LCSC 编号在嘉立创 SMT 元件库中未找到',
+        ],
       }
     }
-    const library = String(item.libraryType ?? '').toLowerCase() === 'base' ? 'base' : 'expand'
+    const rawLibrary = String(item.libraryType ?? '').toLowerCase()
+    const library = rawLibrary === 'base' ? 'base' : rawLibrary === 'expand' ? 'expand' : undefined
     if (library === 'expand') extendedUnique.add(String(item.code))
     const tiers = Array.isArray(item.priceUsdTiers) ? item.priceUsdTiers : []
     const unitUsd = pickTierPrice(tiers, orderQty)
@@ -1192,7 +1253,10 @@ export async function auditBom(service, args, options = {}) {
     if (stock <= 0) flags.push('无库存')
     else if (stock < orderQty) flags.push(`库存不足（需 ${orderQty}）`)
     if (library === 'expand') flags.push(assembly === 'smt' ? '扩展库：$3/料号上料费' : '扩展库（手焊无上料费）')
+    if (library === undefined && assembly === 'hand') flags.push('不在嘉立创 SMT 库（手焊可单独买）')
     if (unitUsd === undefined) flags.push('无价格数据')
+    const minPurchase = asInteger(item.minPurchaseNum)
+    if (minPurchase !== undefined && minPurchase > orderQty) flags.push(`起订量 ${minPurchase}`)
     const cny = cnyByCode.get(String(item.code))
     const unitCny = cny?.ok === true ? asNumber(cny.unit) : undefined
     const bulkUsd = bulkTierUsd(item)
@@ -1209,6 +1273,8 @@ export async function auditBom(service, args, options = {}) {
       package: item.package,
       library,
       stock,
+      stock_source: item.stockSource ?? 'jlcpcb-smt',
+      price_source: item.priceSource ?? 'jlcpcb-smt',
       unit_usd: unitUsd === undefined ? undefined : money(unitUsd),
       subtotal_usd: unitUsd === undefined ? undefined : money(unitUsd * orderQty),
       unit_cny: unitCny === undefined ? undefined : money(unitCny),
@@ -1263,6 +1329,7 @@ export async function auditBom(service, args, options = {}) {
     not_found: auditRows.filter((row) => row.status === 'NOT-FOUND').length,
     base_parts: auditRows.filter((row) => row.library === 'base').length,
     expand_parts: extendedUnique.size,
+    library_unknown: auditRows.filter((row) => row.status !== 'NOT-FOUND' && row.library === undefined).length,
     extended_fee_per_order_usd: money(extendedFee),
     components_usd: money(componentUsd),
     components_per_board_usd: money(componentUsd / Math.max(1, boards)),
@@ -1274,7 +1341,12 @@ export async function auditBom(service, args, options = {}) {
     components_cny_estimate: money(componentCnyEstimate),
   }
 
-  notes.push('USD 为嘉立创 SMT 元件阶梯价（按采购数量取档）；CNY 为立创商城零售参考价，两者从不互相换算。')
+  notes.push(
+    assembly === 'smt'
+      ? 'assembly=smt：价格与库存均取嘉立创 SMT 元件库（USD 阶梯价按采购数量取档），这是贴片备料仓的实际数据。'
+      : 'assembly=hand：价格优先取立创商城零售阶梯价（lcsc.com），库存取嘉立创 SMT 备料仓（立创国内站当前不可达，国际站库存≠国内仓库存，故不冒充）。行内 stock_source / price_source 标明来源。',
+  )
+  notes.push('USD 与 CNY 从不互相换算；每条价格都带 currency 与 source。')
   if (assembly === 'smt') notes.push(`扩展库上料费按每唯一料号 $${EXTENDED_PART_FEE_USD}/单估算，未包含工程费、钢网费、焊点费和手焊费。`)
   else {
     notes.push('assembly=hand：不计嘉立创上料费；价格供参考，手焊请以立创商城实际下单页为准。')
@@ -1357,7 +1429,7 @@ export function renderAuditText(value) {
     const alternative = isRecord(row.alternative) ? ` -> base alt: ${row.alternative.lcsc} (${row.alternative.model ?? '?'})` : ''
     const cnyEstimate = typeof row.unit_cny_estimate === 'number' ? ` | CNY≈${row.unit_cny_estimate}(估算)` : ''
     lines.push(
-      `${row.lcsc} x${row.qty} | ${row.status} | lib ${row.library ?? '?'} | stock ${row.stock ?? '?'} | USD ${row.unit_usd ?? '-'} (sub ${row.subtotal_usd ?? '-'})${cnyEstimate}${flags}${alternative}`,
+      `${row.lcsc} x${row.qty} | ${row.status} | lib ${row.library ?? '?'} | stock ${row.stock ?? '?'}${row.stock_source === undefined ? '' : `(${row.stock_source})`} | USD ${row.unit_usd ?? '-'} (sub ${row.subtotal_usd ?? '-'})${cnyEstimate}${flags}${alternative}`,
     )
   }
   for (const error of Array.isArray(value.errors) ? value.errors : []) lines.push(`error: ${error}`)
