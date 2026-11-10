@@ -354,7 +354,7 @@ export function extractRequirements(text) {
  */
 export function parseNeed(raw) {
   const text = String(raw ?? '').trim()
-  const directCode = text.match(/\bC\d{4,8}\b/i)?.[0]?.toUpperCase()
+  const directCode = text.match(/\bC\d{4,11}\b/i)?.[0]?.toUpperCase()
   const upper = text.toUpperCase()
   const packageName = extractPackage(text)
   const categories = []
@@ -1058,7 +1058,7 @@ export async function findAlternative(service, item, originalNeed, options = {})
   const tryCodes = []
   const alternatives = asString(item.alternatives)
   if (alternatives !== undefined) {
-    for (const match of alternatives.matchAll(/C\d{4,8}/gi)) tryCodes.push(match[0].toUpperCase())
+    for (const match of alternatives.matchAll(/C\d{4,11}/gi)) tryCodes.push(match[0].toUpperCase())
   }
   const candidates = []
   for (const code of tryCodes.slice(0, 3)) {

@@ -82,8 +82,12 @@ export const DEFAULT_CONFIG = Object.freeze({
   usdToCnyFactor: 6.0,
 })
 
-const LCSC_CODE_RE = /^C\d{4,8}$/i
-const LCSC_CODE_SEARCH_RE = /\bC\d{4,8}\b/gi
+// LCSC codes are normally C + 4–7 digits, but the catalogue also carries
+// long-form codes such as C9900021114 (C + 10 digits). A too-narrow bound made
+// those parts invisible: normalizeJlcItem dropped them outright, so BOM rows
+// referencing them looked like "no LCSC code".
+const LCSC_CODE_RE = /^C\d{4,11}$/i
+const LCSC_CODE_SEARCH_RE = /\bC\d{4,11}\b/gi
 
 const JLC_SEARCH_URL =
   'https://jlcpcb.com/api/overseas-pcb-order/v1/shoppingCart/smtGood/selectSmtComponentList'
@@ -560,7 +564,7 @@ export function parseBomCsvDetailed(text) {
     }
     const code = normalizeCode(found[0])
     if (code === undefined) continue
-    const rest = row.filter((cell) => !/^C\d{4,8}$/i.test(cell.trim()))
+    const rest = row.filter((cell) => !/^C\d{4,11}$/i.test(cell.trim()))
     let qty = 1
     let designators
     for (const cell of rest) {
@@ -571,7 +575,7 @@ export function parseBomCsvDetailed(text) {
       }
     }
     for (const cell of rest) {
-      if (cell.trim() !== '' && !Number.isFinite(Number(cell)) && !/C\d{4,8}/i.test(cell)) {
+      if (cell.trim() !== '' && !Number.isFinite(Number(cell)) && !/C\d{4,11}/i.test(cell)) {
         designators = cell.trim()
         break
       }
