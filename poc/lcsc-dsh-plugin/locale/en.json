@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "LCSC part finder",
+    "description": "Find cost-effective LCSC/JLC parts from a requirement (package, capacitance, voltage rating, current, …) and audit a BOM for price, stock and basic-vs-extended library fees. Hand-soldering by default; JLCPCB SMT optional."
+  }
+}

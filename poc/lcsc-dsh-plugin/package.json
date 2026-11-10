@@ -1,0 +1,47 @@
+{
+  "name": "dsh-plugin-lcsc",
+  "version": "0.2.0",
+  "description": "Requirement-driven LCSC/JLC part finder and BOM cost auditor for DeepSeek Harness agents: rank parts by price, stock, parameters and basic-vs-extended library fees",
+  "keywords": [
+    "dsh-plugin",
+    "dsh-bundle",
+    "deepseek-harness",
+    "lcsc",
+    "jlcpcb",
+    "bom",
+    "electronics",
+    "component-selection",
+    "diy"
+  ],
+  "license": "MIT",
+  "author": "BOM_assitant contributors",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "data.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20",
+    "dsh": ">=0.2.2-rc.1 <0.3.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/example/bom-assistant.git",
+    "directory": "poc/lcsc-dsh-plugin"
+  }
+}

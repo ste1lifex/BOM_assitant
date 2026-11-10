@@ -1,0 +1,1703 @@
+{
+  "auditSmt": {
+    "assembly": "smt",
+    "boards": 5,
+    "currency": "USD",
+    "summary": {
+      "lines": 32,
+      "unique_parts": 28,
+      "verified": 32,
+      "no_stock": 0,
+      "not_found": 0,
+      "base_parts": 12,
+      "expand_parts": 16,
+      "extended_fee_per_order_usd": 48,
+      "components_usd": 7.0745,
+      "components_per_board_usd": 1.4149,
+      "total_usd": 55.0745,
+      "total_per_board_usd": 11.0149,
+      "cny_covered_lines": 0,
+      "components_cny": 0
+    },
+    "rows": [
+      {
+        "line": 2,
+        "lcsc": "C7434398",
+        "qty": 1,
+        "status": "verified",
+        "model": "AD142A4",
+        "brand": "JieLi Tech",
+        "package": "SOP-16",
+        "library": "expand",
+        "stock": 385,
+        "unit_usd": 0.3659,
+        "subtotal_usd": 1.8295,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ]
+      },
+      {
+        "line": 3,
+        "lcsc": "C668215",
+        "qty": 1,
+        "status": "verified",
+        "model": "TP4054",
+        "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+        "package": "SOT-23-5L",
+        "library": "expand",
+        "stock": 90195,
+        "unit_usd": 0.0385,
+        "subtotal_usd": 0.1925,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ]
+      },
+      {
+        "line": 4,
+        "lcsc": "C347476",
+        "qty": 1,
+        "status": "verified",
+        "model": "AO3401A",
+        "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+        "package": "SOT-23",
+        "library": "expand",
+        "stock": 842274,
+        "unit_usd": 0.0318,
+        "subtotal_usd": 0.159,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ]
+      },
+      {
+        "line": 5,
+        "lcsc": "C82942",
+        "qty": 1,
+        "status": "verified",
+        "model": "ME6211C33M5G-N",
+        "brand": "MICRONE(Nanjing Micro One Elec)",
+        "package": "SOT-23-5",
+        "library": "expand",
+        "stock": 338955,
+        "unit_usd": 0.0624,
+        "subtotal_usd": 0.312,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ]
+      },
+      {
+        "line": 6,
+        "lcsc": "C2687116",
+        "qty": 1,
+        "status": "verified",
+        "model": "USBLC6-2SC6",
+        "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+        "package": "SOT-23-6",
+        "library": "expand",
+        "stock": 86894,
+        "unit_usd": 0.0478,
+        "subtotal_usd": 0.239,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ]
+      },
+      {
+        "line": 7,
+        "lcsc": "C193402",
+        "qty": 2,
+        "status": "verified",
+        "model": "SMF5.0A",
+        "brand": "MDD(Microdiode Semiconductor)",
+        "package": "SOD-123FL",
+        "library": "expand",
+        "stock": 469189,
+        "unit_usd": 0.0284,
+        "subtotal_usd": 0.284,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ]
+      },
+      {
+        "line": 8,
+        "lcsc": "C8678",
+        "qty": 1,
+        "status": "verified",
+        "model": "SS34",
+        "brand": "MDD(Microdiode Semiconductor)",
+        "package": "SMA(DO-214AC)",
+        "library": "base",
+        "stock": 2928629,
+        "unit_usd": 0.0351,
+        "subtotal_usd": 0.1755,
+        "flags": []
+      },
+      {
+        "line": 9,
+        "lcsc": "C70110",
+        "qty": 1,
+        "status": "verified",
+        "model": "mSMD050-15V",
+        "brand": "TECHFUSE",
+        "package": "1812",
+        "library": "expand",
+        "stock": 12201,
+        "unit_usd": 0.0418,
+        "subtotal_usd": 0.209,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ]
+      },
+      {
+        "line": 10,
+        "lcsc": "C19330",
+        "qty": 1,
+        "status": "verified",
+        "model": "BLM18AG601SN1D",
+        "brand": "Murata Electronics",
+        "package": "0603",
+        "library": "expand",
+        "stock": 353634,
+        "unit_usd": 0.0121,
+        "subtotal_usd": 0.0605,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ]
+      },
+      {
+        "line": 11,
+        "lcsc": "C5373222",
+        "qty": 1,
+        "status": "verified",
+        "model": "LMA2718B381-OA7",
+        "brand": "LinkMems",
+        "package": "SMD-4P,2.8x1.9mm",
+        "library": "expand",
+        "stock": 13298,
+        "unit_usd": 0.128,
+        "subtotal_usd": 0.64,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ]
+      },
+      {
+        "line": 12,
+        "lcsc": "C22383473",
+        "qty": 1,
+        "status": "verified",
+        "model": "SH-TF-01A",
+        "brand": "SHOU HAN",
+        "package": "SMD",
+        "library": "expand",
+        "stock": 17416,
+        "unit_usd": 0.0698,
+        "subtotal_usd": 0.349,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ]
+      },
+      {
+        "line": 13,
+        "lcsc": "C709357",
+        "qty": 1,
+        "status": "verified",
+        "model": "KH-TYPE-C-16P",
+        "brand": "Shenzhen Kinghelm Elec",
+        "package": "SMD",
+        "library": "expand",
+        "stock": 157945,
+        "unit_usd": 0.0778,
+        "subtotal_usd": 0.389,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ]
+      },
+      {
+        "line": 14,
+        "lcsc": "C2905009",
+        "qty": 1,
+        "status": "verified",
+        "model": "1.25-2PWB",
+        "brand": "DEALON",
+        "package": "SMD,P=1.25mm,Surface Mount，Right Angle",
+        "library": "expand",
+        "stock": 166279,
+        "unit_usd": 0.0284,
+        "subtotal_usd": 0.142,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ]
+      },
+      {
+        "line": 15,
+        "lcsc": "C91552",
+        "qty": 1,
+        "status": "verified",
+        "model": "2.54-1*4PReverse bent pin header",
+        "brand": "BOOMELE(Boom Precision Elec)",
+        "package": "Push-Pull,P=2.54mm",
+        "library": "expand",
+        "stock": 17623,
+        "unit_usd": 0.0339,
+        "subtotal_usd": 0.1695,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ]
+      },
+      {
+        "line": 16,
+        "lcsc": "C318884",
+        "qty": 1,
+        "status": "verified",
+        "model": "TS-1187A-B-A-B",
+        "brand": "XKB Connection",
+        "package": "SMD-4P,5.1x5.1mm",
+        "library": "base",
+        "stock": 832106,
+        "unit_usd": 0.0215,
+        "subtotal_usd": 0.1075,
+        "flags": []
+      },
+      {
+        "line": 17,
+        "lcsc": "C2286",
+        "qty": 2,
+        "status": "verified",
+        "model": "KT-0603R",
+        "brand": "Hubei KENTO Elec",
+        "package": "0603",
+        "library": "base",
+        "stock": 6319445,
+        "unit_usd": 0.0077,
+        "subtotal_usd": 0.077,
+        "flags": []
+      },
+      {
+        "line": 18,
+        "lcsc": "C25744",
+        "qty": 5,
+        "status": "verified",
+        "model": "0402WGF1002TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 21599882,
+        "unit_usd": 0.0028,
+        "subtotal_usd": 0.07,
+        "flags": []
+      },
+      {
+        "line": 19,
+        "lcsc": "C11702",
+        "qty": 2,
+        "status": "verified",
+        "model": "0402WGF1001TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 33134628,
+        "unit_usd": 0.0013,
+        "subtotal_usd": 0.013,
+        "flags": []
+      },
+      {
+        "line": 20,
+        "lcsc": "C25905",
+        "qty": 3,
+        "status": "verified",
+        "model": "0402WGF5101TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 4346495,
+        "unit_usd": 0.0023,
+        "subtotal_usd": 0.0345,
+        "flags": []
+      },
+      {
+        "line": 21,
+        "lcsc": "C114765",
+        "qty": 3,
+        "status": "verified",
+        "model": "RC0402FR-0722RL",
+        "brand": "YAGEO",
+        "package": "0402",
+        "library": "expand",
+        "stock": 5591584,
+        "unit_usd": 0.0018,
+        "subtotal_usd": 0.027,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ],
+        "alternative": {
+          "lcsc": "C25092",
+          "model": "0402WGF220JTCE",
+          "package": "0402",
+          "library": "base",
+          "stock": 3179099,
+          "unit_usd": 0.0012
+        }
+      },
+      {
+        "line": 22,
+        "lcsc": "C25741",
+        "qty": 2,
+        "status": "verified",
+        "model": "0402WGF1003TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 8343418,
+        "unit_usd": 0.0012,
+        "subtotal_usd": 0.012,
+        "flags": []
+      },
+      {
+        "line": 23,
+        "lcsc": "C25076",
+        "qty": 1,
+        "status": "verified",
+        "model": "0402WGF1000TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 11461913,
+        "unit_usd": 0.0012,
+        "subtotal_usd": 0.006,
+        "flags": []
+      },
+      {
+        "line": 24,
+        "lcsc": "C17168",
+        "qty": 2,
+        "status": "verified",
+        "model": "0402WGF0000TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 16427391,
+        "unit_usd": 0.0012,
+        "subtotal_usd": 0.012,
+        "flags": []
+      },
+      {
+        "line": 25,
+        "lcsc": "C1581",
+        "qty": 5,
+        "status": "verified",
+        "model": "0402F104M500NT",
+        "brand": "FH (Guangdong Fenghua Advanced Tech)",
+        "package": "0402",
+        "library": "expand",
+        "stock": 355642,
+        "unit_usd": 0.0071,
+        "subtotal_usd": 0.1775,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ],
+        "alternative": {
+          "lcsc": "C307331",
+          "model": "CL05B104KB54PNC",
+          "package": "0402",
+          "library": "base",
+          "stock": 21403676,
+          "unit_usd": 0.0089
+        }
+      },
+      {
+        "line": 26,
+        "lcsc": "C52923",
+        "qty": 7,
+        "status": "verified",
+        "model": "CL05A105KA5NQNC",
+        "brand": "Samsung Electro-Mechanics",
+        "package": "0402",
+        "library": "base",
+        "stock": 11171333,
+        "unit_usd": 0.0058,
+        "subtotal_usd": 0.203,
+        "flags": []
+      },
+      {
+        "line": 27,
+        "lcsc": "C15850",
+        "qty": 5,
+        "status": "verified",
+        "model": "CL21A106KAYNNNE",
+        "brand": "Samsung Electro-Mechanics",
+        "package": "0805",
+        "library": "base",
+        "stock": 8557049,
+        "unit_usd": 0.0315,
+        "subtotal_usd": 0.7875,
+        "flags": []
+      },
+      {
+        "line": 28,
+        "lcsc": "C318884",
+        "qty": 3,
+        "status": "verified",
+        "model": "TS-1187A-B-A-B",
+        "brand": "XKB Connection",
+        "package": "SMD-4P,5.1x5.1mm",
+        "library": "base",
+        "stock": 832106,
+        "unit_usd": 0.0215,
+        "subtotal_usd": 0.3225,
+        "flags": []
+      },
+      {
+        "line": 29,
+        "lcsc": "C11702",
+        "qty": 1,
+        "status": "verified",
+        "model": "0402WGF1001TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 33134628,
+        "unit_usd": 0.0013,
+        "subtotal_usd": 0.0065,
+        "flags": []
+      },
+      {
+        "line": 30,
+        "lcsc": "C25882",
+        "qty": 1,
+        "status": "verified",
+        "model": "0402WGF2401TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "expand",
+        "stock": 944410,
+        "unit_usd": 0.0012,
+        "subtotal_usd": 0.006,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ]
+      },
+      {
+        "line": 31,
+        "lcsc": "C25900",
+        "qty": 1,
+        "status": "verified",
+        "model": "0402WGF4701TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 15353517,
+        "unit_usd": 0.0017,
+        "subtotal_usd": 0.0085,
+        "flags": []
+      },
+      {
+        "line": 32,
+        "lcsc": "C17168",
+        "qty": 3,
+        "status": "verified",
+        "model": "0402WGF0000TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 16427391,
+        "unit_usd": 0.0012,
+        "subtotal_usd": 0.018,
+        "flags": []
+      },
+      {
+        "line": 33,
+        "lcsc": "C1581",
+        "qty": 1,
+        "status": "verified",
+        "model": "0402F104M500NT",
+        "brand": "FH (Guangdong Fenghua Advanced Tech)",
+        "package": "0402",
+        "library": "expand",
+        "stock": 355642,
+        "unit_usd": 0.0071,
+        "subtotal_usd": 0.0355,
+        "flags": [
+          "扩展库：$3/料号上料费"
+        ],
+        "alternative": {
+          "lcsc": "C307331",
+          "model": "CL05B104KB54PNC",
+          "package": "0402",
+          "library": "base",
+          "stock": 21403676,
+          "unit_usd": 0.0089
+        }
+      }
+    ],
+    "errors": [],
+    "hints": [],
+    "notes": [
+      "USD 为嘉立创 SMT 元件阶梯价（按采购数量取档）；CNY 为立创商城零售参考价，两者从不互相换算。",
+      "扩展库上料费按每唯一料号 $3/单估算，未包含工程费、钢网费、焊点费和手焊费。",
+      "优选扩展库（Preferred Extended）分类未在公开接口暴露，若需免上料费请到嘉立创 SMT 下单页确认。"
+    ],
+    "fetched_at": "2026-11-10T10:17:57.720Z"
+  },
+  "auditHand": {
+    "assembly": "hand",
+    "boards": 5,
+    "currency": "USD",
+    "summary": {
+      "lines": 32,
+      "unique_parts": 28,
+      "verified": 32,
+      "no_stock": 0,
+      "not_found": 0,
+      "base_parts": 12,
+      "expand_parts": 16,
+      "extended_fee_per_order_usd": 0,
+      "components_usd": 7.0745,
+      "components_per_board_usd": 1.4149,
+      "total_usd": 7.0745,
+      "total_per_board_usd": 1.4149,
+      "cny_covered_lines": 0,
+      "components_cny": 0
+    },
+    "rows": [
+      {
+        "line": 2,
+        "lcsc": "C7434398",
+        "qty": 1,
+        "status": "verified",
+        "model": "AD142A4",
+        "brand": "JieLi Tech",
+        "package": "SOP-16",
+        "library": "expand",
+        "stock": 385,
+        "unit_usd": 0.3659,
+        "subtotal_usd": 1.8295,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 3,
+        "lcsc": "C668215",
+        "qty": 1,
+        "status": "verified",
+        "model": "TP4054",
+        "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+        "package": "SOT-23-5L",
+        "library": "expand",
+        "stock": 90195,
+        "unit_usd": 0.0385,
+        "subtotal_usd": 0.1925,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 4,
+        "lcsc": "C347476",
+        "qty": 1,
+        "status": "verified",
+        "model": "AO3401A",
+        "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+        "package": "SOT-23",
+        "library": "expand",
+        "stock": 842274,
+        "unit_usd": 0.0318,
+        "subtotal_usd": 0.159,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 5,
+        "lcsc": "C82942",
+        "qty": 1,
+        "status": "verified",
+        "model": "ME6211C33M5G-N",
+        "brand": "MICRONE(Nanjing Micro One Elec)",
+        "package": "SOT-23-5",
+        "library": "expand",
+        "stock": 338955,
+        "unit_usd": 0.0624,
+        "subtotal_usd": 0.312,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 6,
+        "lcsc": "C2687116",
+        "qty": 1,
+        "status": "verified",
+        "model": "USBLC6-2SC6",
+        "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+        "package": "SOT-23-6",
+        "library": "expand",
+        "stock": 86894,
+        "unit_usd": 0.0478,
+        "subtotal_usd": 0.239,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 7,
+        "lcsc": "C193402",
+        "qty": 2,
+        "status": "verified",
+        "model": "SMF5.0A",
+        "brand": "MDD(Microdiode Semiconductor)",
+        "package": "SOD-123FL",
+        "library": "expand",
+        "stock": 469189,
+        "unit_usd": 0.0284,
+        "subtotal_usd": 0.284,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 8,
+        "lcsc": "C8678",
+        "qty": 1,
+        "status": "verified",
+        "model": "SS34",
+        "brand": "MDD(Microdiode Semiconductor)",
+        "package": "SMA(DO-214AC)",
+        "library": "base",
+        "stock": 2928629,
+        "unit_usd": 0.0351,
+        "subtotal_usd": 0.1755,
+        "flags": []
+      },
+      {
+        "line": 9,
+        "lcsc": "C70110",
+        "qty": 1,
+        "status": "verified",
+        "model": "mSMD050-15V",
+        "brand": "TECHFUSE",
+        "package": "1812",
+        "library": "expand",
+        "stock": 12201,
+        "unit_usd": 0.0418,
+        "subtotal_usd": 0.209,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 10,
+        "lcsc": "C19330",
+        "qty": 1,
+        "status": "verified",
+        "model": "BLM18AG601SN1D",
+        "brand": "Murata Electronics",
+        "package": "0603",
+        "library": "expand",
+        "stock": 353634,
+        "unit_usd": 0.0121,
+        "subtotal_usd": 0.0605,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 11,
+        "lcsc": "C5373222",
+        "qty": 1,
+        "status": "verified",
+        "model": "LMA2718B381-OA7",
+        "brand": "LinkMems",
+        "package": "SMD-4P,2.8x1.9mm",
+        "library": "expand",
+        "stock": 13298,
+        "unit_usd": 0.128,
+        "subtotal_usd": 0.64,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 12,
+        "lcsc": "C22383473",
+        "qty": 1,
+        "status": "verified",
+        "model": "SH-TF-01A",
+        "brand": "SHOU HAN",
+        "package": "SMD",
+        "library": "expand",
+        "stock": 17416,
+        "unit_usd": 0.0698,
+        "subtotal_usd": 0.349,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 13,
+        "lcsc": "C709357",
+        "qty": 1,
+        "status": "verified",
+        "model": "KH-TYPE-C-16P",
+        "brand": "Shenzhen Kinghelm Elec",
+        "package": "SMD",
+        "library": "expand",
+        "stock": 157945,
+        "unit_usd": 0.0778,
+        "subtotal_usd": 0.389,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 14,
+        "lcsc": "C2905009",
+        "qty": 1,
+        "status": "verified",
+        "model": "1.25-2PWB",
+        "brand": "DEALON",
+        "package": "SMD,P=1.25mm,Surface Mount，Right Angle",
+        "library": "expand",
+        "stock": 166279,
+        "unit_usd": 0.0284,
+        "subtotal_usd": 0.142,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 15,
+        "lcsc": "C91552",
+        "qty": 1,
+        "status": "verified",
+        "model": "2.54-1*4PReverse bent pin header",
+        "brand": "BOOMELE(Boom Precision Elec)",
+        "package": "Push-Pull,P=2.54mm",
+        "library": "expand",
+        "stock": 17623,
+        "unit_usd": 0.0339,
+        "subtotal_usd": 0.1695,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 16,
+        "lcsc": "C318884",
+        "qty": 1,
+        "status": "verified",
+        "model": "TS-1187A-B-A-B",
+        "brand": "XKB Connection",
+        "package": "SMD-4P,5.1x5.1mm",
+        "library": "base",
+        "stock": 832106,
+        "unit_usd": 0.0215,
+        "subtotal_usd": 0.1075,
+        "flags": []
+      },
+      {
+        "line": 17,
+        "lcsc": "C2286",
+        "qty": 2,
+        "status": "verified",
+        "model": "KT-0603R",
+        "brand": "Hubei KENTO Elec",
+        "package": "0603",
+        "library": "base",
+        "stock": 6319445,
+        "unit_usd": 0.0077,
+        "subtotal_usd": 0.077,
+        "flags": []
+      },
+      {
+        "line": 18,
+        "lcsc": "C25744",
+        "qty": 5,
+        "status": "verified",
+        "model": "0402WGF1002TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 21599882,
+        "unit_usd": 0.0028,
+        "subtotal_usd": 0.07,
+        "flags": []
+      },
+      {
+        "line": 19,
+        "lcsc": "C11702",
+        "qty": 2,
+        "status": "verified",
+        "model": "0402WGF1001TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 33134628,
+        "unit_usd": 0.0013,
+        "subtotal_usd": 0.013,
+        "flags": []
+      },
+      {
+        "line": 20,
+        "lcsc": "C25905",
+        "qty": 3,
+        "status": "verified",
+        "model": "0402WGF5101TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 4346495,
+        "unit_usd": 0.0023,
+        "subtotal_usd": 0.0345,
+        "flags": []
+      },
+      {
+        "line": 21,
+        "lcsc": "C114765",
+        "qty": 3,
+        "status": "verified",
+        "model": "RC0402FR-0722RL",
+        "brand": "YAGEO",
+        "package": "0402",
+        "library": "expand",
+        "stock": 5591584,
+        "unit_usd": 0.0018,
+        "subtotal_usd": 0.027,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 22,
+        "lcsc": "C25741",
+        "qty": 2,
+        "status": "verified",
+        "model": "0402WGF1003TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 8343418,
+        "unit_usd": 0.0012,
+        "subtotal_usd": 0.012,
+        "flags": []
+      },
+      {
+        "line": 23,
+        "lcsc": "C25076",
+        "qty": 1,
+        "status": "verified",
+        "model": "0402WGF1000TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 11461913,
+        "unit_usd": 0.0012,
+        "subtotal_usd": 0.006,
+        "flags": []
+      },
+      {
+        "line": 24,
+        "lcsc": "C17168",
+        "qty": 2,
+        "status": "verified",
+        "model": "0402WGF0000TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 16427391,
+        "unit_usd": 0.0012,
+        "subtotal_usd": 0.012,
+        "flags": []
+      },
+      {
+        "line": 25,
+        "lcsc": "C1581",
+        "qty": 5,
+        "status": "verified",
+        "model": "0402F104M500NT",
+        "brand": "FH (Guangdong Fenghua Advanced Tech)",
+        "package": "0402",
+        "library": "expand",
+        "stock": 355642,
+        "unit_usd": 0.0071,
+        "subtotal_usd": 0.1775,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 26,
+        "lcsc": "C52923",
+        "qty": 7,
+        "status": "verified",
+        "model": "CL05A105KA5NQNC",
+        "brand": "Samsung Electro-Mechanics",
+        "package": "0402",
+        "library": "base",
+        "stock": 11171333,
+        "unit_usd": 0.0058,
+        "subtotal_usd": 0.203,
+        "flags": []
+      },
+      {
+        "line": 27,
+        "lcsc": "C15850",
+        "qty": 5,
+        "status": "verified",
+        "model": "CL21A106KAYNNNE",
+        "brand": "Samsung Electro-Mechanics",
+        "package": "0805",
+        "library": "base",
+        "stock": 8557049,
+        "unit_usd": 0.0315,
+        "subtotal_usd": 0.7875,
+        "flags": []
+      },
+      {
+        "line": 28,
+        "lcsc": "C318884",
+        "qty": 3,
+        "status": "verified",
+        "model": "TS-1187A-B-A-B",
+        "brand": "XKB Connection",
+        "package": "SMD-4P,5.1x5.1mm",
+        "library": "base",
+        "stock": 832106,
+        "unit_usd": 0.0215,
+        "subtotal_usd": 0.3225,
+        "flags": []
+      },
+      {
+        "line": 29,
+        "lcsc": "C11702",
+        "qty": 1,
+        "status": "verified",
+        "model": "0402WGF1001TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 33134628,
+        "unit_usd": 0.0013,
+        "subtotal_usd": 0.0065,
+        "flags": []
+      },
+      {
+        "line": 30,
+        "lcsc": "C25882",
+        "qty": 1,
+        "status": "verified",
+        "model": "0402WGF2401TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "expand",
+        "stock": 944410,
+        "unit_usd": 0.0012,
+        "subtotal_usd": 0.006,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      },
+      {
+        "line": 31,
+        "lcsc": "C25900",
+        "qty": 1,
+        "status": "verified",
+        "model": "0402WGF4701TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 15353517,
+        "unit_usd": 0.0017,
+        "subtotal_usd": 0.0085,
+        "flags": []
+      },
+      {
+        "line": 32,
+        "lcsc": "C17168",
+        "qty": 3,
+        "status": "verified",
+        "model": "0402WGF0000TCE",
+        "brand": "UNI-ROYAL(Uniroyal Elec)",
+        "package": "0402",
+        "library": "base",
+        "stock": 16427391,
+        "unit_usd": 0.0012,
+        "subtotal_usd": 0.018,
+        "flags": []
+      },
+      {
+        "line": 33,
+        "lcsc": "C1581",
+        "qty": 1,
+        "status": "verified",
+        "model": "0402F104M500NT",
+        "brand": "FH (Guangdong Fenghua Advanced Tech)",
+        "package": "0402",
+        "library": "expand",
+        "stock": 355642,
+        "unit_usd": 0.0071,
+        "subtotal_usd": 0.0355,
+        "flags": [
+          "扩展库（手焊无上料费）"
+        ]
+      }
+    ],
+    "errors": [],
+    "hints": [],
+    "notes": [
+      "USD 为嘉立创 SMT 元件阶梯价（按采购数量取档）；CNY 为立创商城零售参考价，两者从不互相换算。",
+      "assembly=hand：不计嘉立创上料费；价格供参考，手焊请以立创商城实际下单页为准。",
+      "优选扩展库（Preferred Extended）分类未在公开接口暴露，若需免上料费请到嘉立创 SMT 下单页确认。"
+    ],
+    "fetched_at": "2026-11-10T10:17:57.722Z"
+  },
+  "finds": [
+    {
+      "label": "find: 0402 100nF 50V X7R ±10% capacitor [smt, 5 boards]",
+      "args": {
+        "need": "0402 100nF 50V X7R ±10% capacitor",
+        "assembly": "smt",
+        "quantity": 5,
+        "boards": 5,
+        "limit": 5
+      },
+      "result": {
+        "need": "0402 100nF 50V X7R ±10% capacitor",
+        "assembly": "smt",
+        "quantity": 5,
+        "boards": 5,
+        "order_qty": 25,
+        "currency": "USD",
+        "candidates": [
+          {
+            "lcsc": "C307331",
+            "model": "CL05B104KB54PNC",
+            "brand": "Samsung Electro-Mechanics",
+            "package": "0402",
+            "category": "Multilayer Ceramic Capacitors MLCC - SMD/SMT",
+            "library": "base",
+            "preferred": null,
+            "stock": 21403676,
+            "price": {
+              "currency": "USD",
+              "unit": 0.0089,
+              "source": "jlcpcb-smt"
+            },
+            "effective_unit_usd": 0.0089,
+            "fee_per_board_usd": 0,
+            "cny_price": null,
+            "specs": [
+              {
+                "name": "Voltage Rating",
+                "value": "50V"
+              },
+              {
+                "name": "Tolerance",
+                "value": "±10%"
+              },
+              {
+                "name": "Capacitance",
+                "value": "100nF"
+              },
+              {
+                "name": "Temperature Coefficient",
+                "value": "X7R"
+              }
+            ],
+            "score": 1,
+            "reasons": [
+              "基础库：无上料费",
+              "阶梯价 $0.0089（按采购量 25）",
+              "库存 21403676",
+              "库存覆盖需求（100%）",
+              "参数匹配：capacitance=100nF, voltage=50V, tolerance=±10%"
+            ],
+            "url": "https://www.lcsc.com/product-detail/multilayer-ceramic-capacitors-mlcc-smd-smt_samsung-electro-mechanics-cl05b104kb54pnc_C307331.html"
+          },
+          {
+            "lcsc": "C3012377",
+            "model": "CSA0402X7R104K500GT",
+            "brand": "HRE",
+            "package": "0402",
+            "category": "Multilayer Ceramic Capacitors MLCC - SMD/SMT",
+            "library": "expand",
+            "preferred": null,
+            "stock": 4649360,
+            "price": {
+              "currency": "USD",
+              "unit": 0.0023,
+              "source": "jlcpcb-smt"
+            },
+            "effective_unit_usd": 0.1223,
+            "fee_per_board_usd": 0.6,
+            "cny_price": null,
+            "specs": [
+              {
+                "name": "Voltage Rating",
+                "value": "50V"
+              },
+              {
+                "name": "Tolerance",
+                "value": "±10%"
+              },
+              {
+                "name": "Capacitance",
+                "value": "100nF"
+              },
+              {
+                "name": "Temperature Coefficient",
+                "value": "X7R"
+              }
+            ],
+            "score": 0.613,
+            "reasons": [
+              "扩展库：每片板摊 $0.6 上料费（每料号 $3/单）",
+              "阶梯价 $0.0023（按采购量 25）",
+              "库存 4649360",
+              "库存覆盖需求（100%）",
+              "参数匹配：capacitance=100nF, voltage=50V, tolerance=±10%"
+            ],
+            "url": "https://www.lcsc.com/product-detail/multilayer-ceramic-capacitors-mlcc-smd-smt_hre-csa0402x7r104k500gt_C3012377.html"
+          },
+          {
+            "lcsc": "C131394",
+            "model": "CC0402KRX7R9BB104",
+            "brand": "YAGEO",
+            "package": "0402",
+            "category": "Multilayer Ceramic Capacitors MLCC - SMD/SMT",
+            "library": "expand",
+            "preferred": null,
+            "stock": 10661284,
+            "price": {
+              "currency": "USD",
+              "unit": 0.0106,
+              "source": "jlcpcb-smt"
+            },
+            "effective_unit_usd": 0.1306,
+            "fee_per_board_usd": 0.6,
+            "cny_price": null,
+            "specs": [
+              {
+                "name": "Voltage Rating",
+                "value": "50V"
+              },
+              {
+                "name": "Tolerance",
+                "value": "±10%"
+              },
+              {
+                "name": "Capacitance",
+                "value": "100nF"
+              },
+              {
+                "name": "Temperature Coefficient",
+                "value": "X7R"
+              }
+            ],
+            "score": 0.604,
+            "reasons": [
+              "扩展库：每片板摊 $0.6 上料费（每料号 $3/单）",
+              "阶梯价 $0.0106（按采购量 25）",
+              "库存 10661284",
+              "库存覆盖需求（100%）",
+              "参数匹配：capacitance=100nF, voltage=50V, tolerance=±10%"
+            ],
+            "url": "https://www.lcsc.com/product-detail/multilayer-ceramic-capacitors-mlcc-smd-smt_yageo-cc0402krx7r9bb104_C131394.html"
+          },
+          {
+            "lcsc": "C5448791",
+            "model": "TCC0402X7R104K500AT",
+            "brand": "CCTC",
+            "package": "0402",
+            "category": "Multilayer Ceramic Capacitors MLCC - SMD/SMT",
+            "library": "expand",
+            "preferred": null,
+            "stock": 2129382,
+            "price": {
+              "currency": "USD",
+              "unit": 0.0023,
+              "source": "jlcpcb-smt"
+            },
+            "effective_unit_usd": 0.1223,
+            "fee_per_board_usd": 0.6,
+            "cny_price": null,
+            "specs": [
+              {
+                "name": "Voltage Rating",
+                "value": "50V"
+              },
+              {
+                "name": "Tolerance",
+                "value": "±10%"
+              },
+              {
+                "name": "Capacitance",
+                "value": "100nF"
+              },
+              {
+                "name": "Temperature Coefficient",
+                "value": "X7R"
+              }
+            ],
+            "score": 0.601,
+            "reasons": [
+              "扩展库：每片板摊 $0.6 上料费（每料号 $3/单）",
+              "阶梯价 $0.0023（按采购量 25）",
+              "库存 2129382",
+              "库存覆盖需求（100%）",
+              "参数匹配：capacitance=100nF, voltage=50V, tolerance=±10%"
+            ],
+            "url": "https://www.lcsc.com/product-detail/multilayer-ceramic-capacitors-mlcc-smd-smt_cctc-tcc0402x7r104k500at_C5448791.html"
+          },
+          {
+            "lcsc": "C48543623",
+            "model": "TCC0402X7R104K500ATM",
+            "brand": "CCTC",
+            "package": "0402",
+            "category": "Multilayer Ceramic Capacitors MLCC - SMD/SMT",
+            "library": "expand",
+            "preferred": null,
+            "stock": 1516179,
+            "price": {
+              "currency": "USD",
+              "unit": 0.003,
+              "source": "jlcpcb-smt"
+            },
+            "effective_unit_usd": 0.123,
+            "fee_per_board_usd": 0.6,
+            "cny_price": null,
+            "specs": [
+              {
+                "name": "Voltage Rating",
+                "value": "50V"
+              },
+              {
+                "name": "Tolerance",
+                "value": "±10%"
+              },
+              {
+                "name": "Capacitance",
+                "value": "100nF"
+              },
+              {
+                "name": "Temperature Coefficient",
+                "value": "X7R"
+              }
+            ],
+            "score": 0.594,
+            "reasons": [
+              "扩展库：每片板摊 $0.6 上料费（每料号 $3/单）",
+              "阶梯价 $0.003（按采购量 25）",
+              "库存 1516179",
+              "库存覆盖需求（100%）",
+              "参数匹配：capacitance=100nF, voltage=50V, tolerance=±10%"
+            ],
+            "url": "https://www.lcsc.com/product-detail/C48543623.html"
+          }
+        ],
+        "hints": [],
+        "notes": [
+          "解析到参数条件：capacitance=100000, voltage>=50, tolerance<=10",
+          "assembly=smt：扩展库按每料号 $3/单摊销；优选扩展库分类接口未暴露，以下单页为准。"
+        ],
+        "relaxed": false,
+        "fetched_at": "2026-11-10T10:18:00.389Z"
+      }
+    },
+    {
+      "label": "find: 3.3V LDO SOT-23-5 500mA [hand, with CNY attempt]",
+      "args": {
+        "need": "3.3V LDO SOT-23-5 500mA",
+        "assembly": "hand",
+        "quantity": 1,
+        "boards": 5,
+        "limit": 3,
+        "include_cny": true
+      },
+      "result": {
+        "need": "3.3V LDO SOT-23-5 500mA",
+        "assembly": "hand",
+        "quantity": 1,
+        "boards": 5,
+        "order_qty": 5,
+        "currency": "CNY (best effort) + USD reference",
+        "candidates": [
+          {
+            "lcsc": "C82942",
+            "model": "ME6211C33M5G-N",
+            "brand": "MICRONE(Nanjing Micro One Elec)",
+            "package": "SOT-23-5",
+            "category": "Voltage Regulators - Linear, Low Drop Out (LDO) Regulators",
+            "library": "expand",
+            "preferred": null,
+            "stock": 338955,
+            "price": {
+              "currency": "USD",
+              "unit": 0.0624,
+              "source": "jlcpcb-smt"
+            },
+            "effective_unit_usd": 0.0624,
+            "fee_per_board_usd": 0,
+            "cny_price": null,
+            "specs": [
+              {
+                "name": "Power Supply Rejection Ratio (PSRR)",
+                "value": "70dB@(1kHz)"
+              },
+              {
+                "name": "Output Current",
+                "value": "500mA"
+              },
+              {
+                "name": "Output Voltage",
+                "value": "3.3V"
+              }
+            ],
+            "score": 0.932,
+            "reasons": [
+              "阶梯价 $0.0624（按采购量 5）",
+              "库存 338955",
+              "库存覆盖需求（100%）",
+              "参数匹配：voltage=3.3V, current=500mA"
+            ],
+            "url": "https://www.lcsc.com/product-detail/voltage-regulators-linear-low-drop-out-ldo-regulators_microne-nanjing-micro-one-elec-me6211c33m5g-n_C82942.html"
+          },
+          {
+            "lcsc": "C47773",
+            "model": "RT9013-33GB",
+            "brand": "Richtek Tech",
+            "package": "SOT-23-5",
+            "category": "Voltage Regulators - Linear, Low Drop Out (LDO) Regulators",
+            "library": "expand",
+            "preferred": null,
+            "stock": 321440,
+            "price": {
+              "currency": "USD",
+              "unit": 0.1372,
+              "source": "jlcpcb-smt"
+            },
+            "effective_unit_usd": 0.1372,
+            "fee_per_board_usd": 0,
+            "cny_price": null,
+            "specs": [
+              {
+                "name": "Power Supply Rejection Ratio (PSRR)",
+                "value": "50dB@(10kHz)"
+              },
+              {
+                "name": "Output Current",
+                "value": "500mA"
+              },
+              {
+                "name": "Output Voltage",
+                "value": "3.3V"
+              }
+            ],
+            "score": 0.919,
+            "reasons": [
+              "阶梯价 $0.1372（按采购量 5）",
+              "库存 321440",
+              "库存覆盖需求（100%）",
+              "参数匹配：voltage=3.3V, current=500mA"
+            ],
+            "url": "https://www.lcsc.com/product-detail/voltage-regulators-linear-low-drop-out-ldo-regulators_richtek-tech-rt9013-33gb_C47773.html"
+          },
+          {
+            "lcsc": "C610253",
+            "model": "ME6231C33M5G",
+            "brand": "MICRONE(Nanjing Micro One Elec)",
+            "package": "SOT-23-5",
+            "category": "Voltage Regulators - Linear, Low Drop Out (LDO) Regulators",
+            "library": "expand",
+            "preferred": null,
+            "stock": 118338,
+            "price": {
+              "currency": "USD",
+              "unit": 0.0783,
+              "source": "jlcpcb-smt"
+            },
+            "effective_unit_usd": 0.0783,
+            "fee_per_board_usd": 0,
+            "cny_price": null,
+            "specs": [
+              {
+                "name": "Power Supply Rejection Ratio (PSRR)",
+                "value": "76dB@(100Hz)"
+              },
+              {
+                "name": "Output Current",
+                "value": "500mA"
+              },
+              {
+                "name": "Output Voltage",
+                "value": "3.3V"
+              }
+            ],
+            "score": 0.91,
+            "reasons": [
+              "阶梯价 $0.0783（按采购量 5）",
+              "库存 118338",
+              "库存覆盖需求（100%）",
+              "参数匹配：voltage=3.3V, current=500mA"
+            ],
+            "url": "https://www.lcsc.com/product-detail/voltage-regulators-linear-low-drop-out-ldo-regulators_microne-nanjing-micro-one-elec-me6231c33m5g_C610253.html"
+          }
+        ],
+        "hints": [
+          "国内站 CNY 价本次不可用（WAF/限流），价格列为 USD 参考；可稍后重试或到立创商城页面确认。"
+        ],
+        "notes": [
+          "解析到参数条件：voltage=3.3, current>=500",
+          "assembly=hand：不考虑嘉立创上料费与基础库偏好，价格优先展示立创商城人民币零售价（取不到时回退 USD 参考价）。"
+        ],
+        "relaxed": false,
+        "fetched_at": "2026-11-10T10:18:10.111Z"
+      }
+    },
+    {
+      "label": "find: TP4054 [hand]",
+      "args": {
+        "need": "TP4054",
+        "assembly": "hand",
+        "quantity": 1,
+        "boards": 5,
+        "limit": 3,
+        "include_cny": false
+      },
+      "result": {
+        "need": "TP4054",
+        "assembly": "hand",
+        "quantity": 1,
+        "boards": 5,
+        "order_qty": 5,
+        "currency": "USD",
+        "candidates": [
+          {
+            "lcsc": "C5381776",
+            "model": "TP4054",
+            "brand": "JSMSEMI",
+            "package": "SOT-23-5",
+            "category": "Battery Management",
+            "library": "expand",
+            "preferred": null,
+            "stock": 331258,
+            "price": {
+              "currency": "USD",
+              "unit": 0.0215,
+              "source": "jlcpcb-smt"
+            },
+            "effective_unit_usd": 0.0215,
+            "fee_per_board_usd": 0,
+            "cny_price": null,
+            "specs": [],
+            "score": 0.86,
+            "reasons": [
+              "阶梯价 $0.0215（按采购量 5）",
+              "库存 331258",
+              "库存覆盖需求（100%）",
+              "型号精确匹配"
+            ],
+            "url": "https://www.lcsc.com/product-detail/battery-management_jsmsemi-tp4054_C5381776.html"
+          },
+          {
+            "lcsc": "C21713960",
+            "model": "TP4054",
+            "brand": "GOODWORK",
+            "package": "SOT-23-5",
+            "category": "Battery Management",
+            "library": "expand",
+            "preferred": null,
+            "stock": 7800,
+            "price": {
+              "currency": "USD",
+              "unit": 0.0261,
+              "source": "jlcpcb-smt"
+            },
+            "effective_unit_usd": 0.0261,
+            "fee_per_board_usd": 0,
+            "cny_price": null,
+            "specs": [],
+            "score": 0.771,
+            "reasons": [
+              "阶梯价 $0.0261（按采购量 5）",
+              "库存 7800",
+              "库存覆盖需求（100%）",
+              "型号精确匹配"
+            ],
+            "url": "https://www.lcsc.com/product-detail/battery-management_goodwork-tp4054_C21713960.html"
+          },
+          {
+            "lcsc": "C668215",
+            "model": "TP4054",
+            "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+            "package": "SOT-23-5L",
+            "category": "Battery Management",
+            "library": "expand",
+            "preferred": null,
+            "stock": 90195,
+            "price": {
+              "currency": "USD",
+              "unit": 0.0385,
+              "source": "jlcpcb-smt"
+            },
+            "effective_unit_usd": 0.0385,
+            "fee_per_board_usd": 0,
+            "cny_price": null,
+            "specs": [],
+            "score": 0.763,
+            "reasons": [
+              "阶梯价 $0.0385（按采购量 5）",
+              "库存 90195",
+              "库存覆盖需求（100%）",
+              "型号精确匹配"
+            ],
+            "url": "https://www.lcsc.com/product-detail/battery-management_umw-youtai-semiconductor-co-ltd-tp4054_C668215.html"
+          }
+        ],
+        "hints": [],
+        "notes": [
+          "assembly=hand：不考虑嘉立创上料费与基础库偏好，价格优先展示立创商城人民币零售价（取不到时回退 USD 参考价）。"
+        ],
+        "relaxed": false,
+        "fetched_at": "2026-11-10T10:18:14.425Z"
+      }
+    },
+    {
+      "label": "find: USB Type-C 16P connector [smt, 5 boards]",
+      "args": {
+        "need": "USB Type-C 16P 母座 connector",
+        "assembly": "smt",
+        "quantity": 1,
+        "boards": 5,
+        "limit": 3,
+        "include_cny": false
+      },
+      "result": {
+        "need": "USB Type-C 16P 母座 connector",
+        "assembly": "smt",
+        "quantity": 1,
+        "boards": 5,
+        "order_qty": 5,
+        "currency": "USD",
+        "candidates": [
+          {
+            "lcsc": "C393939",
+            "model": "TYPE-C16PIN",
+            "brand": "SHOU HAN",
+            "package": "SMD",
+            "category": "USB Connectors",
+            "library": "expand",
+            "preferred": null,
+            "stock": 341769,
+            "price": {
+              "currency": "USD",
+              "unit": 0.0691,
+              "source": "jlcpcb-smt"
+            },
+            "effective_unit_usd": 0.6691,
+            "fee_per_board_usd": 0.6,
+            "cny_price": null,
+            "specs": [
+              {
+                "name": "Current Rating-Power",
+                "value": "3A"
+              },
+              {
+                "name": "Voltage Rating",
+                "value": "5V"
+              }
+            ],
+            "score": 0.845,
+            "reasons": [
+              "扩展库：每片板摊 $0.6 上料费（每料号 $3/单）",
+              "阶梯价 $0.0691（按采购量 5）",
+              "库存 341769",
+              "库存覆盖需求（100%）",
+              "参数匹配：pins=16P"
+            ],
+            "url": "https://www.lcsc.com/product-detail/usb-connectors_shou-han-type-c16pin_C393939.html"
+          },
+          {
+            "lcsc": "C2927038",
+            "model": "USB-TYPE-C-018",
+            "brand": "DEALON",
+            "package": "SMD",
+            "category": "USB Connectors",
+            "library": "expand",
+            "preferred": null,
+            "stock": 201251,
+            "price": {
+              "currency": "USD",
+              "unit": 0.0635,
+              "source": "jlcpcb-smt"
+            },
+            "effective_unit_usd": 0.6635,
+            "fee_per_board_usd": 0.6,
+            "cny_price": null,
+            "specs": [
+              {
+                "name": "Current Rating-Power",
+                "value": "3A"
+              },
+              {
+                "name": "Voltage Rating",
+                "value": "5V"
+              }
+            ],
+            "score": 0.839,
+            "reasons": [
+              "扩展库：每片板摊 $0.6 上料费（每料号 $3/单）",
+              "阶梯价 $0.0635（按采购量 5）",
+              "库存 201251",
+              "库存覆盖需求（100%）",
+              "参数匹配：pins=16P"
+            ],
+            "url": "https://www.lcsc.com/product-detail/usb-connectors_dealon-usb-type-c-018_C2927038.html"
+          },
+          {
+            "lcsc": "C2927039",
+            "model": "USB-TYPE-C-019",
+            "brand": "DEALON",
+            "package": "SMD",
+            "category": "USB Connectors",
+            "library": "expand",
+            "preferred": null,
+            "stock": 129431,
+            "price": {
+              "currency": "USD",
+              "unit": 0.0647,
+              "source": "jlcpcb-smt"
+            },
+            "effective_unit_usd": 0.6647,
+            "fee_per_board_usd": 0.6,
+            "cny_price": null,
+            "specs": [
+              {
+                "name": "Current Rating-Power",
+                "value": "3A"
+              },
+              {
+                "name": "Voltage Rating",
+                "value": "5V"
+              }
+            ],
+            "score": 0.832,
+            "reasons": [
+              "扩展库：每片板摊 $0.6 上料费（每料号 $3/单）",
+              "阶梯价 $0.0647（按采购量 5）",
+              "库存 129431",
+              "库存覆盖需求（100%）",
+              "参数匹配：pins=16P"
+            ],
+            "url": "https://www.lcsc.com/product-detail/usb-connectors_dealon-usb-type-c-019_C2927039.html"
+          }
+        ],
+        "hints": [],
+        "notes": [
+          "解析到参数条件：pins=16",
+          "assembly=smt：扩展库按每料号 $3/单摊销；优选扩展库分类接口未暴露，以下单页为准。"
+        ],
+        "relaxed": false,
+        "fetched_at": "2026-11-10T10:18:16.357Z"
+      }
+    }
+  ]
+}

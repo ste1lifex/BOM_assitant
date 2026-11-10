@@ -1,0 +1,11 @@
+# Bundle patch for dsh-plugin-lcsc (Host-only bundle).
+# `install_bundle` adds the package dependency and selects this bundle; this
+# patch inserts the plugin row into the profile's composed plugin tree.
+- insert:
+    - id: lcsc-parts
+      name: 'dsh-plugin-lcsc'
+      config:
+        timeoutMs: 8000
+        retries: 3
+        cacheTtlMs: 600000
+        usdToCnyFactor: 6.0
