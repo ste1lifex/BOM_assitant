@@ -29,6 +29,7 @@ import {
   parseBomCsvDetailed,
   pickTierPrice,
 } from './data.js'
+import { createCnAdapter } from './cn.js'
 
 /** Plugin id used by the DSH loader. */
 export const name = 'lcsc-parts'
@@ -1296,17 +1297,31 @@ function cnFailureHint(results, adapter) {
     .map(([reason, count]) => `${reason}×${count}`)
     .join('，')
   const parts = [`国内站人民币价 ${total - failed.length}/${total} 成功，失败原因：${breakdown}。`]
+  const transient = ['szlcsc-waf-challenge', 'chrome-render-empty', 'page-parse-failed'].filter((reason) => counts.has(reason))
   if (counts.has('chrome-not-found')) {
     parts.push(
       typeof adapter?.chrome?.hint === 'string'
         ? adapter.chrome.hint
         : '未找到 Chrome/Chromium：请配置 chromePath 或设置环境变量 CHROME_BIN 后重试。',
     )
-  } else if (adapter?.chrome?.path !== undefined) {
-    parts.push(`当前 Chrome：${adapter.chrome.path}（来源 ${adapter.chrome.source ?? 'auto'}）。`)
+  } else if (transient.length > 0) {
+    parts.push(
+      '以上失败属阵发问题（阿里云 WAF 限流或页面渲染为空），已自动重试 1 次；' +
+        '稍后重试即可，不需要改配置。成功的料号已写入 24h 缓存，重跑只补失败项。' +
+        '若频繁出现，可把 cnConcurrency 降到 1（默认 2）以减少触发。',
+    )
+  }
+  if (counts.has('product-id-not-found')) {
+    parts.push('部分料号在 EasyEDA 查不到商品 id 映射（常见于新料或国内专属料），重试无效，只能参考 USD 价。')
+  }
+  if (counts.has('cny-adapter-unavailable')) {
+    parts.push('人民币适配器未初始化（Chrome 渲染器未挂载），请检查插件是否完整安装及宿主日志。')
   }
   if (counts.has('cn-budget-exceeded')) {
     parts.push('部分料号超出时间预算未查完；结果已写入 24h 缓存，再调用一次会更快补齐。')
+  }
+  if (adapter?.chrome?.path !== undefined && counts.has('chrome-not-found') === false) {
+    parts.push(`当前 Chrome：${adapter.chrome.path}（来源 ${adapter.chrome.source ?? 'auto'}）。`)
   }
   return parts.join('')
 }

@@ -66,6 +66,24 @@ const DEFAULT_USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
 
+/** Ali yun WAF challenge markers: page is not the product page we asked for. */
+const WAF_HINT_RE = /aliyun|acw_sc__v2|_____tmd_____|验证码|captcha|challenge-platform|error code.*?5\d\d/i
+
+/**
+ * True when the rendered HTML is a WAF challenge page rather than a product
+ * page. A page carrying `__NEXT_DATA__` is always the real one.
+ * @param {unknown} html
+ */
+export function looksLikeWafChallenge(html) {
+  if (typeof html !== 'string' || html === '') return false
+  if (html.includes('__NEXT_DATA__')) return false
+  return WAF_HINT_RE.test(html)
+}
+
+/** One retry for transient failures; the domestic site challenges in bursts. */
+const RETRY_DELAY_MS = 1500
+const RETRYABLE_FAILURES = new Set(['szlcsc-waf-challenge', 'chrome-render-empty', 'page-parse-failed'])
+
 /**
  * How to fix a missing Chrome, phrased so an agent can act on it directly.
  * @param {{ path?: string, source?: string, tried: string[], configPath?: string, envPath?: string }} info
@@ -299,7 +317,7 @@ export function createCnAdapter(options = {}) {
   const profileDir = path.join(cacheDir, 'chrome-profile')
   const cacheTtlMs = Number.isFinite(options.cacheTtlMs) ? options.cacheTtlMs : 24 * 60 * 60 * 1000
   const timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : 30000
-  const concurrency = Math.max(1, Math.min(8, Math.floor(options.concurrency ?? 4)))
+  const concurrency = Math.max(1, Math.min(8, Math.floor(options.concurrency ?? 2)))
   const browserIdleTtlMs = Number.isFinite(options.browserIdleTtlMs) ? options.browserIdleTtlMs : 120000
   const cacheMaxEntries = Number.isFinite(options.cacheMaxEntries) ? Math.max(1, Math.floor(options.cacheMaxEntries)) : 800
   const legacyProfileDir = path.join(cacheDir, 'legacy-profile')
@@ -699,40 +717,56 @@ export function createCnAdapter(options = {}) {
       return cached
     }
     return withSlot(async () => {
-      try {
-        const pid = await resolvePid(normalized)
-        if (pid === undefined) return { ok: false, reason: 'product-id-not-found' }
-        const html = await renderHtml(`${ITEM_URL}${pid}.html`)
-        if (html === '') return { ok: false, reason: 'chrome-render-empty' }
-        const parsed = parseItemHtml(html)
-        if (parsed === undefined || parsed.price === undefined) {
-          return { ok: false, reason: 'page-parse-failed' }
+      /** @type {{ ok: false, reason: string, attempts: number } | undefined} */
+      let failure
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        if (attempt > 1) await sleep(RETRY_DELAY_MS)
+        try {
+          const pid = await resolvePid(normalized)
+          if (pid === undefined) return { ok: false, reason: 'product-id-not-found', attempts: attempt }
+          const html = await renderHtml(`${ITEM_URL}${pid}.html`)
+          if (html === '') {
+            failure = { ok: false, reason: 'chrome-render-empty', attempts: attempt }
+            continue
+          }
+          if (looksLikeWafChallenge(html)) {
+            failure = { ok: false, reason: 'szlcsc-waf-challenge', attempts: attempt }
+            continue
+          }
+          const parsed = parseItemHtml(html)
+          if (parsed === undefined || parsed.price === undefined) {
+            failure = { ok: false, reason: 'page-parse-failed', attempts: attempt }
+            continue
+          }
+          const record = {
+            ok: true,
+            lcsc: normalized,
+            product_id: pid,
+            unit: parsed.price,
+            currency: 'CNY',
+            stock: parsed.stock,
+            model: parsed.model,
+            brand: parsed.brand,
+            package: parsed.package,
+            min_buy: parsed.min_buy,
+            packing: parsed.packing,
+            unit_name: parsed.unit,
+            category: parsed.category,
+            desc: parsed.desc,
+            source: 'lcsc_cn_render',
+            fetched_at: new Date().toISOString(),
+            cache_age_s: 0,
+            cached: false,
+          }
+          writeCache(normalized, record)
+          return record
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : String(error)
+          failure = { ok: false, reason, attempts: attempt }
+          if (!RETRYABLE_FAILURES.has(reason)) return failure
         }
-        const record = {
-          ok: true,
-          lcsc: normalized,
-          product_id: pid,
-          unit: parsed.price,
-          currency: 'CNY',
-          stock: parsed.stock,
-          model: parsed.model,
-          brand: parsed.brand,
-          package: parsed.package,
-          min_buy: parsed.min_buy,
-          packing: parsed.packing,
-          unit_name: parsed.unit,
-          category: parsed.category,
-          desc: parsed.desc,
-          source: 'lcsc_cn_render',
-          fetched_at: new Date().toISOString(),
-          cache_age_s: 0,
-          cached: false,
-        }
-        writeCache(normalized, record)
-        return record
-      } catch (error) {
-        return { ok: false, reason: error instanceof Error ? error.message : String(error) }
       }
+      return failure ?? { ok: false, reason: 'cn-query-failed', attempts: 2 }
     })
   }
 

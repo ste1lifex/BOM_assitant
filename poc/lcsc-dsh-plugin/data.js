@@ -86,7 +86,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   cnCacheDir: null,
   cnCacheTtlMs: 86400000,
   cnTimeoutMs: 30000,
-  cnConcurrency: 4,
+  cnConcurrency: 2,
   cnBrowserIdleTtlMs: 120000,
   cnQueryBudgetMs: 90000,
   cnCacheMaxEntries: 800,

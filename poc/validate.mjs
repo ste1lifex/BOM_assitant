@@ -11,9 +11,10 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { normalizeConfig, parseBomCsvDetailed } from './lcsc-dsh-plugin/data.js'
-import { parseItemHtml, pruneChromeProfile, pruneJsonCache } from './lcsc-dsh-plugin/cn.js'
+import { looksLikeWafChallenge, parseItemHtml, pruneChromeProfile, pruneJsonCache } from './lcsc-dsh-plugin/cn.js'
 import {
   EXTENDED_PART_FEE_USD,
+  apply,
   auditBom,
   bulkTierUsd,
   candidateMatches,
@@ -684,6 +685,42 @@ check(
 
 check('place 空值跟随 hand 口径', normalizePlace('', 'hand') === 'hand')
 check('place 空值默认 smt 口径', normalizePlace(undefined) === 'smt')
+
+check('WAF 挑战页识别', looksLikeWafChallenge('<html><script> acw_sc__v2 </script>aliyun</html>') === true)
+check('真实商品页不误判为 WAF', looksLikeWafChallenge('<html><script id="__NEXT_DATA__">{}</script>aliyun</html>') === false)
+check('空页面不误判为 WAF', looksLikeWafChallenge('') === false)
+
+check('cnConcurrency 默认降到 2', normalizeConfig({}).cnConcurrency === 2, normalizeConfig({}).cnConcurrency)
+
+// 接线回归：apply() 里必须能真正创建 Chrome 适配器（曾因漏 import 静默失败）
+const applyLogs = []
+apply(
+  { tools: { register: () => {} }, effect: () => {}, logger: () => ({ info: (m) => applyLogs.push(m), warn: (m) => applyLogs.push(m) }) },
+  { verbose: true },
+)
+check('apply 能创建 CNY 适配器（不再 is not defined）', !applyLogs.some((line) => line.includes('is not defined')), applyLogs)
+check(
+  'apply 明确记录了适配器状态',
+  applyLogs.some((line) => line.includes('CNY adapter ready') || line.includes('Chrome not found')),
+  applyLogs,
+)
+
+// 阵发失败（WAF）的提示必须说"稍后重试、不用改配置"，与缺 Chrome 的"去改配置"区分开
+const wafService = {
+  searchRaw: async (code) => ({ total: 1, items: [capBase].filter((item) => item.code === String(code).toUpperCase()) }),
+  cn: { query: async () => ({ ok: false, reason: 'szlcsc-waf-challenge' }), chrome: { tried: [], path: '/x/chrome' } },
+}
+const auditWaf = await auditBom(wafService, { bom: 'C307331,2\n', assembly: 'hand', boards: 5, include_cny: true }, {})
+check(
+  'WAF 失败提示「稍后重试、不用改配置」',
+  auditWaf.hints.some((hint) => hint.includes('稍后重试') && hint.includes('不需要改配置')),
+  auditWaf.hints,
+)
+check(
+  '缺 Chrome 提示「去配 chromePath」',
+  auditCnDown.hints.some((hint) => hint.includes('chromePath')),
+  auditCnDown.hints,
+)
 
 /* -------------------------------------------------------------------------- */
 /* Result                                                                     */

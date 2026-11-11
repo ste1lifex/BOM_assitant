@@ -89,7 +89,7 @@ Host-only bundle，无 UI 面板；`engines.dsh >= 0.2.2-rc.1 < 0.3.0`。装完�
   config:
     cnRender: true             # 国内站 Chrome 渲染（关掉则只有 USD + 估算）
     chromePath: ''             # 本机 Chrome/Chromium 路径；留空则自动嗅探（见下）
-    cnConcurrency: 4           # 常驻 Chrome 并发标签数 1-8
+    cnConcurrency: 2           # 常驻 Chrome 并发标签数 1-8（WAF 阵发，建议 ≤2）
     cnBrowserIdleTtlMs: 120000 # 空闲多久关 Chrome
     cnQueryBudgetMs: 90000     # 单次 BOM 取 CNY 时间预算；超时先返回，缓存续跑
     cnCacheTtlMs: 86400000     # JSON 缓存 24h TTL
@@ -131,6 +131,38 @@ node poc/test-improvements.mjs     # 联网验收（BOM v0.6 100 片 + 人民币
 ```
 
 准确性参考（2026-11-11 实测）：28 个料的 BOM 数据 28/28 取到真实 CNY，手焊总价 **¥4.0791**（Recording_card 官方口径 ¥4.0793）；单料如 C1581 ¥0.0239、C7434398 ¥1.097。
+
+## 已知问题（Known Issues）
+
+### 1. 国内站 WAF 阵发，会成批失败
+
+`item.szlcsc.com` 在阿里云 WAF 后面，触发后一段时间内**整批**请求都会被挑战。
+
+- **已缓解**：单料失败自动**重试 1 次**（1.5s 退避）；`cnConcurrency` 默认已降到 **2**
+- **失败不缓存，成功缓存 24h**：所以重跑只补失败项，已成功的直接命中缓存
+- 工具输出会写清 `失败原因：szlcsc-waf-challenge×N`，并提示**稍后重试即可、不需要改配置**
+- 若仍然频繁：把 `cnConcurrency` 降到 `1`
+
+### 2. `product-id-not-found` 是数据缺口，重试无用
+
+部分料号在 EasyEDA / lceda 查不到对应的国内商品 id（常见于新料、国内专属料、非零售料）。
+这类只能看 USD 价，`hints` 里会明确标注，**不要**把它当成 Chrome 配置问题去反复调。
+
+### 3. Chrome 必须装在本机
+
+真实人民币价依赖本机 Chrome/Chromium。查找顺序：`chromePath` → `CHROME_BIN` → 自动嗅探。
+找不到时 `hints` 会给出**已尝试的路径 + 修复方法**，按提示配 `chromePath` 即可，不需要改代码。
+
+### 4. 手焊模式下出现 NOT-FOUND 可能只是国内站暂时不可用
+
+判断条件是「嘉立创 SMT 没有 **且** 国内站查不到」。国内站被 WAF 挡住时，立创有货的料也会落到
+`NOT-FOUND`。隔几分钟重跑通常就恢复；`hints` 会告诉你当时的真实原因。
+
+### 5. 0.3.3 及更早：Chrome 适配器未初始化（0.3.4 已修）
+
+0.3.3 的 `index.js` 漏了 `createCnAdapter` 的 import，导致 `apply()` 里创建适配器时抛
+`createCnAdapter is not defined` 并被吞掉，**人民币链路整条不生效**（静默回退到旧路径）。
+0.3.4 修复，并在 `validate.mjs` 增加了接线回归断言。
 
 ## 局限（无法消除，只会缓解）
 
