@@ -89,6 +89,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   cnConcurrency: 4,
   cnBrowserIdleTtlMs: 120000,
   cnQueryBudgetMs: 90000,
+  cnCacheMaxEntries: 800,
   // JLCPCB extended-part feeder fee and optional engineering fees (USD).
   extendedPartFeeUsd: 3.0,
   setupFeeUsd: 0.0,
@@ -1640,6 +1641,7 @@ export function normalizeConfig(raw, options = {}) {
     cnConcurrency: number('cnConcurrency', DEFAULT_CONFIG.cnConcurrency, 1, 8),
     cnBrowserIdleTtlMs: number('cnBrowserIdleTtlMs', DEFAULT_CONFIG.cnBrowserIdleTtlMs, 0, 30 * 60 * 1000),
     cnQueryBudgetMs: number('cnQueryBudgetMs', DEFAULT_CONFIG.cnQueryBudgetMs, 0, 10 * 60 * 1000),
+    cnCacheMaxEntries: number('cnCacheMaxEntries', DEFAULT_CONFIG.cnCacheMaxEntries, 1, 100000),
     extendedPartFeeUsd: float('extendedPartFeeUsd', DEFAULT_CONFIG.extendedPartFeeUsd, 0, 100),
     setupFeeUsd: float('setupFeeUsd', DEFAULT_CONFIG.setupFeeUsd, 0, 10000),
     stencilFeeUsd: float('stencilFeeUsd', DEFAULT_CONFIG.stencilFeeUsd, 0, 10000),

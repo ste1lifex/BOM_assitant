@@ -13,7 +13,7 @@
 - **真实国内价 + 国内库存**：Chrome 渲染立创官方商品页取 `price`/`stockNumber`，不是估算；无 Chrome/WAF/超时才降级为标注估算。
 - **性价比排序**：单价（按采购量取档）+ 库存覆盖 + 参数匹配 + 基础库/扩展库权重；`assembly=smt` 时把 $3/料号上料费摊销进成本。
 - **BOM 体检**：逐行 `smt/hand/dnp`、重复料号合并、双库存/双价格并列、批量摊销表（20/100/300/1000 片）、基础库替代的**净节省**、直接导出嘉立创 BOM CSV。
-- **快**：常驻 Chrome + CDP 多标签，28 料完整手焊 BOM 首次约 26.5s，缓存命中 **0.0s/次**（24h 缓存只用于提速）。
+- **快且不留垃圾**：常驻 Chrome + CDP 多标签，28 料完整手焊 BOM 首次约 26.5s，缓存命中 **0.0s/次**；Chrome 缓存/JSON 缓存都有清理策略（见「边界」中的缓存行）。
 
 ## 先说边界（重要）
 
@@ -29,6 +29,7 @@
 | 替代料 | 同类别 + 基础库 + 参数匹配 | 只做保守同类替换，不做电气/热/寿命/认证等效；封装不同会标「需改 PCB」 |
 | 选型范围 | — | 必须有 LCSC 编号或可搜到的型号/描述；插件不做“猜你要什么” |
 | 价格/库存时效 | 公开页面/接口 | 都是抓取时刻快照；24h 缓存只用于性能，不代表历史价 |
+| **本地缓存**（`~/.cache/dsh-plugin-lcsc`） | JSON 结果 + Chrome profile | JSON：24h TTL、最多 800 条，过期/超量自动删；Chrome：只保留 WAF cookie，HTTP/Code/GPU/Crashpad 缓存**每次关闭即清**，磁盘缓存硬上限 50MB；空闲 120s 关 Chrome、卸载 `dispose()`；`rm -rf ~/.cache/dsh-plugin-lcsc` 可整体清理 |
 
 ## 两个工具
 
@@ -90,7 +91,8 @@ Host-only bundle，无 UI 面板；`engines.dsh >= 0.2.2-rc.1 < 0.3.0`。装完�
     cnConcurrency: 4           # 常驻 Chrome 并发标签数 1-8
     cnBrowserIdleTtlMs: 120000 # 空闲多久关 Chrome
     cnQueryBudgetMs: 90000     # 单次 BOM 取 CNY 时间预算；超时先返回，缓存续跑
-    cnCacheTtlMs: 86400000     # 24h
+    cnCacheTtlMs: 86400000     # JSON 缓存 24h TTL
+    cnCacheMaxEntries: 800     # JSON 缓存条数上限（超量删最旧）
     usdToCnyFactor: 6.0        # 仅用于估算，不是汇率
     extendedPartFeeUsd: 3.0    # 扩展库上料费
     setupFeeUsd: 0.0           # 工程费（可选）
@@ -114,6 +116,7 @@ node poc/test-improvements.mjs     # 联网验收（BOM v0.6 100 片 + 人民币
 4. `region=cn` 的人民币费率表未内置，国内 SMT 费用以官方计价页为准。
 5. 替代料不验证电气/热/寿命/认证等效，封装变化需改 PCB。
 6. 不做下单、不做比价大屏、不抓淘宝/1688；没有 LCSC 编号的料无法计价。
+7. Chrome 进程按空闲/卸载退出；若宿主进程被强杀，可能留下一个 Chrome 残留进程（其 profile 缓存在下次启动前会先清理，不会持续膨胀）。
 
 详细改进记录见仓库 [`docs/改进记录_0.3.0.md`](../../docs/改进记录_0.3.0.md)。
 

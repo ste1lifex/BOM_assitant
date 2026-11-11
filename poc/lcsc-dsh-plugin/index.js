@@ -2098,6 +2098,7 @@ export function apply(ctx, config) {
         timeoutMs: settings.cnTimeoutMs,
         concurrency: settings.cnConcurrency,
         browserIdleTtlMs: settings.cnBrowserIdleTtlMs,
+        cacheMaxEntries: settings.cnCacheMaxEntries,
         verbose: settings.verbose,
         logger,
       })

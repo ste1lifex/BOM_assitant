@@ -16,6 +16,7 @@
         cnConcurrency: 4
         cnBrowserIdleTtlMs: 120000
         cnQueryBudgetMs: 90000
+        cnCacheMaxEntries: 800
         # 嘉立创费用（USD）；工程费/钢网费默认 0，需要时填实际报价
         extendedPartFeeUsd: 3.0
         setupFeeUsd: 0.0

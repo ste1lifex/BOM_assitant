@@ -7,8 +7,11 @@
  * Exit code 0 = all checks passed.
  */
 
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { normalizeConfig } from './lcsc-dsh-plugin/data.js'
-import { parseItemHtml } from './lcsc-dsh-plugin/cn.js'
+import { parseItemHtml, pruneChromeProfile, pruneJsonCache } from './lcsc-dsh-plugin/cn.js'
 import {
   EXTENDED_PART_FEE_USD,
   auditBom,
@@ -590,6 +593,46 @@ check('CN render parse price', parsedItem?.price === 0.0239, parsedItem)
 check('CN render parse stock', parsedItem?.stock === 299962)
 check('CN render parse model', parsedItem?.model === '0402F104M500NT')
 check('CN render rejects empty page', parseItemHtml('<html></html>') === undefined)
+
+/* -------------------------------------------------------------------------- */
+/* 7. Cache management (no invisible garbage)                                 */
+/* -------------------------------------------------------------------------- */
+
+section('cache management')
+
+const tmpCache = fs.mkdtempSync(path.join(os.tmpdir(), 'lcsc-cache-test-'))
+try {
+  const now = Date.now()
+  const writeRecord = (code, fetchedAt) =>
+    fs.writeFileSync(path.join(tmpCache, `${code}.json`), JSON.stringify({ ok: true, lcsc: code, fetched_at: new Date(fetchedAt).toISOString() }))
+  writeRecord('C0001', now - 30 * 60 * 60 * 1000) // expired (30h)
+  writeRecord('C0002', now - 60 * 1000) // fresh
+  writeRecord('C0003', now - 120 * 1000) // fresh
+  writeRecord('C0004', now - 180 * 1000) // fresh (should be dropped by maxEntries=2)
+  fs.writeFileSync(path.join(tmpCache, 'broken.json'), '{not json')
+  const pruned = pruneJsonCache(tmpCache, { ttlMs: 24 * 60 * 60 * 1000, maxEntries: 2 })
+  const left = fs.readdirSync(tmpCache).filter((name) => name.endsWith('.json')).sort()
+  check('expired cache entries pruned', !left.includes('C0001.json'), left)
+  check('broken cache file pruned', !left.includes('broken.json'), left)
+  check('cache entry cap enforced', left.length <= 2, left)
+  check('newest entries kept', left.includes('C0002.json') && left.includes('C0003.json'), left)
+  check('prune reports removed count', pruned.removed >= 2 && pruned.kept <= 2, pruned)
+
+  const tmpProfile = fs.mkdtempSync(path.join(os.tmpdir(), 'lcsc-profile-test-'))
+  fs.mkdirSync(path.join(tmpProfile, 'Default', 'Cache'), { recursive: true })
+  fs.mkdirSync(path.join(tmpProfile, 'Default', 'Code Cache'), { recursive: true })
+  fs.mkdirSync(path.join(tmpProfile, 'Crashpad'), { recursive: true })
+  fs.writeFileSync(path.join(tmpProfile, 'Default', 'Cache', 'blob'), 'x')
+  fs.writeFileSync(path.join(tmpProfile, 'Default', 'Cookies'), 'cookie')
+  pruneChromeProfile(tmpProfile)
+  check('chrome HTTP cache removed', !fs.existsSync(path.join(tmpProfile, 'Default', 'Cache')))
+  check('chrome code cache removed', !fs.existsSync(path.join(tmpProfile, 'Default', 'Code Cache')))
+  check('chrome crashpad removed', !fs.existsSync(path.join(tmpProfile, 'Crashpad')))
+  check('chrome cookies kept for WAF challenge', fs.existsSync(path.join(tmpProfile, 'Default', 'Cookies')))
+  fs.rmSync(tmpProfile, { recursive: true, force: true })
+} finally {
+  fs.rmSync(tmpCache, { recursive: true, force: true })
+}
 
 /* -------------------------------------------------------------------------- */
 /* Result                                                                     */

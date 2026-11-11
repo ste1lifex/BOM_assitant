@@ -65,6 +65,100 @@ export function extractNextData(html) {
   }
 }
 
+/** Chrome profile subdirectories that are pure cache/garbage and can be deleted freely. */
+const CHROME_PROFILE_JUNK = [
+  'Default/Cache',
+  'Default/Code Cache',
+  'Default/GPUCache',
+  'Default/DawnCache',
+  'Default/DawnGraphiteCache',
+  'Default/DawnWebGPUCache',
+  'Default/GraphiteDawnCache',
+  'Default/ShaderCache',
+  'Default/Service Worker/CacheStorage',
+  'Default/Service Worker/ScriptCache',
+  'Default/Media Cache',
+  'Default/Session Storage',
+  'Default/WebStorage',
+  'Crashpad',
+  'ShaderCache',
+  'GrShaderCache',
+  'BrowserMetrics',
+  'component_crx_cache',
+  'extensions_crx_cache',
+]
+
+/**
+ * Delete cache-only subdirectories from a Chrome profile, keeping cookies and
+ * preferences (the WAF challenge cookie lives in the profile).
+ * @param {string} profileDir
+ */
+export function pruneChromeProfile(profileDir) {
+  for (const relative of CHROME_PROFILE_JUNK) {
+    try {
+      fs.rmSync(path.join(profileDir, relative), { recursive: true, force: true })
+    } catch {
+      // best effort
+    }
+  }
+}
+
+/**
+ * Prune the JSON result cache: drop entries older than `ttlMs`, then keep at
+ * most `maxEntries` newest entries. This keeps `~/.cache/dsh-plugin-lcsc/cn`
+ * bounded instead of accumulating one file per part ever queried.
+ * @param {string} cacheDir
+ * @param {{ ttlMs?: number, maxEntries?: number }} [options]
+ * @returns {{ removed: number, kept: number }}
+ */
+export function pruneJsonCache(cacheDir, options = {}) {
+  const ttlMs = Number.isFinite(options.ttlMs) ? options.ttlMs : 24 * 60 * 60 * 1000
+  const maxEntries = Number.isFinite(options.maxEntries) ? Math.max(1, Math.floor(options.maxEntries)) : 800
+  let names
+  try {
+    names = fs.readdirSync(cacheDir).filter((name) => name.endsWith('.json'))
+  } catch {
+    return { removed: 0, kept: 0 }
+  }
+  const now = Date.now()
+  /** @type {{ file: string, fetchedAt: number }[]} */
+  const alive = []
+  let removed = 0
+  for (const name of names) {
+    const file = path.join(cacheDir, name)
+    let record
+    try {
+      record = JSON.parse(fs.readFileSync(file, 'utf8'))
+    } catch {
+      record = undefined
+    }
+    const fetchedAt = record === undefined ? Number.NaN : Date.parse(record.fetched_at)
+    if (!Number.isFinite(fetchedAt) || now - fetchedAt > ttlMs) {
+      try {
+        fs.rmSync(file, { force: true })
+        removed += 1
+      } catch {
+        // best effort
+      }
+      continue
+    }
+    alive.push({ file, fetchedAt })
+  }
+  if (alive.length > maxEntries) {
+    alive.sort((left, right) => left.fetchedAt - right.fetchedAt)
+    for (const entry of alive.slice(0, alive.length - maxEntries)) {
+      try {
+        fs.rmSync(entry.file, { force: true })
+        removed += 1
+      } catch {
+        // best effort
+      }
+    }
+    return { removed, kept: maxEntries }
+  }
+  return { removed, kept: alive.length }
+}
+
 /**
  * Parse a rendered `item.szlcsc.com` page into the official domestic record.
  * @param {string} html
@@ -145,6 +239,10 @@ export function createCnAdapter(options = {}) {
   const timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : 30000
   const concurrency = Math.max(1, Math.min(8, Math.floor(options.concurrency ?? 4)))
   const browserIdleTtlMs = Number.isFinite(options.browserIdleTtlMs) ? options.browserIdleTtlMs : 120000
+  const cacheMaxEntries = Number.isFinite(options.cacheMaxEntries) ? Math.max(1, Math.floor(options.cacheMaxEntries)) : 800
+  const legacyProfileDir = path.join(cacheDir, 'legacy-profile')
+  let lastJsonPruneAt = 0
+  let queryCount = 0
   const logger = options.logger
   const memory = new Map()
   let active = 0
@@ -214,6 +312,9 @@ export function createCnAdapter(options = {}) {
     } catch {
       // already gone
     }
+    // Keep cookies for the WAF challenge, drop HTTP/Code caches so the profile
+    // does not silently grow.
+    pruneChromeProfile(profileDir)
   }
 
   function touchIdle() {
@@ -228,6 +329,8 @@ export function createCnAdapter(options = {}) {
     if (browser !== undefined && browser.closed !== true) return browser
     if (chromePath === undefined) throw new Error('chrome-not-found')
     fs.mkdirSync(profileDir, { recursive: true })
+    // Clean caches left behind by an interrupted previous run.
+    pruneChromeProfile(profileDir)
     const child = spawn(
       chromePath,
       [
@@ -238,6 +341,8 @@ export function createCnAdapter(options = {}) {
         '--disable-background-networking',
         '--disable-sync',
         '--mute-audio',
+        '--disk-cache-size=52428800', // hard cap: 50 MiB HTTP cache
+        '--media-cache-size=10485760', // hard cap: 10 MiB media cache
         '--remote-debugging-pipe',
         `--user-data-dir=${profileDir}`,
         'about:blank',
@@ -382,13 +487,12 @@ export function createCnAdapter(options = {}) {
   }
 
   /* ------------------- legacy per-page renderer (fallback) ----------------- */
-  const chromeProfile = path.join(os.tmpdir(), 'dsh-plugin-lcsc-chrome-profile')
-
   /** @param {string} url @param {number} timeout @returns {Promise<string>} */
   function renderViaDumpDom(url, timeout = timeoutMs) {
     if (chromePath === undefined) return Promise.resolve('')
     return new Promise((resolve) => {
-      fs.mkdirSync(chromeProfile, { recursive: true })
+      fs.mkdirSync(legacyProfileDir, { recursive: true })
+      pruneChromeProfile(legacyProfileDir)
       const args = [
         '--headless=new',
         '--disable-gpu',
@@ -397,7 +501,9 @@ export function createCnAdapter(options = {}) {
         '--disable-background-networking',
         '--disable-sync',
         '--mute-audio',
-        `--user-data-dir=${chromeProfile}`,
+        '--disk-cache-size=52428800',
+        '--media-cache-size=10485760',
+        `--user-data-dir=${legacyProfileDir}`,
         '--dump-dom',
         '--virtual-time-budget=6000',
         url,
@@ -428,6 +534,7 @@ export function createCnAdapter(options = {}) {
         if (finished) return
         finished = true
         clearTimeout(timer)
+        pruneChromeProfile(legacyProfileDir)
         resolve(stdout)
       })
     })
@@ -516,6 +623,12 @@ export function createCnAdapter(options = {}) {
     const normalized = String(code ?? '').trim().toUpperCase()
     if (normalized === '') return { ok: false, reason: 'empty-code' }
     if (chromePath === undefined) return { ok: false, reason: 'chrome-not-found' }
+    queryCount += 1
+    // Prune expired JSON cache entries lazily (about once per hour / 50 hits).
+    if (queryCount === 1 || Date.now() - lastJsonPruneAt > 60 * 60 * 1000 || queryCount % 50 === 0) {
+      lastJsonPruneAt = Date.now()
+      pruneJsonCache(cacheDir, { ttlMs: cacheTtlMs, maxEntries: cacheMaxEntries })
+    }
     const cached = callOptions.refresh === true ? undefined : readCache(normalized)
     if (cached !== undefined && cached.ok !== false) {
       touchIdle()
@@ -568,8 +681,27 @@ export function createCnAdapter(options = {}) {
     clearMemory() {
       memory.clear()
     },
+    /** Remove this adapter's on-disk caches (JSON results + Chrome profiles). */
+    clearCache() {
+      shutdownBrowser()
+      try {
+        fs.rmSync(cacheDir, { recursive: true, force: true })
+      } catch {
+        // best effort
+      }
+      memory.clear()
+    },
+    pruneCaches() {
+      const json = pruneJsonCache(cacheDir, { ttlMs: cacheTtlMs, maxEntries: cacheMaxEntries })
+      pruneChromeProfile(profileDir)
+      pruneChromeProfile(legacyProfileDir)
+      return json
+    },
     dispose() {
       shutdownBrowser()
+      pruneChromeProfile(profileDir)
+      pruneChromeProfile(legacyProfileDir)
+      pruneJsonCache(cacheDir, { ttlMs: cacheTtlMs, maxEntries: cacheMaxEntries })
     },
   }
 }
