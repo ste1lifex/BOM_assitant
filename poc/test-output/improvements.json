@@ -1,0 +1,6858 @@
+{
+  "checks": [
+    {
+      "label": "SMF5.0A returns candidates (not 0)",
+      "ok": true,
+      "detail": [
+        "C2857263",
+        "C19077497",
+        "C284108",
+        "C193402",
+        "C908213",
+        "C46956403"
+      ]
+    },
+    {
+      "label": "SMF5.0A includes C193402",
+      "ok": true,
+      "detail": [
+        "C2857263",
+        "C19077497",
+        "C284108",
+        "C193402",
+        "C908213",
+        "C46956403"
+      ]
+    },
+    {
+      "label": "AO3401A returns candidates (not 0)",
+      "ok": true,
+      "detail": [
+        "C15127",
+        "C347476",
+        "C49396278",
+        "C48678024",
+        "C2938368",
+        "C5224202"
+      ]
+    },
+    {
+      "label": "AO3401A includes C347476",
+      "ok": true,
+      "detail": [
+        "C15127",
+        "C347476",
+        "C49396278",
+        "C48678024",
+        "C2938368",
+        "C5224202"
+      ]
+    },
+    {
+      "label": "TP4054 returns candidates (not 0)",
+      "ok": true,
+      "detail": [
+        "C5381776",
+        "C5342385",
+        "C668215",
+        "C21713960",
+        "C55349166",
+        "C382138"
+      ]
+    },
+    {
+      "label": "TP4054 includes C668215",
+      "ok": true,
+      "detail": [
+        "C5381776",
+        "C5342385",
+        "C668215",
+        "C21713960",
+        "C55349166",
+        "C382138"
+      ]
+    },
+    {
+      "label": "C307331 returns candidates (not 0)",
+      "ok": true,
+      "detail": [
+        "C307331"
+      ]
+    },
+    {
+      "label": "C307331 includes C307331",
+      "ok": true,
+      "detail": [
+        "C307331"
+      ]
+    },
+    {
+      "label": "finds a base-library 22Ω candidate",
+      "ok": true,
+      "detail": [
+        "C25092/base",
+        "C114765/expand",
+        "C2929994/expand",
+        "C22369461/expand",
+        "C324769/expand"
+      ]
+    },
+    {
+      "label": "reports stock_lcsc separately from stock_smt",
+      "ok": true
+    },
+    {
+      "label": "base 22Ω reports a dual stock view (lcsc stock may be 0)",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "label": "place column parsed: 6 DNP lines",
+      "ok": true,
+      "detail": 6
+    },
+    {
+      "label": "place column parsed: 1 hand line",
+      "ok": true,
+      "detail": 1
+    },
+    {
+      "label": "place column parsed: 25 SMT lines",
+      "ok": true,
+      "detail": 25
+    },
+    {
+      "label": "extended feeder fee is positive",
+      "ok": true,
+      "detail": 36
+    },
+    {
+      "label": "components cost within review range ($100-$125 for 100 boards)",
+      "ok": true,
+      "detail": 108.6
+    },
+    {
+      "label": "total cost within review range ($135-$160)",
+      "ok": true,
+      "detail": 144.6
+    },
+    {
+      "label": "DNP component value excluded and reported",
+      "ok": true,
+      "detail": 6.64
+    },
+    {
+      "label": "hand lines excluded from SMT component total",
+      "ok": true
+    },
+    {
+      "label": "batch table has 20/100/300/1000",
+      "ok": true
+    },
+    {
+      "label": "BOM CSV exported with smt lines",
+      "ok": true,
+      "detail": "Comment,Designator,Footprint,LCSC Part #\n\"AD142A4\",\"\",\"SOP-16\",\"C7434398\"\n\"TP4054\",\"\",\"SOT-23-5L\",\"C668215\"\n\"AO3401A\",\"\""
+    },
+    {
+      "label": "optimize saving is reported",
+      "ok": true,
+      "detail": 3.18
+    },
+    {
+      "label": "at least one net-saving action suggested",
+      "ok": true,
+      "detail": [
+        "C114765→C25092：封装兼容，上料费省 $3，元件成本变化 $-0.18，净省 $3.18",
+        "C91552 place=hand：不占上料费（已从 SMT 费用中剔除）",
+        "C318884 DNP：不贴片、不计元件与上料费",
+        "C11702 DNP：不贴片、不计元件与上料费",
+        "C25882 DNP：不贴片、不计元件与上料费",
+        "C25900 DNP：不贴片、不计元件与上料费",
+        "C17168 DNP：不贴片、不计元件与上料费",
+        "C307331 DNP：不贴片、不计元件与上料费"
+      ]
+    },
+    {
+      "label": "J4 line was rewritten to smt",
+      "ok": true
+    },
+    {
+      "label": "J4 as hand avoids exactly one feeder fee ($3)",
+      "ok": true,
+      "detail": [
+        36,
+        39
+      ]
+    },
+    {
+      "label": "all-smt total is higher than hand-in-BOM total",
+      "ok": true
+    },
+    {
+      "label": "C1581 real CNY ≈ ¥0.0239 (±8%)",
+      "ok": true,
+      "detail": 0.0239
+    },
+    {
+      "label": "C1581 real domestic stock present",
+      "ok": true,
+      "detail": 268391
+    },
+    {
+      "label": "C7434398 real CNY ≈ ¥1.097 (±8%)",
+      "ok": true,
+      "detail": 1.097
+    },
+    {
+      "label": "CNY source labelled lcsc_cn_render",
+      "ok": true,
+      "detail": "lcsc_cn_render"
+    },
+    {
+      "label": "duplicate lines merged to one line",
+      "ok": true,
+      "detail": 1
+    },
+    {
+      "label": "merged quantity = 5",
+      "ok": true,
+      "detail": 5
+    },
+    {
+      "label": "feeder fee counted once",
+      "ok": true,
+      "detail": 3
+    }
+  ],
+  "audits": {
+    "find_SMF5_0A": {
+      "need": "SMF5.0A",
+      "exact": true,
+      "assembly": "smt",
+      "quantity": 1,
+      "boards": 100,
+      "order_qty": 100,
+      "currency": "USD（CNY 为参考估算）",
+      "relaxed": false,
+      "relax_stage": 0,
+      "candidates": [
+        {
+          "lcsc": "C2857263",
+          "model": "SMF5.0A",
+          "brand": "JSMSEMI",
+          "package": "SOD-123FL",
+          "category": "ESD and Surge Protection (TVS/ESD)",
+          "library": "expand",
+          "preferred": null,
+          "stock": 276331,
+          "stock_smt": 276331,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0187,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0187,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0187
+              },
+              {
+                "qty": 500,
+                "unit": 0.0147
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0116
+              },
+              {
+                "qty": 6000,
+                "unit": 0.0103
+              },
+              {
+                "qty": 24000,
+                "unit": 0.0091
+              },
+              {
+                "qty": 45000,
+                "unit": 0.0085
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.051,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0487,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.051,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Junction Capacitance",
+              "value": "-"
+            },
+            {
+              "name": "Peak Pulse Power Dissipation (Ppp)",
+              "value": "200W@10/1000us"
+            }
+          ],
+          "score": 0.838,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0187（按采购量 100）",
+            "库存 276331",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=SMF5.0A"
+          ],
+          "url": "https://www.lcsc.com/product-detail/esd-and-surge-protection-tvs-esd_jsmsemi-smf5-0a_C2857263.html"
+        },
+        {
+          "lcsc": "C19077497",
+          "model": "SMF5.0A",
+          "brand": "hongjiacheng",
+          "package": "SOD-123FL",
+          "category": "ESD and Surge Protection (TVS/ESD)",
+          "library": "expand",
+          "preferred": true,
+          "stock": 822343,
+          "stock_smt": 822343,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0283,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0283,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0283
+              },
+              {
+                "qty": 200,
+                "unit": 0.0233
+              },
+              {
+                "qty": 600,
+                "unit": 0.021
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0161
+              },
+              {
+                "qty": 9000,
+                "unit": 0.0154
+              },
+              {
+                "qty": 21000,
+                "unit": 0.0149
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0894,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0583,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.0894,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Junction Capacitance",
+              "value": "-"
+            },
+            {
+              "name": "Peak Pulse Power Dissipation (Ppp)",
+              "value": "200W@10/1000us"
+            }
+          ],
+          "score": 0.838,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0283（按采购量 100）",
+            "库存 822343",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=SMF5.0A"
+          ],
+          "url": "https://www.lcsc.com/product-detail/esd-and-surge-protection-tvs-esd_hongjiacheng-smf5-0a_C19077497.html"
+        },
+        {
+          "lcsc": "C284108",
+          "model": "SMF5.0A",
+          "brand": "DOWO",
+          "package": "SOD-123",
+          "category": "ESD and Surge Protection (TVS/ESD)",
+          "library": "expand",
+          "preferred": null,
+          "stock": 225970,
+          "stock_smt": 225970,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0193,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0193,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0193
+              },
+              {
+                "qty": 200,
+                "unit": 0.0167
+              },
+              {
+                "qty": 600,
+                "unit": 0.0153
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0146
+              },
+              {
+                "qty": 9000,
+                "unit": 0.0138
+              },
+              {
+                "qty": 21000,
+                "unit": 0.0134
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0804,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0493,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.0804,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Peak Pulse Power Dissipation (Ppp)",
+              "value": "1kW@8/20us"
+            }
+          ],
+          "score": 0.834,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0193（按采购量 100）",
+            "库存 225970",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=SMF5.0A"
+          ],
+          "url": "https://www.lcsc.com/product-detail/esd-and-surge-protection-tvs-esd_dowo-smf5-0a_C284108.html"
+        },
+        {
+          "lcsc": "C193402",
+          "model": "SMF5.0A",
+          "brand": "MDD(Microdiode Semiconductor)",
+          "package": "SOD-123FL",
+          "category": "ESD and Surge Protection (TVS/ESD)",
+          "library": "expand",
+          "preferred": null,
+          "stock": 465127,
+          "stock_smt": 465127,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0283,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0283,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0283
+              },
+              {
+                "qty": 200,
+                "unit": 0.0218
+              },
+              {
+                "qty": 600,
+                "unit": 0.019
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0159
+              },
+              {
+                "qty": 9000,
+                "unit": 0.015
+              },
+              {
+                "qty": 21000,
+                "unit": 0.0145
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.087,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0583,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.087,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Junction Capacitance",
+              "value": "-"
+            },
+            {
+              "name": "Peak Pulse Power Dissipation (Ppp)",
+              "value": "200W@10/1000us"
+            }
+          ],
+          "score": 0.829,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0283（按采购量 100）",
+            "库存 465127",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=SMF5.0A"
+          ],
+          "url": "https://www.lcsc.com/product-detail/esd-and-surge-protection-tvs-esd_mdd-microdiode-semiconductor-smf5-0a_C193402.html"
+        },
+        {
+          "lcsc": "C908213",
+          "model": "SMF5.0A",
+          "brand": "FUXINSEMI",
+          "package": "SOD-123",
+          "category": "ESD and Surge Protection (TVS/ESD)",
+          "library": "expand",
+          "preferred": null,
+          "stock": 119530,
+          "stock_smt": 119530,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0269,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0269,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0269
+              },
+              {
+                "qty": 200,
+                "unit": 0.022
+              },
+              {
+                "qty": 600,
+                "unit": 0.0193
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0143
+              },
+              {
+                "qty": 9000,
+                "unit": 0.0129
+              },
+              {
+                "qty": 21000,
+                "unit": 0.0122
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0732,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0569,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.0732,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Peak Pulse Power Dissipation (Ppp)",
+              "value": "200W@10/1000us"
+            }
+          ],
+          "score": 0.811,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0269（按采购量 100）",
+            "库存 119530",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=SMF5.0A"
+          ],
+          "url": "https://www.lcsc.com/product-detail/esd-and-surge-protection-tvs-esd_fuxinsemi-smf5-0a_C908213.html"
+        },
+        {
+          "lcsc": "C46956403",
+          "model": "SMF5.0A",
+          "brand": "TDSEMIC",
+          "package": "SOD-123FL",
+          "category": "ESD and Surge Protection (TVS/ESD)",
+          "library": "expand",
+          "preferred": null,
+          "stock": 31820,
+          "stock_smt": 31820,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0193,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0193,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0193
+              },
+              {
+                "qty": 500,
+                "unit": 0.0152
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0129
+              },
+              {
+                "qty": 6000,
+                "unit": 0.0115
+              },
+              {
+                "qty": 24000,
+                "unit": 0.0103
+              },
+              {
+                "qty": 51000,
+                "unit": 0.0096
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0576,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0493,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.0576,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Junction Capacitance",
+              "value": "-"
+            },
+            {
+              "name": "Peak Pulse Power Dissipation (Ppp)",
+              "value": "200W@10/1000us"
+            }
+          ],
+          "score": 0.804,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0193（按采购量 100）",
+            "库存 31820",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=SMF5.0A"
+          ],
+          "url": "https://www.lcsc.com/product-detail/esd-and-surge-protection-tvs-esd_tdsemic-smf5-0a_C46956403.html"
+        }
+      ],
+      "hints": [
+        "该品类未找到基础库候选（均为扩展库，$3/料号上料费）；请到下单页确认优选扩展库分类。"
+      ],
+      "notes": [
+        "按型号精确查询（SMF5.0A），未做参数解析。",
+        "assembly=smt：扩展库按每料号 $3/单上料费摊销；基础库优先度体现在排序里。"
+      ],
+      "fetched_at": "2026-11-11T08:50:46.356Z"
+    },
+    "find_AO3401A": {
+      "need": "AO3401A",
+      "exact": true,
+      "assembly": "smt",
+      "quantity": 1,
+      "boards": 100,
+      "order_qty": 100,
+      "currency": "USD（CNY 为参考估算）",
+      "relaxed": false,
+      "relax_stage": 0,
+      "candidates": [
+        {
+          "lcsc": "C15127",
+          "model": "AO3401A",
+          "brand": "Alpha & Omega Semicon",
+          "package": "SOT-23",
+          "category": "MOSFETs",
+          "library": "base",
+          "preferred": null,
+          "stock": 1608615,
+          "stock_smt": 1608615,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.064,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.064,
+            "tier": "50+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0813
+              },
+              {
+                "qty": 50,
+                "unit": 0.064
+              },
+              {
+                "qty": 150,
+                "unit": 0.0551
+              },
+              {
+                "qty": 500,
+                "unit": 0.0478
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0453
+              },
+              {
+                "qty": 6000,
+                "unit": 0.0435
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.261,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "50+",
+          "effective_unit_usd": 0.064,
+          "fee_per_board_usd": 0,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.261,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Input Capacitance(Ciss)",
+              "value": "645pF"
+            },
+            {
+              "name": "Reverse Transfer Capacitance (Crss@Vds)",
+              "value": "55pF"
+            },
+            {
+              "name": "Output Capacitance(Coss)",
+              "value": "80pF"
+            },
+            {
+              "name": "Pd - Power Dissipation",
+              "value": "-"
+            }
+          ],
+          "score": 0.937,
+          "reasons": [
+            "基础库：无上料费",
+            "阶梯价 $0.064（按采购量 100）",
+            "库存 1608615",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=AO3401A"
+          ],
+          "url": "https://www.lcsc.com/product-detail/mosfets_alpha-omega-semicon-ao3401a_C15127.html"
+        },
+        {
+          "lcsc": "C347476",
+          "model": "AO3401A",
+          "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+          "package": "SOT-23",
+          "category": "MOSFETs",
+          "library": "expand",
+          "preferred": null,
+          "stock": 817311,
+          "stock_smt": 817311,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0318,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0318,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0318
+              },
+              {
+                "qty": 200,
+                "unit": 0.0236
+              },
+              {
+                "qty": 600,
+                "unit": 0.0198
+              },
+              {
+                "qty": 3000,
+                "unit": 0.017
+              },
+              {
+                "qty": 9000,
+                "unit": 0.016
+              },
+              {
+                "qty": 21000,
+                "unit": 0.0153
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0918,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0618,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.0918,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Input Capacitance(Ciss)",
+              "value": "954pF"
+            },
+            {
+              "name": "Reverse Transfer Capacitance (Crss@Vds)",
+              "value": "77pF"
+            },
+            {
+              "name": "Output Capacitance(Coss)",
+              "value": "115pF"
+            },
+            {
+              "name": "Pd - Power Dissipation",
+              "value": "1.4W"
+            }
+          ],
+          "score": 0.841,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0318（按采购量 100）",
+            "库存 817311",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=AO3401A"
+          ],
+          "url": "https://www.lcsc.com/product-detail/mosfets_umw-youtai-semiconductor-co-ltd-ao3401a_C347476.html"
+        },
+        {
+          "lcsc": "C49396278",
+          "model": "AO3401A",
+          "brand": "YONGYUTAI",
+          "package": "SOT-23",
+          "category": "MOSFETs",
+          "library": "expand",
+          "preferred": null,
+          "stock": 41388,
+          "stock_smt": 41388,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0287,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0287,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0287
+              },
+              {
+                "qty": 200,
+                "unit": 0.0224
+              },
+              {
+                "qty": 600,
+                "unit": 0.019
+              },
+              {
+                "qty": 3000,
+                "unit": 0.017
+              },
+              {
+                "qty": 9000,
+                "unit": 0.0152
+              },
+              {
+                "qty": 21000,
+                "unit": 0.0143
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0858,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0587,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.0858,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Input Capacitance(Ciss)",
+              "value": "553pF"
+            },
+            {
+              "name": "Reverse Transfer Capacitance (Crss@Vds)",
+              "value": "35pF"
+            },
+            {
+              "name": "Output Capacitance(Coss)",
+              "value": "57pF"
+            }
+          ],
+          "score": 0.815,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0287（按采购量 100）",
+            "库存 41388",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=AO3401A"
+          ],
+          "url": "https://www.lcsc.com/product-detail/C49396278.html"
+        },
+        {
+          "lcsc": "C48678024",
+          "model": "AO3401A",
+          "brand": "baocheng(Shandong Baocheng Elec)",
+          "package": "SOT-23",
+          "category": "MOSFETs",
+          "library": "expand",
+          "preferred": null,
+          "stock": 52500,
+          "stock_smt": 52500,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0329,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0329,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0329
+              },
+              {
+                "qty": 200,
+                "unit": 0.0255
+              },
+              {
+                "qty": 600,
+                "unit": 0.0215
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0192
+              },
+              {
+                "qty": 9000,
+                "unit": 0.017
+              },
+              {
+                "qty": 21000,
+                "unit": 0.0159
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0954,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0629,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.0954,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Input Capacitance(Ciss)",
+              "value": "954pF"
+            },
+            {
+              "name": "Reverse Transfer Capacitance (Crss@Vds)",
+              "value": "77pF"
+            },
+            {
+              "name": "Output Capacitance(Coss)",
+              "value": "115pF"
+            },
+            {
+              "name": "Pd - Power Dissipation",
+              "value": "1.4W"
+            }
+          ],
+          "score": 0.791,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0329（按采购量 100）",
+            "库存 52500",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=AO3401A"
+          ],
+          "url": "https://www.lcsc.com/product-detail/mosfets_baocheng-shandong-baocheng-elec-ao3401a_C48678024.html"
+        },
+        {
+          "lcsc": "C2938368",
+          "model": "AO3401A",
+          "brand": "GOODWORK",
+          "package": "SOT-23",
+          "category": "MOSFETs",
+          "library": "expand",
+          "preferred": null,
+          "stock": 212347,
+          "stock_smt": 212347,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0368,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0368,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0368
+              },
+              {
+                "qty": 200,
+                "unit": 0.0298
+              },
+              {
+                "qty": 600,
+                "unit": 0.0259
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0198
+              },
+              {
+                "qty": 9000,
+                "unit": 0.0177
+              },
+              {
+                "qty": 30000,
+                "unit": 0.0167
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.1002,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0668,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.1002,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Input Capacitance(Ciss)",
+              "value": "1.05nF"
+            },
+            {
+              "name": "Reverse Transfer Capacitance (Crss@Vds)",
+              "value": "85pF"
+            },
+            {
+              "name": "Output Capacitance(Coss)",
+              "value": "127pF"
+            },
+            {
+              "name": "Pd - Power Dissipation",
+              "value": "1.2W"
+            }
+          ],
+          "score": 0.788,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0368（按采购量 100）",
+            "库存 212347",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=AO3401A"
+          ],
+          "url": "https://www.lcsc.com/product-detail/mosfets_goodwork-ao3401a_C2938368.html"
+        },
+        {
+          "lcsc": "C5224202",
+          "model": "AO3401A",
+          "brand": "ElecSuper",
+          "package": "SOT-23-3L",
+          "category": "MOSFETs",
+          "library": "expand",
+          "preferred": null,
+          "stock": 90726,
+          "stock_smt": 90726,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0421,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0421,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0421
+              },
+              {
+                "qty": 200,
+                "unit": 0.0318
+              },
+              {
+                "qty": 600,
+                "unit": 0.026
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0226
+              },
+              {
+                "qty": 9000,
+                "unit": 0.0197
+              },
+              {
+                "qty": 21000,
+                "unit": 0.018
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.108,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0721,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.108,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Input Capacitance(Ciss)",
+              "value": "954pF"
+            },
+            {
+              "name": "Reverse Transfer Capacitance (Crss@Vds)",
+              "value": "77pF"
+            },
+            {
+              "name": "Output Capacitance(Coss)",
+              "value": "54pF"
+            },
+            {
+              "name": "Pd - Power Dissipation",
+              "value": "1.4W"
+            }
+          ],
+          "score": 0.74,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0421（按采购量 100）",
+            "库存 90726",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=AO3401A"
+          ],
+          "url": "https://www.lcsc.com/product-detail/mosfets_elecsuper-ao3401a_C5224202.html"
+        }
+      ],
+      "hints": [],
+      "notes": [
+        "按型号精确查询（AO3401A），未做参数解析。",
+        "assembly=smt：扩展库按每料号 $3/单上料费摊销；基础库优先度体现在排序里。"
+      ],
+      "fetched_at": "2026-11-11T08:50:47.736Z"
+    },
+    "find_TP4054": {
+      "need": "TP4054",
+      "exact": true,
+      "assembly": "smt",
+      "quantity": 1,
+      "boards": 100,
+      "order_qty": 100,
+      "currency": "USD（CNY 为参考估算）",
+      "relaxed": false,
+      "relax_stage": 0,
+      "candidates": [
+        {
+          "lcsc": "C5381776",
+          "model": "TP4054",
+          "brand": "JSMSEMI",
+          "package": "SOT-23-5",
+          "category": "Battery Management",
+          "library": "expand",
+          "preferred": null,
+          "stock": 328284,
+          "stock_smt": 328284,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0215,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0215,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0215
+              },
+              {
+                "qty": 200,
+                "unit": 0.0167
+              },
+              {
+                "qty": 600,
+                "unit": 0.014
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0124
+              },
+              {
+                "qty": 9000,
+                "unit": 0.011
+              },
+              {
+                "qty": 21000,
+                "unit": 0.0103
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0618,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0515,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.0618,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [],
+          "score": 0.819,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0215（按采购量 100）",
+            "库存 328284",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=TP4054"
+          ],
+          "url": "https://www.lcsc.com/product-detail/battery-management_jsmsemi-tp4054_C5381776.html"
+        },
+        {
+          "lcsc": "C5342385",
+          "model": "TP4054",
+          "brand": "TECH PUBLIC",
+          "package": "SOT-23-5L",
+          "category": "Battery Management",
+          "library": "expand",
+          "preferred": null,
+          "stock": 10210,
+          "stock_smt": 10210,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.027,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.027,
+            "tier": "100+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0306
+              },
+              {
+                "qty": 100,
+                "unit": 0.027
+              },
+              {
+                "qty": 300,
+                "unit": 0.0252
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0226
+              },
+              {
+                "qty": 6000,
+                "unit": 0.0215
+              },
+              {
+                "qty": 9000,
+                "unit": 0.021
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.126,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "100+",
+          "effective_unit_usd": 0.057,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.126,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [],
+          "score": 0.741,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.027（按采购量 100）",
+            "库存 10210",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=TP4054"
+          ],
+          "url": "https://www.lcsc.com/product-detail/battery-management_tech-public-tp4054_C5342385.html"
+        },
+        {
+          "lcsc": "C668215",
+          "model": "TP4054",
+          "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+          "package": "SOT-23-5L",
+          "category": "Battery Management",
+          "library": "expand",
+          "preferred": null,
+          "stock": 88009,
+          "stock_smt": 88009,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0385,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0385,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0385
+              },
+              {
+                "qty": 200,
+                "unit": 0.0296
+              },
+              {
+                "qty": 600,
+                "unit": 0.0247
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0203
+              },
+              {
+                "qty": 9000,
+                "unit": 0.0179
+              },
+              {
+                "qty": 21000,
+                "unit": 0.0164
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0984,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0685,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.0984,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [],
+          "score": 0.723,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0385（按采购量 100）",
+            "库存 88009",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=TP4054"
+          ],
+          "url": "https://www.lcsc.com/product-detail/battery-management_umw-youtai-semiconductor-co-ltd-tp4054_C668215.html"
+        },
+        {
+          "lcsc": "C21713960",
+          "model": "TP4054",
+          "brand": "GOODWORK",
+          "package": "SOT-23-5",
+          "category": "Battery Management",
+          "library": "expand",
+          "preferred": null,
+          "stock": 1800,
+          "stock_smt": 1800,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.026,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.026,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.026
+              },
+              {
+                "qty": 200,
+                "unit": 0.0206
+              },
+              {
+                "qty": 600,
+                "unit": 0.0175
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0153
+              },
+              {
+                "qty": 12000,
+                "unit": 0.0137
+              },
+              {
+                "qty": 18000,
+                "unit": 0.0128
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0768,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.056,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.0768,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [],
+          "score": 0.718,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.026（按采购量 100）",
+            "库存 1800",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=TP4054"
+          ],
+          "url": "https://www.lcsc.com/product-detail/battery-management_goodwork-tp4054_C21713960.html"
+        },
+        {
+          "lcsc": "C55349166",
+          "model": "TP4054",
+          "brand": "hongjiacheng",
+          "package": "SOT-23-5L",
+          "category": "Battery Management",
+          "library": "expand",
+          "preferred": null,
+          "stock": 17942,
+          "stock_smt": 17942,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0365,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0365,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0365
+              },
+              {
+                "qty": 200,
+                "unit": 0.0287
+              },
+              {
+                "qty": 600,
+                "unit": 0.0242
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0215
+              },
+              {
+                "qty": 9000,
+                "unit": 0.0192
+              },
+              {
+                "qty": 21000,
+                "unit": 0.018
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.108,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0665,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.108,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [],
+          "score": 0.707,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0365（按采购量 100）",
+            "库存 17942",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=TP4054"
+          ],
+          "url": "https://www.lcsc.com/product-detail/C55349166.html"
+        },
+        {
+          "lcsc": "C382138",
+          "model": "TP4054",
+          "brand": "TPOWER",
+          "package": "SOT-23-5",
+          "category": "Battery Management",
+          "library": "expand",
+          "preferred": null,
+          "stock": 259,
+          "stock_smt": 259,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0437,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0437,
+            "tier": "100+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.056
+              },
+              {
+                "qty": 100,
+                "unit": 0.0437
+              },
+              {
+                "qty": 300,
+                "unit": 0.0375
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0373
+              },
+              {
+                "qty": 6000,
+                "unit": 0.0336
+              },
+              {
+                "qty": 9000,
+                "unit": 0.0318
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.1908,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "100+",
+          "effective_unit_usd": 0.0737,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.1908,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [],
+          "score": 0.609,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0437（按采购量 100）",
+            "库存 259",
+            "库存覆盖需求（100%）",
+            "型号精确匹配",
+            "参数匹配：model=TP4054"
+          ],
+          "url": "https://www.lcsc.com/product-detail/battery-management_tpower-tp4054_C382138.html"
+        }
+      ],
+      "hints": [
+        "该品类未找到基础库候选（均为扩展库，$3/料号上料费）；请到下单页确认优选扩展库分类。"
+      ],
+      "notes": [
+        "按型号精确查询（TP4054），未做参数解析。",
+        "assembly=smt：扩展库按每料号 $3/单上料费摊销；基础库优先度体现在排序里。"
+      ],
+      "fetched_at": "2026-11-11T08:50:48.651Z"
+    },
+    "find_C307331": {
+      "need": "C307331",
+      "exact": true,
+      "assembly": "smt",
+      "quantity": 1,
+      "boards": 100,
+      "order_qty": 100,
+      "currency": "USD（CNY 为参考估算）",
+      "relaxed": false,
+      "relax_stage": 0,
+      "candidates": [
+        {
+          "lcsc": "C307331",
+          "model": "CL05B104KB54PNC",
+          "brand": "Samsung Electro-Mechanics",
+          "package": "0402",
+          "category": "Multilayer Ceramic Capacitors MLCC - SMD/SMT",
+          "library": "base",
+          "preferred": null,
+          "stock": 20627138,
+          "stock_smt": 20627138,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0085,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0085,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0085
+              },
+              {
+                "qty": 1000,
+                "unit": 0.0063
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0054
+              },
+              {
+                "qty": 10000,
+                "unit": 0.0046
+              },
+              {
+                "qty": 50000,
+                "unit": 0.0043
+              },
+              {
+                "qty": 100000,
+                "unit": 0.0042
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0252,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0085,
+          "fee_per_board_usd": 0,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.0252,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Voltage Rating",
+              "value": "50V"
+            },
+            {
+              "name": "Tolerance",
+              "value": "±10%"
+            },
+            {
+              "name": "Capacitance",
+              "value": "100nF"
+            },
+            {
+              "name": "Temperature Coefficient",
+              "value": "X7R"
+            }
+          ],
+          "score": 0.95,
+          "reasons": [
+            "基础库：无上料费",
+            "阶梯价 $0.0085（按采购量 100）",
+            "库存 20627138",
+            "库存覆盖需求（100%）"
+          ],
+          "url": "https://www.lcsc.com/product-detail/multilayer-ceramic-capacitors-mlcc-smd-smt_samsung-electro-mechanics-cl05b104kb54pnc_C307331.html"
+        }
+      ],
+      "hints": [],
+      "notes": [
+        "按 LCSC 编号精确查询（C307331），未做参数解析。",
+        "assembly=smt：扩展库按每料号 $3/单上料费摊销；基础库优先度体现在排序里。"
+      ],
+      "fetched_at": "2026-11-11T08:50:49.802Z"
+    },
+    "find_22ohm": {
+      "need": "22 ohm 0402 resistor 1%",
+      "exact": false,
+      "assembly": "smt",
+      "quantity": 1,
+      "boards": 100,
+      "order_qty": 100,
+      "currency": "USD + CNY（并列，不混算）",
+      "relaxed": false,
+      "relax_stage": 0,
+      "candidates": [
+        {
+          "lcsc": "C25092",
+          "model": "0402WGF220JTCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "category": "Chip Resistor - Surface Mount",
+          "library": "base",
+          "preferred": null,
+          "stock": 3118613,
+          "stock_smt": 3118613,
+          "stock_lcsc": 0,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0012,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0012,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0012
+              },
+              {
+                "qty": 1000,
+                "unit": 0.001
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0009
+              },
+              {
+                "qty": 10000,
+                "unit": 0.0008
+              },
+              {
+                "qty": 50000,
+                "unit": 0.0007
+              },
+              {
+                "qty": 50200,
+                "unit": 0.0007
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0042,
+            "source": "lcsc_cn_render",
+            "estimated": false,
+            "cached": true,
+            "fetched_at": "2026-11-11T08:47:39.524Z"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0012,
+          "fee_per_board_usd": 0,
+          "cny_price": 0.0042,
+          "cny_estimate": null,
+          "specs": [
+            {
+              "name": "Resistance",
+              "value": "22Ω"
+            },
+            {
+              "name": "Power(Watts)",
+              "value": "62.5mW"
+            },
+            {
+              "name": "Tolerance",
+              "value": "±1%"
+            },
+            {
+              "name": "Temperature Coefficient",
+              "value": "±100ppm/℃"
+            }
+          ],
+          "score": 0.982,
+          "reasons": [
+            "基础库：无上料费",
+            "阶梯价 $0.0012（按采购量 100）",
+            "库存 3118613",
+            "库存覆盖需求（100%）",
+            "参数匹配：resistance=22 ohm, tolerance=1%"
+          ],
+          "url": "https://www.lcsc.com/product-detail/chip-resistor-surface-mount_uni-royal-uniroyal-elec-0402wgf220jtce_C25092.html"
+        },
+        {
+          "lcsc": "C114765",
+          "model": "RC0402FR-0722RL",
+          "brand": "YAGEO",
+          "package": "0402",
+          "category": "Chip Resistor - Surface Mount",
+          "library": "expand",
+          "preferred": null,
+          "stock": 5247177,
+          "stock_smt": 5247177,
+          "stock_lcsc": 4730872,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0018,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0018,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0018
+              },
+              {
+                "qty": 1000,
+                "unit": 0.0013
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0011
+              },
+              {
+                "qty": 10000,
+                "unit": 0.001
+              },
+              {
+                "qty": 50000,
+                "unit": 0.0009
+              },
+              {
+                "qty": 50200,
+                "unit": 0.0009
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0052,
+            "source": "lcsc_cn_render",
+            "estimated": false,
+            "cached": true,
+            "fetched_at": "2026-11-11T08:48:33.754Z"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0318,
+          "fee_per_board_usd": 0.03,
+          "cny_price": 0.0052,
+          "cny_estimate": null,
+          "specs": [
+            {
+              "name": "Resistance",
+              "value": "22Ω"
+            },
+            {
+              "name": "Power(Watts)",
+              "value": "62.5mW"
+            },
+            {
+              "name": "Tolerance",
+              "value": "±1%"
+            },
+            {
+              "name": "Temperature Coefficient",
+              "value": "±100ppm/℃"
+            }
+          ],
+          "score": 0.79,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0018（按采购量 100）",
+            "库存 5247177",
+            "库存覆盖需求（100%）",
+            "参数匹配：resistance=22 ohm, tolerance=1%"
+          ],
+          "url": "https://www.lcsc.com/product-detail/chip-resistor-surface-mount_yageo-rc0402fr-0722rl_C114765.html"
+        },
+        {
+          "lcsc": "C2929994",
+          "model": "FRC0402F22R0TS",
+          "brand": "FOJAN",
+          "package": "0402",
+          "category": "Chip Resistor - Surface Mount",
+          "library": "expand",
+          "preferred": null,
+          "stock": 3778442,
+          "stock_smt": 3778442,
+          "stock_lcsc": 3472682,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0012,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0012,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0012
+              },
+              {
+                "qty": 1000,
+                "unit": 0.001
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0009
+              },
+              {
+                "qty": 10000,
+                "unit": 0.0008
+              },
+              {
+                "qty": 50000,
+                "unit": 0.0007
+              },
+              {
+                "qty": 50200,
+                "unit": 0.0007
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0037,
+            "source": "lcsc_cn_render",
+            "estimated": false,
+            "cached": false,
+            "fetched_at": "2026-11-11T08:51:05.637Z"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0312,
+          "fee_per_board_usd": 0.03,
+          "cny_price": 0.0037,
+          "cny_estimate": null,
+          "specs": [
+            {
+              "name": "Resistance",
+              "value": "22Ω"
+            },
+            {
+              "name": "Power(Watts)",
+              "value": "62.5mW"
+            },
+            {
+              "name": "Tolerance",
+              "value": "±1%"
+            },
+            {
+              "name": "Temperature Coefficient",
+              "value": "±100ppm/℃"
+            }
+          ],
+          "score": 0.787,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0012（按采购量 100）",
+            "库存 3778442",
+            "库存覆盖需求（100%）",
+            "参数匹配：resistance=22 ohm, tolerance=1%"
+          ],
+          "url": "https://www.lcsc.com/product-detail/chip-resistor-surface-mount_fojan-frc0402f22r0ts_C2929994.html"
+        },
+        {
+          "lcsc": "C22369461",
+          "model": "RCA0222RFLF",
+          "brand": "HKR(Hong Kong Resistors)",
+          "package": "0402",
+          "category": "Chip Resistor - Surface Mount",
+          "library": "expand",
+          "preferred": null,
+          "stock": 2681312,
+          "stock_smt": 2681312,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0008,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0008,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0008
+              },
+              {
+                "qty": 1000,
+                "unit": 0.0007
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0006
+              },
+              {
+                "qty": 10000,
+                "unit": 0.0005
+              },
+              {
+                "qty": 50000,
+                "unit": 0.0004
+              },
+              {
+                "qty": 50200,
+                "unit": 0.0004
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0024,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0308,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.0024,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Resistance",
+              "value": "22Ω"
+            },
+            {
+              "name": "Power(Watts)",
+              "value": "62.5mW"
+            },
+            {
+              "name": "Tolerance",
+              "value": "±1%"
+            },
+            {
+              "name": "Temperature Coefficient",
+              "value": "±200ppm/℃"
+            }
+          ],
+          "score": 0.783,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0008（按采购量 100）",
+            "库存 2681312",
+            "库存覆盖需求（100%）",
+            "参数匹配：resistance=22 ohm, tolerance=1%"
+          ],
+          "url": "https://www.lcsc.com/product-detail/C22369461.html"
+        },
+        {
+          "lcsc": "C324769",
+          "model": "RC-02K22R0FT",
+          "brand": "FH (Guangdong Fenghua Advanced Tech)",
+          "package": "0402",
+          "category": "Chip Resistor - Surface Mount",
+          "library": "expand",
+          "preferred": null,
+          "stock": 525150,
+          "stock_smt": 525150,
+          "stock_lcsc": null,
+          "coverage": 1,
+          "price": {
+            "currency": "USD",
+            "unit": 0.0014,
+            "source": "jlcpcb-smt"
+          },
+          "price_usd": {
+            "currency": "USD",
+            "unit": 0.0014,
+            "tier": "1+",
+            "source": "jlcpcb-smt",
+            "tiers": [
+              {
+                "qty": 1,
+                "unit": 0.0014
+              },
+              {
+                "qty": 1000,
+                "unit": 0.0011
+              },
+              {
+                "qty": 3000,
+                "unit": 0.0009
+              },
+              {
+                "qty": 10000,
+                "unit": 0.0008
+              },
+              {
+                "qty": 50000,
+                "unit": 0.0007
+              },
+              {
+                "qty": 50200,
+                "unit": 0.0007
+              }
+            ]
+          },
+          "price_cny": {
+            "currency": "CNY",
+            "unit": 0.0042,
+            "source": "usd_x_factor",
+            "estimated": true,
+            "factor": 6,
+            "note": "参考估算（批量档 USD × 系数），非实际报价"
+          },
+          "used_tier": "1+",
+          "effective_unit_usd": 0.0314,
+          "fee_per_board_usd": 0.03,
+          "cny_price": null,
+          "cny_estimate": {
+            "unit": 0.0042,
+            "factor": 6,
+            "basis": "highest-volume USD tier × factor",
+            "note": "参考估算，非实时汇率/非实际报价"
+          },
+          "specs": [
+            {
+              "name": "Resistance",
+              "value": "22Ω"
+            },
+            {
+              "name": "Power(Watts)",
+              "value": "62.5mW"
+            },
+            {
+              "name": "Tolerance",
+              "value": "±1%"
+            },
+            {
+              "name": "Temperature Coefficient",
+              "value": "±100ppm/℃"
+            }
+          ],
+          "score": 0.756,
+          "reasons": [
+            "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
+            "阶梯价 $0.0014（按采购量 100）",
+            "库存 525150",
+            "库存覆盖需求（100%）",
+            "参数匹配：resistance=22 ohm, tolerance=1%"
+          ],
+          "url": "https://www.lcsc.com/product-detail/chip-resistor-surface-mount_fh-guangdong-fenghua-advanced-tech-rc-02k22r0ft_C324769.html"
+        }
+      ],
+      "hints": [],
+      "notes": [
+        "人民币价来自立创商城国内站（Chrome 渲染，3/3 个候选取到 CNY，24h 缓存）。USD 与 CNY 并列，不混算。",
+        "解析到参数条件：resistance=22, tolerance<=1",
+        "assembly=smt：扩展库按每料号 $3/单上料费摊销；基础库优先度体现在排序里。"
+      ],
+      "fetched_at": "2026-11-11T08:51:05.638Z"
+    },
+    "bomV06": {
+      "assembly": "smt",
+      "boards": 100,
+      "region": "global",
+      "currency": "USD（CNY 为参考估算）",
+      "summary": {
+        "lines": 32,
+        "lines_in_bom": 32,
+        "skipped_lines": 0,
+        "smt_lines": 25,
+        "hand_lines": 1,
+        "dnp_lines": 6,
+        "unique_parts": 28,
+        "verified": 25,
+        "no_stock": 0,
+        "not_found": 0,
+        "base_parts": 13,
+        "expand_parts": 12,
+        "library_unknown": 0,
+        "extended_fee_per_order_usd": 36,
+        "setup_fee_usd": 0,
+        "stencil_fee_usd": 0,
+        "components_usd": 108.6,
+        "components_per_board_usd": 1.086,
+        "total_usd": 144.6,
+        "total_per_board_usd": 1.446,
+        "hand_components_usd_reference": 3.39,
+        "hand_components_cny": 0,
+        "dnp_components_usd_excluded": 6.64,
+        "cny_covered_lines": 0,
+        "components_cny": 0,
+        "cny_estimated_lines": 32,
+        "components_cny_estimate": 392.94,
+        "cost_table": [
+          {
+            "boards": 20,
+            "components_usd": 26.046,
+            "extended_fee_usd": 36,
+            "setup_fees_usd": 0,
+            "total_usd": 62.046,
+            "per_board_usd": 3.1023,
+            "extended_fee_per_board_usd": 1.8
+          },
+          {
+            "boards": 100,
+            "components_usd": 108.6,
+            "extended_fee_usd": 36,
+            "setup_fees_usd": 0,
+            "total_usd": 144.6,
+            "per_board_usd": 1.446,
+            "extended_fee_per_board_usd": 0.36
+          },
+          {
+            "boards": 300,
+            "components_usd": 277.59,
+            "extended_fee_usd": 36,
+            "setup_fees_usd": 0,
+            "total_usd": 313.59,
+            "per_board_usd": 1.0453,
+            "extended_fee_per_board_usd": 0.12
+          },
+          {
+            "boards": 1000,
+            "components_usd": 816.2,
+            "extended_fee_usd": 36,
+            "setup_fees_usd": 0,
+            "total_usd": 852.2,
+            "per_board_usd": 0.8522,
+            "extended_fee_per_board_usd": 0.036
+          }
+        ]
+      },
+      "rows": [
+        {
+          "lcsc": "C7434398",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 2,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "AD142A4",
+          "brand": "JieLi Tech",
+          "package": "SOP-16",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 385,
+          "stock_smt": 385,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.2861,
+          "price_usd_tier": "50+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.3655
+            },
+            {
+              "qty": 50,
+              "unit": 0.2861
+            },
+            {
+              "qty": 150,
+              "unit": 0.2521
+            },
+            {
+              "qty": 500,
+              "unit": 0.2096
+            },
+            {
+              "qty": 2500,
+              "unit": 0.1906
+            },
+            {
+              "qty": 5000,
+              "unit": 0.1794
+            }
+          ],
+          "subtotal_usd": 28.61,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 1.0764,
+          "subtotal_cny_estimate": 107.64,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C668215",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 3,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "TP4054",
+          "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+          "package": "SOT-23-5L",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 88009,
+          "stock_smt": 88009,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0385,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0385
+            },
+            {
+              "qty": 200,
+              "unit": 0.0296
+            },
+            {
+              "qty": 600,
+              "unit": 0.0247
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0203
+            },
+            {
+              "qty": 9000,
+              "unit": 0.0179
+            },
+            {
+              "qty": 21000,
+              "unit": 0.0164
+            }
+          ],
+          "subtotal_usd": 3.85,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0984,
+          "subtotal_cny_estimate": 9.84,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C347476",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 4,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "AO3401A",
+          "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+          "package": "SOT-23",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 817311,
+          "stock_smt": 817311,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0318,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0318
+            },
+            {
+              "qty": 200,
+              "unit": 0.0236
+            },
+            {
+              "qty": 600,
+              "unit": 0.0198
+            },
+            {
+              "qty": 3000,
+              "unit": 0.017
+            },
+            {
+              "qty": 9000,
+              "unit": 0.016
+            },
+            {
+              "qty": 21000,
+              "unit": 0.0153
+            }
+          ],
+          "subtotal_usd": 3.18,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0918,
+          "subtotal_cny_estimate": 9.18,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C82942",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 5,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "ME6211C33M5G-N",
+          "brand": "MICRONE(Nanjing Micro One Elec)",
+          "package": "SOT-23-5",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 320724,
+          "stock_smt": 320724,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0506,
+          "price_usd_tier": "100+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0623
+            },
+            {
+              "qty": 100,
+              "unit": 0.0506
+            },
+            {
+              "qty": 300,
+              "unit": 0.0445
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0396
+            },
+            {
+              "qty": 6000,
+              "unit": 0.0378
+            },
+            {
+              "qty": 9000,
+              "unit": 0.0367
+            }
+          ],
+          "subtotal_usd": 5.06,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.2202,
+          "subtotal_cny_estimate": 22.02,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C2687116",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 6,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "USBLC6-2SC6",
+          "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+          "package": "SOT-23-6",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 77270,
+          "stock_smt": 77270,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0385,
+          "price_usd_tier": "100+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0478
+            },
+            {
+              "qty": 100,
+              "unit": 0.0385
+            },
+            {
+              "qty": 300,
+              "unit": 0.0337
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0244
+            },
+            {
+              "qty": 6000,
+              "unit": 0.0231
+            },
+            {
+              "qty": 9000,
+              "unit": 0.0221
+            }
+          ],
+          "subtotal_usd": 3.85,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.1326,
+          "subtotal_cny_estimate": 13.26,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C193402",
+          "qty": 2,
+          "lines": [
+            {
+              "line": 7,
+              "qty": 2,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "SMF5.0A",
+          "brand": "MDD(Microdiode Semiconductor)",
+          "package": "SOD-123FL",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 465127,
+          "stock_smt": 465127,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0218,
+          "price_usd_tier": "200+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0283
+            },
+            {
+              "qty": 200,
+              "unit": 0.0218
+            },
+            {
+              "qty": 600,
+              "unit": 0.019
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0159
+            },
+            {
+              "qty": 9000,
+              "unit": 0.015
+            },
+            {
+              "qty": 21000,
+              "unit": 0.0145
+            }
+          ],
+          "subtotal_usd": 4.36,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.087,
+          "subtotal_cny_estimate": 17.4,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C8678",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 8,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "SS34",
+          "brand": "MDD(Microdiode Semiconductor)",
+          "package": "SMA(DO-214AC)",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 2823934,
+          "stock_smt": 2823934,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.035,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.035
+            },
+            {
+              "qty": 200,
+              "unit": 0.0282
+            },
+            {
+              "qty": 600,
+              "unit": 0.0251
+            },
+            {
+              "qty": 5000,
+              "unit": 0.0169
+            },
+            {
+              "qty": 10000,
+              "unit": 0.016
+            },
+            {
+              "qty": 20000,
+              "unit": 0.0154
+            }
+          ],
+          "subtotal_usd": 3.5,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0924,
+          "subtotal_cny_estimate": 9.24,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C70110",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 9,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "mSMD050-15V",
+          "brand": "TECHFUSE",
+          "package": "1812",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 11381,
+          "stock_smt": 11381,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0337,
+          "price_usd_tier": "100+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0417
+            },
+            {
+              "qty": 100,
+              "unit": 0.0337
+            },
+            {
+              "qty": 300,
+              "unit": 0.0296
+            },
+            {
+              "qty": 1500,
+              "unit": 0.0242
+            },
+            {
+              "qty": 4500,
+              "unit": 0.0218
+            },
+            {
+              "qty": 10500,
+              "unit": 0.0206
+            }
+          ],
+          "subtotal_usd": 3.37,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.1236,
+          "subtotal_cny_estimate": 12.36,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C1017",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 10,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "GZ2012D601TF",
+          "brand": "Sunlord",
+          "package": "0805",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 390620,
+          "stock_smt": 390620,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.02,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.02
+            },
+            {
+              "qty": 200,
+              "unit": 0.0158
+            },
+            {
+              "qty": 600,
+              "unit": 0.0139
+            },
+            {
+              "qty": 4000,
+              "unit": 0.0126
+            },
+            {
+              "qty": 8000,
+              "unit": 0.012
+            },
+            {
+              "qty": 20000,
+              "unit": 0.0116
+            }
+          ],
+          "subtotal_usd": 2,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0696,
+          "subtotal_cny_estimate": 6.96,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C5373222",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 11,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "LMA2718B381-OA7",
+          "brand": "LinkMems",
+          "package": "SMD-4P,2.8x1.9mm",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 13298,
+          "stock_smt": 13298,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.1007,
+          "price_usd_tier": "50+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.1279
+            },
+            {
+              "qty": 50,
+              "unit": 0.1007
+            },
+            {
+              "qty": 150,
+              "unit": 0.087
+            },
+            {
+              "qty": 500,
+              "unit": 0.0769
+            },
+            {
+              "qty": 2500,
+              "unit": 0.0687
+            },
+            {
+              "qty": 5000,
+              "unit": 0.0646
+            }
+          ],
+          "subtotal_usd": 10.07,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.3876,
+          "subtotal_cny_estimate": 38.76,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C22383473",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 12,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "SH-TF-01A",
+          "brand": "SHOU HAN",
+          "package": "SMD",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 17391,
+          "stock_smt": 17391,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0556,
+          "price_usd_tier": "100+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0697
+            },
+            {
+              "qty": 100,
+              "unit": 0.0556
+            },
+            {
+              "qty": 300,
+              "unit": 0.0484
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0432
+            },
+            {
+              "qty": 5000,
+              "unit": 0.039
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0368
+            }
+          ],
+          "subtotal_usd": 5.56,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.2208,
+          "subtotal_cny_estimate": 22.08,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C709357",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 13,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "KH-TYPE-C-16P",
+          "brand": "Shenzhen Kinghelm Elec",
+          "package": "SMD",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 156109,
+          "stock_smt": 156109,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0631,
+          "price_usd_tier": "50+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0777
+            },
+            {
+              "qty": 50,
+              "unit": 0.0631
+            },
+            {
+              "qty": 150,
+              "unit": 0.0558
+            },
+            {
+              "qty": 1500,
+              "unit": 0.0471
+            },
+            {
+              "qty": 3000,
+              "unit": 0.045
+            },
+            {
+              "qty": 4500,
+              "unit": 0.0435
+            }
+          ],
+          "subtotal_usd": 6.31,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.261,
+          "subtotal_cny_estimate": 26.1,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C2905009",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 14,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "1.25-2PWB",
+          "brand": "DEALON",
+          "package": "SMD,P=1.25mm,Surface Mount，Right Angle",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 164373,
+          "stock_smt": 164373,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0283,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0283
+            },
+            {
+              "qty": 200,
+              "unit": 0.0221
+            },
+            {
+              "qty": 600,
+              "unit": 0.0187
+            },
+            {
+              "qty": 2000,
+              "unit": 0.0151
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0133
+            },
+            {
+              "qty": 20000,
+              "unit": 0.0124
+            }
+          ],
+          "subtotal_usd": 2.83,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0744,
+          "subtotal_cny_estimate": 7.44,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C91552",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 15,
+              "qty": 1,
+              "place": "hand"
+            }
+          ],
+          "place": "hand",
+          "status": "HAND",
+          "model": "2.54-1*4PReverse bent pin header",
+          "brand": "BOOMELE(Boom Precision Elec)",
+          "package": "Push-Pull,P=2.54mm",
+          "library": "expand",
+          "billable_smt": false,
+          "billable": false,
+          "stock": 17839,
+          "stock_smt": 17839,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0339,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0339
+            },
+            {
+              "qty": 200,
+              "unit": 0.0269
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0198
+            },
+            {
+              "qty": 2000,
+              "unit": 0.0174
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0154
+            },
+            {
+              "qty": 20000,
+              "unit": 0.0143
+            }
+          ],
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0858,
+          "subtotal_cny_estimate": 8.58,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "手焊：不计入 SMT 贴片与上料费",
+            "扩展库（手焊/DNP 无上料费）"
+          ]
+        },
+        {
+          "lcsc": "C318884",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 16,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "TS-1187A-B-A-B",
+          "brand": "XKB Connection",
+          "package": "SMD-4P,5.1x5.1mm",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 834296,
+          "stock_smt": 834296,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0215,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0215
+            },
+            {
+              "qty": 200,
+              "unit": 0.0167
+            },
+            {
+              "qty": 600,
+              "unit": 0.0147
+            },
+            {
+              "qty": 4000,
+              "unit": 0.0129
+            },
+            {
+              "qty": 8000,
+              "unit": 0.0123
+            },
+            {
+              "qty": 20000,
+              "unit": 0.0119
+            }
+          ],
+          "subtotal_usd": 2.15,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0714,
+          "subtotal_cny_estimate": 7.14,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C2286",
+          "qty": 2,
+          "lines": [
+            {
+              "line": 17,
+              "qty": 2,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "KT-0603R",
+          "brand": "Hubei KENTO Elec",
+          "package": "0603",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 6121141,
+          "stock_smt": 6121141,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0077,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0077
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0059
+            },
+            {
+              "qty": 4000,
+              "unit": 0.0046
+            },
+            {
+              "qty": 8000,
+              "unit": 0.004
+            },
+            {
+              "qty": 48000,
+              "unit": 0.0037
+            },
+            {
+              "qty": 100000,
+              "unit": 0.0036
+            }
+          ],
+          "subtotal_usd": 1.54,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0216,
+          "subtotal_cny_estimate": 4.32,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C25744",
+          "qty": 5,
+          "lines": [
+            {
+              "line": 18,
+              "qty": 5,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "0402WGF1002TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 20853703,
+          "stock_smt": 20853703,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.001,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.001
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0008
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0006
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0006
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0005
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0005
+            }
+          ],
+          "subtotal_usd": 0.5,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.003,
+          "subtotal_cny_estimate": 1.5,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C11702",
+          "qty": 2,
+          "lines": [
+            {
+              "line": 19,
+              "qty": 2,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "0402WGF1001TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 32272095,
+          "stock_smt": 32272095,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0013,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0013
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0011
+            },
+            {
+              "qty": 3000,
+              "unit": 0.001
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0009
+            }
+          ],
+          "subtotal_usd": 0.26,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0054,
+          "subtotal_cny_estimate": 1.08,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C25905",
+          "qty": 3,
+          "lines": [
+            {
+              "line": 20,
+              "qty": 3,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "0402WGF5101TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 4168497,
+          "stock_smt": 4168497,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0014,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0014
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0011
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0007
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0007
+            }
+          ],
+          "subtotal_usd": 0.42,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0042,
+          "subtotal_cny_estimate": 1.26,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C114765",
+          "qty": 3,
+          "lines": [
+            {
+              "line": 21,
+              "qty": 3,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "RC0402FR-0722RL",
+          "brand": "YAGEO",
+          "package": "0402",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 5247177,
+          "stock_smt": 5247177,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0018,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0018
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0013
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0011
+            },
+            {
+              "qty": 10000,
+              "unit": 0.001
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0009
+            }
+          ],
+          "subtotal_usd": 0.54,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0054,
+          "subtotal_cny_estimate": 1.62,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ],
+          "alternative": {
+            "lcsc": "C25092",
+            "model": "0402WGF220JTCE",
+            "package": "0402",
+            "library": "base",
+            "stock": 3118613,
+            "unit_usd": 0.0012,
+            "fee_saved_usd": 3,
+            "component_delta_usd": -0.18,
+            "net_saving_usd": 3.18,
+            "footprint_compatible": true
+          }
+        },
+        {
+          "lcsc": "C25741",
+          "qty": 2,
+          "lines": [
+            {
+              "line": 22,
+              "qty": 2,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "0402WGF1003TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 7950240,
+          "stock_smt": 7950240,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0012,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0012
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0008
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0007
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0006
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0006
+            }
+          ],
+          "subtotal_usd": 0.24,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0036,
+          "subtotal_cny_estimate": 0.72,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C25076",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 23,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "0402WGF1000TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 11304287,
+          "stock_smt": 11304287,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0012,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0012
+            },
+            {
+              "qty": 1000,
+              "unit": 0.001
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0008
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0007
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0007
+            }
+          ],
+          "subtotal_usd": 0.12,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0042,
+          "subtotal_cny_estimate": 0.42,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C17168",
+          "qty": 2,
+          "lines": [
+            {
+              "line": 24,
+              "qty": 2,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "0402WGF0000TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 16154927,
+          "stock_smt": 16154927,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0012,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0012
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0008
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0007
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0006
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0006
+            }
+          ],
+          "subtotal_usd": 0.24,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0036,
+          "subtotal_cny_estimate": 0.72,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C307331",
+          "qty": 5,
+          "lines": [
+            {
+              "line": 25,
+              "qty": 5,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "CL05B104KB54PNC",
+          "brand": "Samsung Electro-Mechanics",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 20627138,
+          "stock_smt": 20627138,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0085,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0085
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0063
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0054
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0046
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0043
+            },
+            {
+              "qty": 100000,
+              "unit": 0.0042
+            }
+          ],
+          "subtotal_usd": 4.25,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0252,
+          "subtotal_cny_estimate": 12.6,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C52923",
+          "qty": 7,
+          "lines": [
+            {
+              "line": 26,
+              "qty": 7,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "CL05A105KA5NQNC",
+          "brand": "Samsung Electro-Mechanics",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 10744195,
+          "stock_smt": 10744195,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0057,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0057
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0043
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0037
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0032
+            },
+            {
+              "qty": 50000,
+              "unit": 0.003
+            },
+            {
+              "qty": 100000,
+              "unit": 0.0029
+            }
+          ],
+          "subtotal_usd": 3.99,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0174,
+          "subtotal_cny_estimate": 12.18,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C15850",
+          "qty": 5,
+          "lines": [
+            {
+              "line": 27,
+              "qty": 5,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "CL21A106KAYNNNE",
+          "brand": "Samsung Electro-Mechanics",
+          "package": "0805",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 8244993,
+          "stock_smt": 8244993,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0236,
+          "price_usd_tier": "200+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0314
+            },
+            {
+              "qty": 200,
+              "unit": 0.0236
+            },
+            {
+              "qty": 600,
+              "unit": 0.0202
+            },
+            {
+              "qty": 2000,
+              "unit": 0.0175
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0164
+            },
+            {
+              "qty": 20000,
+              "unit": 0.0157
+            }
+          ],
+          "subtotal_usd": 11.8,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0942,
+          "subtotal_cny_estimate": 47.1,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C318884",
+          "qty": 3,
+          "lines": [
+            {
+              "line": 28,
+              "qty": 3,
+              "place": "dnp"
+            }
+          ],
+          "place": "dnp",
+          "status": "DNP",
+          "model": "TS-1187A-B-A-B",
+          "brand": "XKB Connection",
+          "package": "SMD-4P,5.1x5.1mm",
+          "library": "base",
+          "billable_smt": false,
+          "billable": false,
+          "stock": 834296,
+          "stock_smt": 834296,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0167,
+          "price_usd_tier": "200+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0215
+            },
+            {
+              "qty": 200,
+              "unit": 0.0167
+            },
+            {
+              "qty": 600,
+              "unit": 0.0147
+            },
+            {
+              "qty": 4000,
+              "unit": 0.0129
+            },
+            {
+              "qty": 8000,
+              "unit": 0.0123
+            },
+            {
+              "qty": 20000,
+              "unit": 0.0119
+            }
+          ],
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0714,
+          "subtotal_cny_estimate": 21.42,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "DNP：不贴/不计元件与上料费"
+          ]
+        },
+        {
+          "lcsc": "C11702",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 29,
+              "qty": 1,
+              "place": "dnp"
+            }
+          ],
+          "place": "dnp",
+          "status": "DNP",
+          "model": "0402WGF1001TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": false,
+          "billable": false,
+          "stock": 32272095,
+          "stock_smt": 32272095,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0013,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0013
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0011
+            },
+            {
+              "qty": 3000,
+              "unit": 0.001
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0009
+            }
+          ],
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0054,
+          "subtotal_cny_estimate": 0.54,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "DNP：不贴/不计元件与上料费"
+          ]
+        },
+        {
+          "lcsc": "C25882",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 30,
+              "qty": 1,
+              "place": "dnp"
+            }
+          ],
+          "place": "dnp",
+          "status": "DNP",
+          "model": "0402WGF2401TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "expand",
+          "billable_smt": false,
+          "billable": false,
+          "stock": 761787,
+          "stock_smt": 761787,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0012,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0012
+            },
+            {
+              "qty": 1000,
+              "unit": 0.001
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0008
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0008
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0006
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0006
+            }
+          ],
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0036,
+          "subtotal_cny_estimate": 0.36,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "DNP：不贴/不计元件与上料费",
+            "扩展库（手焊/DNP 无上料费）"
+          ]
+        },
+        {
+          "lcsc": "C25900",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 31,
+              "qty": 1,
+              "place": "dnp"
+            }
+          ],
+          "place": "dnp",
+          "status": "DNP",
+          "model": "0402WGF4701TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": false,
+          "billable": false,
+          "stock": 15057559,
+          "stock_smt": 15057559,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0017,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0017
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0013
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0011
+            },
+            {
+              "qty": 10000,
+              "unit": 0.001
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0009
+            }
+          ],
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0054,
+          "subtotal_cny_estimate": 0.54,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "DNP：不贴/不计元件与上料费"
+          ]
+        },
+        {
+          "lcsc": "C17168",
+          "qty": 3,
+          "lines": [
+            {
+              "line": 32,
+              "qty": 3,
+              "place": "dnp"
+            }
+          ],
+          "place": "dnp",
+          "status": "DNP",
+          "model": "0402WGF0000TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": false,
+          "billable": false,
+          "stock": 16154927,
+          "stock_smt": 16154927,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0012,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0012
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0008
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0007
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0006
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0006
+            }
+          ],
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0036,
+          "subtotal_cny_estimate": 1.08,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "DNP：不贴/不计元件与上料费"
+          ]
+        },
+        {
+          "lcsc": "C307331",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 33,
+              "qty": 1,
+              "place": "dnp"
+            }
+          ],
+          "place": "dnp",
+          "status": "DNP",
+          "model": "CL05B104KB54PNC",
+          "brand": "Samsung Electro-Mechanics",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": false,
+          "billable": false,
+          "stock": 20627138,
+          "stock_smt": 20627138,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0085,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0085
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0063
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0054
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0046
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0043
+            },
+            {
+              "qty": 100000,
+              "unit": 0.0042
+            }
+          ],
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0252,
+          "subtotal_cny_estimate": 2.52,
+          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "flags": [
+            "DNP：不贴/不计元件与上料费"
+          ]
+        }
+      ],
+      "optimize": {
+        "extended_parts_before": 12,
+        "extended_parts_after": 11,
+        "fee_before_usd": 36,
+        "fee_after_usd": 33,
+        "saving_usd_per_order": 3.18,
+        "actions": [
+          "C114765→C25092：封装兼容，上料费省 $3，元件成本变化 $-0.18，净省 $3.18",
+          "C91552 place=hand：不占上料费（已从 SMT 费用中剔除）",
+          "C318884 DNP：不贴片、不计元件与上料费",
+          "C11702 DNP：不贴片、不计元件与上料费",
+          "C25882 DNP：不贴片、不计元件与上料费",
+          "C25900 DNP：不贴片、不计元件与上料费",
+          "C17168 DNP：不贴片、不计元件与上料费",
+          "C307331 DNP：不贴片、不计元件与上料费"
+        ],
+        "alternatives": [
+          {
+            "from": "C114765",
+            "lcsc": "C25092",
+            "model": "0402WGF220JTCE",
+            "package": "0402",
+            "library": "base",
+            "stock": 3118613,
+            "unit_usd": 0.0012,
+            "fee_saved_usd": 3,
+            "component_delta_usd": -0.18,
+            "net_saving_usd": 3.18,
+            "footprint_compatible": true
+          }
+        ]
+      },
+      "bom_csv": "Comment,Designator,Footprint,LCSC Part #\n\"AD142A4\",\"\",\"SOP-16\",\"C7434398\"\n\"TP4054\",\"\",\"SOT-23-5L\",\"C668215\"\n\"AO3401A\",\"\",\"SOT-23\",\"C347476\"\n\"ME6211C33M5G-N\",\"\",\"SOT-23-5\",\"C82942\"\n\"USBLC6-2SC6\",\"\",\"SOT-23-6\",\"C2687116\"\n\"SMF5.0A\",\"\",\"SOD-123FL\",\"C193402\"\n\"SS34\",\"\",\"SMA(DO-214AC)\",\"C8678\"\n\"mSMD050-15V\",\"\",\"1812\",\"C70110\"\n\"GZ2012D601TF\",\"\",\"0805\",\"C1017\"\n\"LMA2718B381-OA7\",\"\",\"SMD-4P,2.8x1.9mm\",\"C5373222\"\n\"SH-TF-01A\",\"\",\"SMD\",\"C22383473\"\n\"KH-TYPE-C-16P\",\"\",\"SMD\",\"C709357\"\n\"1.25-2PWB\",\"\",\"SMD,P=1.25mm,Surface Mount，Right Angle\",\"C2905009\"\n\"TS-1187A-B-A-B\",\"\",\"SMD-4P,5.1x5.1mm\",\"C318884\"\n\"KT-0603R\",\"\",\"0603\",\"C2286\"\n\"0402WGF1002TCE\",\"\",\"0402\",\"C25744\"\n\"0402WGF1001TCE\",\"\",\"0402\",\"C11702\"\n\"0402WGF5101TCE\",\"\",\"0402\",\"C25905\"\n\"RC0402FR-0722RL\",\"\",\"0402\",\"C114765\"\n\"0402WGF1003TCE\",\"\",\"0402\",\"C25741\"\n\"0402WGF1000TCE\",\"\",\"0402\",\"C25076\"\n\"0402WGF0000TCE\",\"\",\"0402\",\"C17168\"\n\"CL05B104KB54PNC\",\"\",\"0402\",\"C307331\"\n\"CL05A105KA5NQNC\",\"\",\"0402\",\"C52923\"\n\"CL21A106KAYNNNE\",\"\",\"0805\",\"C15850\"",
+      "skipped": [],
+      "errors": [],
+      "hints": [],
+      "notes": [
+        "assembly=smt：价格与库存取嘉立创 SMT 元件库（USD 阶梯价按采购数量取档）；上料费只计 smt 且为扩展库的唯一料号。",
+        "USD 与 CNY 并列展示、不互相换算；每行带 price_source / fetched_at / estimated。",
+        "上料费按每唯一扩展库料号 $3/单估算；工程费 $0、钢网费 $0 已单列（默认 0，可在插件 config 配置）。",
+        "优选扩展库（Preferred Extended）分类未在公开接口暴露，若需免上料费请到嘉立创 SMT 下单页确认。",
+        "批量摊销参考：100 片时约 $1.446/片（含上料费 $0.36/片 + 工程/钢网 $0/片）。"
+      ],
+      "fetched_at": "2026-11-11T08:51:25.957Z"
+    },
+    "bomV06AllSmt": {
+      "assembly": "smt",
+      "boards": 100,
+      "region": "global",
+      "currency": "USD（CNY 为参考估算）",
+      "summary": {
+        "lines": 32,
+        "lines_in_bom": 32,
+        "skipped_lines": 0,
+        "smt_lines": 26,
+        "hand_lines": 0,
+        "dnp_lines": 6,
+        "unique_parts": 28,
+        "verified": 26,
+        "no_stock": 0,
+        "not_found": 0,
+        "base_parts": 13,
+        "expand_parts": 13,
+        "library_unknown": 0,
+        "extended_fee_per_order_usd": 39,
+        "setup_fee_usd": 0,
+        "stencil_fee_usd": 0,
+        "components_usd": 111.99,
+        "components_per_board_usd": 1.1199,
+        "total_usd": 150.99,
+        "total_per_board_usd": 1.5099,
+        "hand_components_usd_reference": 0,
+        "hand_components_cny": 0,
+        "dnp_components_usd_excluded": 6.64,
+        "cny_covered_lines": 0,
+        "components_cny": 0,
+        "cny_estimated_lines": 32,
+        "components_cny_estimate": 401.52,
+        "cost_table": [
+          {
+            "boards": 20,
+            "components_usd": 26.724,
+            "extended_fee_usd": 39,
+            "setup_fees_usd": 0,
+            "total_usd": 65.724,
+            "per_board_usd": 3.2862,
+            "extended_fee_per_board_usd": 1.95
+          },
+          {
+            "boards": 100,
+            "components_usd": 111.99,
+            "extended_fee_usd": 39,
+            "setup_fees_usd": 0,
+            "total_usd": 150.99,
+            "per_board_usd": 1.5099,
+            "extended_fee_per_board_usd": 0.39
+          },
+          {
+            "boards": 300,
+            "components_usd": 285.66,
+            "extended_fee_usd": 39,
+            "setup_fees_usd": 0,
+            "total_usd": 324.66,
+            "per_board_usd": 1.0822,
+            "extended_fee_per_board_usd": 0.13
+          },
+          {
+            "boards": 1000,
+            "components_usd": 836,
+            "extended_fee_usd": 39,
+            "setup_fees_usd": 0,
+            "total_usd": 875,
+            "per_board_usd": 0.875,
+            "extended_fee_per_board_usd": 0.039
+          }
+        ]
+      },
+      "rows": [
+        {
+          "lcsc": "C7434398",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 2,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "AD142A4",
+          "brand": "JieLi Tech",
+          "package": "SOP-16",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 385,
+          "stock_smt": 385,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.2861,
+          "price_usd_tier": "50+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.3655
+            },
+            {
+              "qty": 50,
+              "unit": 0.2861
+            },
+            {
+              "qty": 150,
+              "unit": 0.2521
+            },
+            {
+              "qty": 500,
+              "unit": 0.2096
+            },
+            {
+              "qty": 2500,
+              "unit": 0.1906
+            },
+            {
+              "qty": 5000,
+              "unit": 0.1794
+            }
+          ],
+          "subtotal_usd": 28.61,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 1.0764,
+          "subtotal_cny_estimate": 107.64,
+          "fetched_at": "2026-11-11T08:51:25.959Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C668215",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 3,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "TP4054",
+          "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+          "package": "SOT-23-5L",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 88009,
+          "stock_smt": 88009,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0385,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0385
+            },
+            {
+              "qty": 200,
+              "unit": 0.0296
+            },
+            {
+              "qty": 600,
+              "unit": 0.0247
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0203
+            },
+            {
+              "qty": 9000,
+              "unit": 0.0179
+            },
+            {
+              "qty": 21000,
+              "unit": 0.0164
+            }
+          ],
+          "subtotal_usd": 3.85,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0984,
+          "subtotal_cny_estimate": 9.84,
+          "fetched_at": "2026-11-11T08:51:25.959Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C347476",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 4,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "AO3401A",
+          "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+          "package": "SOT-23",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 817311,
+          "stock_smt": 817311,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0318,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0318
+            },
+            {
+              "qty": 200,
+              "unit": 0.0236
+            },
+            {
+              "qty": 600,
+              "unit": 0.0198
+            },
+            {
+              "qty": 3000,
+              "unit": 0.017
+            },
+            {
+              "qty": 9000,
+              "unit": 0.016
+            },
+            {
+              "qty": 21000,
+              "unit": 0.0153
+            }
+          ],
+          "subtotal_usd": 3.18,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0918,
+          "subtotal_cny_estimate": 9.18,
+          "fetched_at": "2026-11-11T08:51:25.959Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C82942",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 5,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "ME6211C33M5G-N",
+          "brand": "MICRONE(Nanjing Micro One Elec)",
+          "package": "SOT-23-5",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 320724,
+          "stock_smt": 320724,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0506,
+          "price_usd_tier": "100+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0623
+            },
+            {
+              "qty": 100,
+              "unit": 0.0506
+            },
+            {
+              "qty": 300,
+              "unit": 0.0445
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0396
+            },
+            {
+              "qty": 6000,
+              "unit": 0.0378
+            },
+            {
+              "qty": 9000,
+              "unit": 0.0367
+            }
+          ],
+          "subtotal_usd": 5.06,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.2202,
+          "subtotal_cny_estimate": 22.02,
+          "fetched_at": "2026-11-11T08:51:25.959Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C2687116",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 6,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "USBLC6-2SC6",
+          "brand": "UMW(Youtai Semiconductor Co., Ltd.)",
+          "package": "SOT-23-6",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 77270,
+          "stock_smt": 77270,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0385,
+          "price_usd_tier": "100+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0478
+            },
+            {
+              "qty": 100,
+              "unit": 0.0385
+            },
+            {
+              "qty": 300,
+              "unit": 0.0337
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0244
+            },
+            {
+              "qty": 6000,
+              "unit": 0.0231
+            },
+            {
+              "qty": 9000,
+              "unit": 0.0221
+            }
+          ],
+          "subtotal_usd": 3.85,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.1326,
+          "subtotal_cny_estimate": 13.26,
+          "fetched_at": "2026-11-11T08:51:25.959Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C193402",
+          "qty": 2,
+          "lines": [
+            {
+              "line": 7,
+              "qty": 2,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "SMF5.0A",
+          "brand": "MDD(Microdiode Semiconductor)",
+          "package": "SOD-123FL",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 465127,
+          "stock_smt": 465127,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0218,
+          "price_usd_tier": "200+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0283
+            },
+            {
+              "qty": 200,
+              "unit": 0.0218
+            },
+            {
+              "qty": 600,
+              "unit": 0.019
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0159
+            },
+            {
+              "qty": 9000,
+              "unit": 0.015
+            },
+            {
+              "qty": 21000,
+              "unit": 0.0145
+            }
+          ],
+          "subtotal_usd": 4.36,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.087,
+          "subtotal_cny_estimate": 17.4,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C8678",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 8,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "SS34",
+          "brand": "MDD(Microdiode Semiconductor)",
+          "package": "SMA(DO-214AC)",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 2823934,
+          "stock_smt": 2823934,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.035,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.035
+            },
+            {
+              "qty": 200,
+              "unit": 0.0282
+            },
+            {
+              "qty": 600,
+              "unit": 0.0251
+            },
+            {
+              "qty": 5000,
+              "unit": 0.0169
+            },
+            {
+              "qty": 10000,
+              "unit": 0.016
+            },
+            {
+              "qty": 20000,
+              "unit": 0.0154
+            }
+          ],
+          "subtotal_usd": 3.5,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0924,
+          "subtotal_cny_estimate": 9.24,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C70110",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 9,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "mSMD050-15V",
+          "brand": "TECHFUSE",
+          "package": "1812",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 11381,
+          "stock_smt": 11381,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0337,
+          "price_usd_tier": "100+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0417
+            },
+            {
+              "qty": 100,
+              "unit": 0.0337
+            },
+            {
+              "qty": 300,
+              "unit": 0.0296
+            },
+            {
+              "qty": 1500,
+              "unit": 0.0242
+            },
+            {
+              "qty": 4500,
+              "unit": 0.0218
+            },
+            {
+              "qty": 10500,
+              "unit": 0.0206
+            }
+          ],
+          "subtotal_usd": 3.37,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.1236,
+          "subtotal_cny_estimate": 12.36,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C1017",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 10,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "GZ2012D601TF",
+          "brand": "Sunlord",
+          "package": "0805",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 390620,
+          "stock_smt": 390620,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.02,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.02
+            },
+            {
+              "qty": 200,
+              "unit": 0.0158
+            },
+            {
+              "qty": 600,
+              "unit": 0.0139
+            },
+            {
+              "qty": 4000,
+              "unit": 0.0126
+            },
+            {
+              "qty": 8000,
+              "unit": 0.012
+            },
+            {
+              "qty": 20000,
+              "unit": 0.0116
+            }
+          ],
+          "subtotal_usd": 2,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0696,
+          "subtotal_cny_estimate": 6.96,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C5373222",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 11,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "LMA2718B381-OA7",
+          "brand": "LinkMems",
+          "package": "SMD-4P,2.8x1.9mm",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 13298,
+          "stock_smt": 13298,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.1007,
+          "price_usd_tier": "50+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.1279
+            },
+            {
+              "qty": 50,
+              "unit": 0.1007
+            },
+            {
+              "qty": 150,
+              "unit": 0.087
+            },
+            {
+              "qty": 500,
+              "unit": 0.0769
+            },
+            {
+              "qty": 2500,
+              "unit": 0.0687
+            },
+            {
+              "qty": 5000,
+              "unit": 0.0646
+            }
+          ],
+          "subtotal_usd": 10.07,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.3876,
+          "subtotal_cny_estimate": 38.76,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C22383473",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 12,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "SH-TF-01A",
+          "brand": "SHOU HAN",
+          "package": "SMD",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 17391,
+          "stock_smt": 17391,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0556,
+          "price_usd_tier": "100+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0697
+            },
+            {
+              "qty": 100,
+              "unit": 0.0556
+            },
+            {
+              "qty": 300,
+              "unit": 0.0484
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0432
+            },
+            {
+              "qty": 5000,
+              "unit": 0.039
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0368
+            }
+          ],
+          "subtotal_usd": 5.56,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.2208,
+          "subtotal_cny_estimate": 22.08,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C709357",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 13,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "KH-TYPE-C-16P",
+          "brand": "Shenzhen Kinghelm Elec",
+          "package": "SMD",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 156109,
+          "stock_smt": 156109,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0631,
+          "price_usd_tier": "50+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0777
+            },
+            {
+              "qty": 50,
+              "unit": 0.0631
+            },
+            {
+              "qty": 150,
+              "unit": 0.0558
+            },
+            {
+              "qty": 1500,
+              "unit": 0.0471
+            },
+            {
+              "qty": 3000,
+              "unit": 0.045
+            },
+            {
+              "qty": 4500,
+              "unit": 0.0435
+            }
+          ],
+          "subtotal_usd": 6.31,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.261,
+          "subtotal_cny_estimate": 26.1,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C2905009",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 14,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "1.25-2PWB",
+          "brand": "DEALON",
+          "package": "SMD,P=1.25mm,Surface Mount，Right Angle",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 164373,
+          "stock_smt": 164373,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0283,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0283
+            },
+            {
+              "qty": 200,
+              "unit": 0.0221
+            },
+            {
+              "qty": 600,
+              "unit": 0.0187
+            },
+            {
+              "qty": 2000,
+              "unit": 0.0151
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0133
+            },
+            {
+              "qty": 20000,
+              "unit": 0.0124
+            }
+          ],
+          "subtotal_usd": 2.83,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0744,
+          "subtotal_cny_estimate": 7.44,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C91552",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 15,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "2.54-1*4PReverse bent pin header",
+          "brand": "BOOMELE(Boom Precision Elec)",
+          "package": "Push-Pull,P=2.54mm",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 17839,
+          "stock_smt": 17839,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0339,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0339
+            },
+            {
+              "qty": 200,
+              "unit": 0.0269
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0198
+            },
+            {
+              "qty": 2000,
+              "unit": 0.0174
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0154
+            },
+            {
+              "qty": 20000,
+              "unit": 0.0143
+            }
+          ],
+          "subtotal_usd": 3.39,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0858,
+          "subtotal_cny_estimate": 8.58,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C318884",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 16,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "TS-1187A-B-A-B",
+          "brand": "XKB Connection",
+          "package": "SMD-4P,5.1x5.1mm",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 834296,
+          "stock_smt": 834296,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0215,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0215
+            },
+            {
+              "qty": 200,
+              "unit": 0.0167
+            },
+            {
+              "qty": 600,
+              "unit": 0.0147
+            },
+            {
+              "qty": 4000,
+              "unit": 0.0129
+            },
+            {
+              "qty": 8000,
+              "unit": 0.0123
+            },
+            {
+              "qty": 20000,
+              "unit": 0.0119
+            }
+          ],
+          "subtotal_usd": 2.15,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0714,
+          "subtotal_cny_estimate": 7.14,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C2286",
+          "qty": 2,
+          "lines": [
+            {
+              "line": 17,
+              "qty": 2,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "KT-0603R",
+          "brand": "Hubei KENTO Elec",
+          "package": "0603",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 6121141,
+          "stock_smt": 6121141,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0077,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0077
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0059
+            },
+            {
+              "qty": 4000,
+              "unit": 0.0046
+            },
+            {
+              "qty": 8000,
+              "unit": 0.004
+            },
+            {
+              "qty": 48000,
+              "unit": 0.0037
+            },
+            {
+              "qty": 100000,
+              "unit": 0.0036
+            }
+          ],
+          "subtotal_usd": 1.54,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0216,
+          "subtotal_cny_estimate": 4.32,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C25744",
+          "qty": 5,
+          "lines": [
+            {
+              "line": 18,
+              "qty": 5,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "0402WGF1002TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 20853703,
+          "stock_smt": 20853703,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.001,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.001
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0008
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0006
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0006
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0005
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0005
+            }
+          ],
+          "subtotal_usd": 0.5,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.003,
+          "subtotal_cny_estimate": 1.5,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C11702",
+          "qty": 2,
+          "lines": [
+            {
+              "line": 19,
+              "qty": 2,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "0402WGF1001TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 32272095,
+          "stock_smt": 32272095,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0013,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0013
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0011
+            },
+            {
+              "qty": 3000,
+              "unit": 0.001
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0009
+            }
+          ],
+          "subtotal_usd": 0.26,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0054,
+          "subtotal_cny_estimate": 1.08,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C25905",
+          "qty": 3,
+          "lines": [
+            {
+              "line": 20,
+              "qty": 3,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "0402WGF5101TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 4168497,
+          "stock_smt": 4168497,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0014,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0014
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0011
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0007
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0007
+            }
+          ],
+          "subtotal_usd": 0.42,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0042,
+          "subtotal_cny_estimate": 1.26,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C114765",
+          "qty": 3,
+          "lines": [
+            {
+              "line": 21,
+              "qty": 3,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "RC0402FR-0722RL",
+          "brand": "YAGEO",
+          "package": "0402",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 5247177,
+          "stock_smt": 5247177,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0018,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0018
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0013
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0011
+            },
+            {
+              "qty": 10000,
+              "unit": 0.001
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0009
+            }
+          ],
+          "subtotal_usd": 0.54,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0054,
+          "subtotal_cny_estimate": 1.62,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        },
+        {
+          "lcsc": "C25741",
+          "qty": 2,
+          "lines": [
+            {
+              "line": 22,
+              "qty": 2,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "0402WGF1003TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 7950240,
+          "stock_smt": 7950240,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0012,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0012
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0008
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0007
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0006
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0006
+            }
+          ],
+          "subtotal_usd": 0.24,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0036,
+          "subtotal_cny_estimate": 0.72,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C25076",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 23,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "0402WGF1000TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 11304287,
+          "stock_smt": 11304287,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0012,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0012
+            },
+            {
+              "qty": 1000,
+              "unit": 0.001
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0008
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0007
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0007
+            }
+          ],
+          "subtotal_usd": 0.12,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0042,
+          "subtotal_cny_estimate": 0.42,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C17168",
+          "qty": 2,
+          "lines": [
+            {
+              "line": 24,
+              "qty": 2,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "0402WGF0000TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 16154927,
+          "stock_smt": 16154927,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0012,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0012
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0008
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0007
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0006
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0006
+            }
+          ],
+          "subtotal_usd": 0.24,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0036,
+          "subtotal_cny_estimate": 0.72,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C307331",
+          "qty": 5,
+          "lines": [
+            {
+              "line": 25,
+              "qty": 5,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "CL05B104KB54PNC",
+          "brand": "Samsung Electro-Mechanics",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 20627138,
+          "stock_smt": 20627138,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0085,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0085
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0063
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0054
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0046
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0043
+            },
+            {
+              "qty": 100000,
+              "unit": 0.0042
+            }
+          ],
+          "subtotal_usd": 4.25,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0252,
+          "subtotal_cny_estimate": 12.6,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C52923",
+          "qty": 7,
+          "lines": [
+            {
+              "line": 26,
+              "qty": 7,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "CL05A105KA5NQNC",
+          "brand": "Samsung Electro-Mechanics",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 10744195,
+          "stock_smt": 10744195,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0057,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0057
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0043
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0037
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0032
+            },
+            {
+              "qty": 50000,
+              "unit": 0.003
+            },
+            {
+              "qty": 100000,
+              "unit": 0.0029
+            }
+          ],
+          "subtotal_usd": 3.99,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0174,
+          "subtotal_cny_estimate": 12.18,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C15850",
+          "qty": 5,
+          "lines": [
+            {
+              "line": 27,
+              "qty": 5,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "CL21A106KAYNNNE",
+          "brand": "Samsung Electro-Mechanics",
+          "package": "0805",
+          "library": "base",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 8244993,
+          "stock_smt": 8244993,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0236,
+          "price_usd_tier": "200+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0314
+            },
+            {
+              "qty": 200,
+              "unit": 0.0236
+            },
+            {
+              "qty": 600,
+              "unit": 0.0202
+            },
+            {
+              "qty": 2000,
+              "unit": 0.0175
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0164
+            },
+            {
+              "qty": 20000,
+              "unit": 0.0157
+            }
+          ],
+          "subtotal_usd": 11.8,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0942,
+          "subtotal_cny_estimate": 47.1,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": []
+        },
+        {
+          "lcsc": "C318884",
+          "qty": 3,
+          "lines": [
+            {
+              "line": 28,
+              "qty": 3,
+              "place": "dnp"
+            }
+          ],
+          "place": "dnp",
+          "status": "DNP",
+          "model": "TS-1187A-B-A-B",
+          "brand": "XKB Connection",
+          "package": "SMD-4P,5.1x5.1mm",
+          "library": "base",
+          "billable_smt": false,
+          "billable": false,
+          "stock": 834296,
+          "stock_smt": 834296,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0167,
+          "price_usd_tier": "200+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0215
+            },
+            {
+              "qty": 200,
+              "unit": 0.0167
+            },
+            {
+              "qty": 600,
+              "unit": 0.0147
+            },
+            {
+              "qty": 4000,
+              "unit": 0.0129
+            },
+            {
+              "qty": 8000,
+              "unit": 0.0123
+            },
+            {
+              "qty": 20000,
+              "unit": 0.0119
+            }
+          ],
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0714,
+          "subtotal_cny_estimate": 21.42,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": [
+            "DNP：不贴/不计元件与上料费"
+          ]
+        },
+        {
+          "lcsc": "C11702",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 29,
+              "qty": 1,
+              "place": "dnp"
+            }
+          ],
+          "place": "dnp",
+          "status": "DNP",
+          "model": "0402WGF1001TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": false,
+          "billable": false,
+          "stock": 32272095,
+          "stock_smt": 32272095,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0013,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0013
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0011
+            },
+            {
+              "qty": 3000,
+              "unit": 0.001
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0009
+            }
+          ],
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0054,
+          "subtotal_cny_estimate": 0.54,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": [
+            "DNP：不贴/不计元件与上料费"
+          ]
+        },
+        {
+          "lcsc": "C25882",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 30,
+              "qty": 1,
+              "place": "dnp"
+            }
+          ],
+          "place": "dnp",
+          "status": "DNP",
+          "model": "0402WGF2401TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "expand",
+          "billable_smt": false,
+          "billable": false,
+          "stock": 761787,
+          "stock_smt": 761787,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0012,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0012
+            },
+            {
+              "qty": 1000,
+              "unit": 0.001
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0008
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0008
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0006
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0006
+            }
+          ],
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0036,
+          "subtotal_cny_estimate": 0.36,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": [
+            "DNP：不贴/不计元件与上料费",
+            "扩展库（手焊/DNP 无上料费）"
+          ]
+        },
+        {
+          "lcsc": "C25900",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 31,
+              "qty": 1,
+              "place": "dnp"
+            }
+          ],
+          "place": "dnp",
+          "status": "DNP",
+          "model": "0402WGF4701TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": false,
+          "billable": false,
+          "stock": 15057559,
+          "stock_smt": 15057559,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0017,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0017
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0013
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0011
+            },
+            {
+              "qty": 10000,
+              "unit": 0.001
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0009
+            }
+          ],
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0054,
+          "subtotal_cny_estimate": 0.54,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": [
+            "DNP：不贴/不计元件与上料费"
+          ]
+        },
+        {
+          "lcsc": "C17168",
+          "qty": 3,
+          "lines": [
+            {
+              "line": 32,
+              "qty": 3,
+              "place": "dnp"
+            }
+          ],
+          "place": "dnp",
+          "status": "DNP",
+          "model": "0402WGF0000TCE",
+          "brand": "UNI-ROYAL(Uniroyal Elec)",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": false,
+          "billable": false,
+          "stock": 16154927,
+          "stock_smt": 16154927,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0012,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0012
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0009
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0008
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0007
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0006
+            },
+            {
+              "qty": 50200,
+              "unit": 0.0006
+            }
+          ],
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0036,
+          "subtotal_cny_estimate": 1.08,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": [
+            "DNP：不贴/不计元件与上料费"
+          ]
+        },
+        {
+          "lcsc": "C307331",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 33,
+              "qty": 1,
+              "place": "dnp"
+            }
+          ],
+          "place": "dnp",
+          "status": "DNP",
+          "model": "CL05B104KB54PNC",
+          "brand": "Samsung Electro-Mechanics",
+          "package": "0402",
+          "library": "base",
+          "billable_smt": false,
+          "billable": false,
+          "stock": 20627138,
+          "stock_smt": 20627138,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0085,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0085
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0063
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0054
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0046
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0043
+            },
+            {
+              "qty": 100000,
+              "unit": 0.0042
+            }
+          ],
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.0252,
+          "subtotal_cny_estimate": 2.52,
+          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "flags": [
+            "DNP：不贴/不计元件与上料费"
+          ]
+        }
+      ],
+      "optimize": {
+        "extended_parts_before": 13,
+        "extended_parts_after": 13,
+        "fee_before_usd": 39,
+        "fee_after_usd": 39,
+        "saving_usd_per_order": 0,
+        "actions": [],
+        "alternatives": []
+      },
+      "skipped": [],
+      "errors": [],
+      "hints": [],
+      "notes": [
+        "assembly=smt：价格与库存取嘉立创 SMT 元件库（USD 阶梯价按采购数量取档）；上料费只计 smt 且为扩展库的唯一料号。",
+        "USD 与 CNY 并列展示、不互相换算；每行带 price_source / fetched_at / estimated。",
+        "上料费按每唯一扩展库料号 $3/单估算；工程费 $0、钢网费 $0 已单列（默认 0，可在插件 config 配置）。",
+        "优选扩展库（Preferred Extended）分类未在公开接口暴露，若需免上料费请到嘉立创 SMT 下单页确认。",
+        "批量摊销参考：100 片时约 $1.5099/片（含上料费 $0.39/片 + 工程/钢网 $0/片）。"
+      ],
+      "fetched_at": "2026-11-11T08:51:25.961Z"
+    },
+    "cnyAudit": {
+      "assembly": "hand",
+      "boards": 1,
+      "region": "global",
+      "currency": "USD + CNY（并列，不混算）",
+      "summary": {
+        "lines": 2,
+        "lines_in_bom": 2,
+        "skipped_lines": 0,
+        "smt_lines": 0,
+        "hand_lines": 2,
+        "dnp_lines": 0,
+        "unique_parts": 2,
+        "verified": 2,
+        "no_stock": 0,
+        "not_found": 0,
+        "base_parts": 0,
+        "expand_parts": 0,
+        "library_unknown": 0,
+        "extended_fee_per_order_usd": 0,
+        "setup_fee_usd": 0,
+        "stencil_fee_usd": 0,
+        "components_usd": 0.3726,
+        "components_per_board_usd": 0.3726,
+        "total_usd": 0.3726,
+        "total_per_board_usd": 0.3726,
+        "hand_components_usd_reference": 0.3726,
+        "hand_components_cny": 1.1209,
+        "dnp_components_usd_excluded": 0,
+        "cny_covered_lines": 2,
+        "components_cny": 1.1209,
+        "cny_estimated_lines": 0,
+        "components_cny_estimate": 0,
+        "cost_table": [
+          {
+            "boards": 1,
+            "components_usd": 0.3726,
+            "extended_fee_usd": 0,
+            "setup_fees_usd": 0,
+            "total_usd": 0.3726,
+            "per_board_usd": 0.3726,
+            "extended_fee_per_board_usd": 0
+          },
+          {
+            "boards": 20,
+            "components_usd": 7.452,
+            "extended_fee_usd": 0,
+            "setup_fees_usd": 0,
+            "total_usd": 7.452,
+            "per_board_usd": 0.3726,
+            "extended_fee_per_board_usd": 0
+          },
+          {
+            "boards": 100,
+            "components_usd": 29.32,
+            "extended_fee_usd": 0,
+            "setup_fees_usd": 0,
+            "total_usd": 29.32,
+            "per_board_usd": 0.2932,
+            "extended_fee_per_board_usd": 0
+          },
+          {
+            "boards": 300,
+            "components_usd": 77.76,
+            "extended_fee_usd": 0,
+            "setup_fees_usd": 0,
+            "total_usd": 77.76,
+            "per_board_usd": 0.2592,
+            "extended_fee_per_board_usd": 0
+          },
+          {
+            "boards": 1000,
+            "components_usd": 215.4,
+            "extended_fee_usd": 0,
+            "setup_fees_usd": 0,
+            "total_usd": 215.4,
+            "per_board_usd": 0.2154,
+            "extended_fee_per_board_usd": 0
+          }
+        ]
+      },
+      "rows": [
+        {
+          "lcsc": "C1581",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 1,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "0402F104M500NT",
+          "brand": "FH (Guangdong Fenghua Advanced Tech)",
+          "package": "0402",
+          "library": "expand",
+          "billable_smt": false,
+          "billable": true,
+          "stock": 268391,
+          "stock_smt": 345354,
+          "stock_lcsc": 268391,
+          "stock_source": "lcsc_cn_render",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0071,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0071
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0058
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0051
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0045
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0042
+            },
+            {
+              "qty": 100000,
+              "unit": 0.004
+            }
+          ],
+          "subtotal_usd": 0.0071,
+          "unit_cny": 0.0239,
+          "price_cny_source": "lcsc_cn_render",
+          "price_cny_estimated": false,
+          "subtotal_cny": 0.0239,
+          "fetched_at": "2026-11-11T08:51:27.071Z",
+          "flags": [
+            "扩展库（手焊/DNP 无上料费）"
+          ]
+        },
+        {
+          "lcsc": "C7434398",
+          "qty": 1,
+          "lines": [
+            {
+              "line": 2,
+              "qty": 1,
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "AD142A4",
+          "brand": "JieLi Tech",
+          "package": "SOP-16",
+          "library": "expand",
+          "billable_smt": false,
+          "billable": true,
+          "stock": 385,
+          "stock_smt": 385,
+          "stock_lcsc": 385,
+          "stock_source": "lcsc_cn_render",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.3655,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.3655
+            },
+            {
+              "qty": 50,
+              "unit": 0.2861
+            },
+            {
+              "qty": 150,
+              "unit": 0.2521
+            },
+            {
+              "qty": 500,
+              "unit": 0.2096
+            },
+            {
+              "qty": 2500,
+              "unit": 0.1906
+            },
+            {
+              "qty": 5000,
+              "unit": 0.1794
+            }
+          ],
+          "subtotal_usd": 0.3655,
+          "unit_cny": 1.097,
+          "price_cny_source": "lcsc_cn_render",
+          "price_cny_estimated": false,
+          "subtotal_cny": 1.097,
+          "fetched_at": "2026-11-11T08:51:27.071Z",
+          "flags": [
+            "扩展库（手焊/DNP 无上料费）"
+          ]
+        }
+      ],
+      "optimize": {
+        "extended_parts_before": 0,
+        "extended_parts_after": 0,
+        "fee_before_usd": 0,
+        "fee_after_usd": 0,
+        "saving_usd_per_order": 0,
+        "actions": [],
+        "alternatives": []
+      },
+      "skipped": [],
+      "errors": [],
+      "hints": [],
+      "notes": [
+        "国内站人民币价：2/2 个料取到真实 CNY（Chrome 渲染 + 24h 缓存）；未取到的行回退为批量档 USD×6 估算并标 estimated=true。",
+        "assembly=hand：不计嘉立创上料费；价格优先取立创商城国内站人民币价（Chrome 渲染），未取到的行给 estimated 估算。",
+        "USD 与 CNY 并列展示、不互相换算；每行带 price_source / fetched_at / estimated。",
+        "上料费 0；工程费 $0、钢网费 $0 可配置。",
+        "优选扩展库（Preferred Extended）分类未在公开接口暴露，若需免上料费请到嘉立创 SMT 下单页确认。",
+        "批量摊销参考：100 片时约 $0.2932/片（含上料费 $0/片 + 工程/钢网 $0/片）。"
+      ],
+      "fetched_at": "2026-11-11T08:51:27.072Z"
+    },
+    "duplicates": {
+      "assembly": "smt",
+      "boards": 10,
+      "region": "global",
+      "currency": "USD（CNY 为参考估算）",
+      "summary": {
+        "lines": 1,
+        "lines_in_bom": 2,
+        "skipped_lines": 0,
+        "smt_lines": 1,
+        "hand_lines": 0,
+        "dnp_lines": 0,
+        "unique_parts": 1,
+        "verified": 1,
+        "no_stock": 0,
+        "not_found": 0,
+        "base_parts": 0,
+        "expand_parts": 1,
+        "library_unknown": 0,
+        "extended_fee_per_order_usd": 3,
+        "setup_fee_usd": 0,
+        "stencil_fee_usd": 0,
+        "components_usd": 0.355,
+        "components_per_board_usd": 0.0355,
+        "total_usd": 3.355,
+        "total_per_board_usd": 0.3355,
+        "hand_components_usd_reference": 0,
+        "hand_components_cny": 0,
+        "dnp_components_usd_excluded": 0,
+        "cny_covered_lines": 0,
+        "components_cny": 0,
+        "cny_estimated_lines": 1,
+        "components_cny_estimate": 1.2,
+        "cost_table": [
+          {
+            "boards": 10,
+            "components_usd": 0.355,
+            "extended_fee_usd": 3,
+            "setup_fees_usd": 0,
+            "total_usd": 3.355,
+            "per_board_usd": 0.3355,
+            "extended_fee_per_board_usd": 0.3
+          },
+          {
+            "boards": 20,
+            "components_usd": 0.71,
+            "extended_fee_usd": 3,
+            "setup_fees_usd": 0,
+            "total_usd": 3.71,
+            "per_board_usd": 0.1855,
+            "extended_fee_per_board_usd": 0.15
+          },
+          {
+            "boards": 100,
+            "components_usd": 3.55,
+            "extended_fee_usd": 3,
+            "setup_fees_usd": 0,
+            "total_usd": 6.55,
+            "per_board_usd": 0.0655,
+            "extended_fee_per_board_usd": 0.03
+          },
+          {
+            "boards": 300,
+            "components_usd": 8.7,
+            "extended_fee_usd": 3,
+            "setup_fees_usd": 0,
+            "total_usd": 11.7,
+            "per_board_usd": 0.039,
+            "extended_fee_per_board_usd": 0.01
+          },
+          {
+            "boards": 1000,
+            "components_usd": 25.5,
+            "extended_fee_usd": 3,
+            "setup_fees_usd": 0,
+            "total_usd": 28.5,
+            "per_board_usd": 0.0285,
+            "extended_fee_per_board_usd": 0.003
+          }
+        ]
+      },
+      "rows": [
+        {
+          "lcsc": "C1581",
+          "designators": [
+            "smt",
+            "smt"
+          ],
+          "qty": 5,
+          "lines": [
+            {
+              "line": 1,
+              "qty": 2,
+              "designators": "smt",
+              "place": "smt"
+            },
+            {
+              "line": 2,
+              "qty": 3,
+              "designators": "smt",
+              "place": "smt"
+            }
+          ],
+          "place": "smt",
+          "status": "verified",
+          "model": "0402F104M500NT",
+          "brand": "FH (Guangdong Fenghua Advanced Tech)",
+          "package": "0402",
+          "library": "expand",
+          "billable_smt": true,
+          "billable": true,
+          "stock": 345354,
+          "stock_smt": 345354,
+          "stock_source": "jlcpcb-smt",
+          "coverage": 1,
+          "price_source": "jlcpcb-smt",
+          "unit_usd": 0.0071,
+          "price_usd_tier": "1+",
+          "price_usd_ladder": [
+            {
+              "qty": 1,
+              "unit": 0.0071
+            },
+            {
+              "qty": 1000,
+              "unit": 0.0058
+            },
+            {
+              "qty": 3000,
+              "unit": 0.0051
+            },
+            {
+              "qty": 10000,
+              "unit": 0.0045
+            },
+            {
+              "qty": 50000,
+              "unit": 0.0042
+            },
+            {
+              "qty": 100000,
+              "unit": 0.004
+            }
+          ],
+          "subtotal_usd": 0.355,
+          "price_cny_estimated": false,
+          "unit_cny_estimate": 0.024,
+          "subtotal_cny_estimate": 1.2,
+          "fetched_at": "2026-11-11T08:51:27.072Z",
+          "flags": [
+            "扩展库：$3/料号上料费"
+          ]
+        }
+      ],
+      "optimize": {
+        "extended_parts_before": 1,
+        "extended_parts_after": 1,
+        "fee_before_usd": 3,
+        "fee_after_usd": 3,
+        "saving_usd_per_order": 0,
+        "actions": [],
+        "alternatives": []
+      },
+      "skipped": [],
+      "errors": [],
+      "hints": [],
+      "notes": [
+        "assembly=smt：价格与库存取嘉立创 SMT 元件库（USD 阶梯价按采购数量取档）；上料费只计 smt 且为扩展库的唯一料号。",
+        "USD 与 CNY 并列展示、不互相换算；每行带 price_source / fetched_at / estimated。",
+        "上料费按每唯一扩展库料号 $3/单估算；工程费 $0、钢网费 $0 已单列（默认 0，可在插件 config 配置）。",
+        "优选扩展库（Preferred Extended）分类未在公开接口暴露，若需免上料费请到嘉立创 SMT 下单页确认。",
+        "批量摊销参考：100 片时约 $0.0655/片（含上料费 $0.03/片 + 工程/钢网 $0/片）。"
+      ],
+      "fetched_at": "2026-11-11T08:51:27.072Z"
+    }
+  }
+}

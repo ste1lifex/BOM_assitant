@@ -9,3 +9,12 @@
         retries: 3
         cacheTtlMs: 600000
         usdToCnyFactor: 6.0
+        # 国内站人民币价：Chrome 无头渲染 + 24h 缓存（无 Chrome 时自动降级为 USD 估算）
+        cnRender: true
+        cnCacheTtlMs: 86400000
+        cnTimeoutMs: 30000
+        cnConcurrency: 2
+        # 嘉立创费用（USD）；工程费/钢网费默认 0，需要时填实际报价
+        extendedPartFeeUsd: 3.0
+        setupFeeUsd: 0.0
+        stencilFeeUsd: 0.0

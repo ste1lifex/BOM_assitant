@@ -42,7 +42,7 @@ const MAX_CANDIDATES = 8
 const DEFAULT_LIMIT = 5
 const SEARCH_PAGE_SIZE = 100
 const MAX_CNY_LOOKUPS = 3
-const MAX_AUDIT_CNY_LOOKUPS = 10
+const MAX_AUDIT_CNY_LOOKUPS = 32
 const MAX_ALTERNATIVE_LOOKUPS = 16
 
 /* -------------------------------------------------------------------------- */
@@ -192,22 +192,39 @@ async function mapLimit(items, limit, fn) {
 /* Requirement parsing                                                        */
 /* -------------------------------------------------------------------------- */
 
-/** Chinese / mixed category words mapped to English search hints. */
+/** Chinese / mixed category words mapped to English search hints (longest first). */
 const CATEGORY_TERMS = [
   ['自恢复保险丝', ['ptc resettable fuse']],
   ['贴片电容', ['capacitor']],
   ['贴片电阻', ['resistor']],
+  ['发光二极管', ['led']],
+  ['锂电池充电', ['battery charger']],
+  ['单节锂电池', ['battery charger']],
+  ['充电ic', ['battery charger']],
+  ['充电 ic', ['battery charger']],
+  ['充电芯片', ['battery charger']],
+  ['静态保护', ['esd']],
+  ['静电保护', ['esd']],
+  ['硅麦', ['microphone']],
+  ['mems硅麦', ['microphone']],
+  ['mems 硅麦', ['microphone']],
+  ['mems麦克风', ['microphone']],
+  ['mems 麦克风', ['microphone']],
+  ['type-c母座', ['usb type-c receptacle']],
+  ['type-c 母座', ['usb type-c receptacle']],
+  ['type c母座', ['usb type-c receptacle']],
+  ['母座', ['receptacle']],
+  ['贴片', []],
   ['电容', ['capacitor']],
   ['电阻', ['resistor']],
   ['电感', ['inductor']],
   ['磁珠', ['ferrite bead']],
   ['二极管', ['diode']],
-  ['发光二极管', ['led']],
   ['肖特基', ['schottky']],
   ['三极管', ['transistor']],
   ['场效应管', ['mosfet']],
   ['mos管', ['mosfet']],
-  ['稳压器', ['voltage regulator']],
+  ['稳压器', ['ldo', 'voltage regulator']],
   ['ldo', ['ldo']],
   ['连接器', ['connector']],
   ['插座', ['connector']],
@@ -238,6 +255,55 @@ const CATEGORY_TERMS = [
   ['microsd', ['microsd']],
   ['usb', ['usb']],
 ]
+
+/** A single token that is a value+unit (e.g. "100nF", "3.3V", "10kΩ") is not a part number. */
+const VALUE_UNIT_TOKEN_RE =
+  /^\d+(?:\.\d+)?\s*(?:pf|nf|uf|µf|mf|f|v|kv|ma|ua|µa|a|w|mw|ω|kω|mω|ohm|kohm|mm|nh|uh|µh|mh|hz|khz|mhz|ghz|k|r|m|%|p|pin|pins|针|脚)$/i
+
+/** Normalised model string used for exact-model matching. */
+export function normalizeModelToken(text) {
+  return String(text ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+}
+
+/**
+ * Detect an exact part query (LCSC code or manufacturer part number) before any
+ * numeric parameter parsing. This is the fix for "SMF5.0A" being read as
+ * current>=5A / "TP4054" as 4054: those strings are part numbers, not values.
+ * @param {string} text
+ * @returns {{ type: 'code' | 'model', value: string, token?: string } | undefined}
+ */
+export function detectExactQuery(text) {
+  const raw = String(text ?? '').trim()
+  if (raw === '') return undefined
+  const wholeCode = raw.match(/^C\d{4,11}$/i)
+  if (wholeCode !== null) return { type: 'code', value: wholeCode[0].toUpperCase() }
+  const tokens = raw.split(/[\s,;，；、]+/).filter((token) => token !== '')
+  if (tokens.length === 0) return undefined
+  // Only treat the input as a part number when it is a single token, or when
+  // one token is a strong part number and the rest are category words. Mixed
+  // requirement strings ("22 ohm 0402 resistor") must keep their value parsing.
+  const strong = []
+  for (const token of tokens) {
+    const clean = token.replace(/^[\(（"'`]+|[)'"`”）]+$/g, '')
+    if (clean.length < 4) continue
+    if (/^C\d{4,11}$/i.test(clean)) return { type: 'code', value: clean.toUpperCase() }
+    if (VALUE_UNIT_TOKEN_RE.test(clean)) continue
+    if (extractPackage(clean) === clean.toUpperCase()) continue
+    if (!/^[A-Za-z0-9._/+\-]+$/.test(clean)) continue
+    if (!/\d/.test(clean) || !/[A-Za-z]/.test(clean)) continue
+    const startsWithLetters = /^[A-Za-z]{2,}/.test(clean)
+    const hasSeparator = /[-._/+]/.test(clean)
+    const longPartNumber = clean.length >= 8
+    if (startsWithLetters || hasSeparator || longPartNumber) strong.push(clean)
+  }
+  if (strong.length === 1) return { type: 'model', value: strong[0], token: normalizeModelToken(strong[0]) }
+  if (strong.length > 1 && tokens.length === strong.length) {
+    // A single part number split by separators is already covered by one token;
+    // multiple independent part numbers are ambiguous, so keep parameter parsing.
+    return undefined
+  }
+  return undefined
+}
 
 /** Package / footprint tokens, longest first so SOT-23-5 wins over SOT-23. */
 const PACKAGE_PATTERNS = [
@@ -354,8 +420,27 @@ export function extractRequirements(text) {
  */
 export function parseNeed(raw) {
   const text = String(raw ?? '').trim()
-  const directCode = text.match(/\bC\d{4,11}\b/i)?.[0]?.toUpperCase()
-  const upper = text.toUpperCase()
+  const exact = detectExactQuery(text)
+  if (exact !== undefined) {
+    // Exact part query: return the code/model directly and DO NOT parse numeric
+    // requirements. Part numbers such as SMF5.0A / AO3401A / TP4054 contain
+    // digit+letter patterns that would otherwise be misread as value/unit.
+    return {
+      raw: text,
+      searchKeyword: exact.value,
+      package: extractPackage(text),
+      directCode: exact.type === 'code' ? exact.value : undefined,
+      modelGuess: exact.type === 'model',
+      modelToken: exact.type === 'model' ? exact.token : undefined,
+      categories: [],
+      dielectric: undefined,
+      requirements: [],
+      exact: true,
+      exactValue: exact.value,
+      upper: text.toUpperCase(),
+    }
+  }
+
   const packageName = extractPackage(text)
   const categories = []
   const dielectricMatch = text.match(/\b(X7R|X5R|X6S|X7S|C0G|NP0|Y5V|Z5U)\b/i)
@@ -373,29 +458,24 @@ export function parseNeed(raw) {
     'microphone', 'buzzer', 'battery holder', 'battery connector', 'optocoupler',
     'operational amplifier', 'comparator', 'microcontroller', 'memory', 'level shifter',
     'tvs', 'esd', 'type-c', 'microsd', 'usb', 'relay', 'sensor', 'motor driver',
-    'adc', 'dac', 'interface', 'antenna',
+    'adc', 'dac', 'interface', 'antenna', 'receptacle', 'battery charger', 'pin header',
   ]
   for (const word of ENGLISH_CATEGORIES) {
-    const re = new RegExp(`(^|[^a-z0-9])${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`, 'i')
+    const re = new RegExp(`(^|[^a-z0-9])${word.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}([^a-z0-9]|$)`, 'i')
     if (re.test(text) && !categories.includes(word)) categories.push(word)
   }
-  const modelGuess =
-    directCode === undefined &&
-    !/\s/.test(text) &&
-    /[A-Za-z]/.test(text) &&
-    text.length >= 3
-  const modelToken = modelGuess ? text.replace(/[^A-Za-z0-9]/g, '').toUpperCase() : undefined
 
   // Translate Chinese category words into English so the JLCPCB keyword search
   // (which is English-oriented) gets a useful query.
   let keyword = text
   for (const [word, hints] of CATEGORY_TERMS) {
+    if (hints.length === 0) continue
     const re = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
     keyword = keyword.replace(re, ` ${hints[0]} `)
   }
   keyword = keyword
     .replace(/[，。；、,;:：!！?？]/g, ' ')
-    .replace(/需要|一个|帮我|找一下|寻找|找|用来|用于|的|料号|器件|元件/g, ' ')
+    .replace(/需要|一个|帮我|找一下|寻找|找|用来|用于|的|料号|器件|元件|请|帮我选|推荐/g, ' ')
     .replace(/[\u4e00-\u9fff]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -404,26 +484,28 @@ export function parseNeed(raw) {
 
   const requirements = extractRequirements(text)
   // Category-aware comparator defaults.
-  const isRegulator = categories.some((category) => category === 'ldo' || category === 'voltage regulator')
+  const isRegulator = categories.some((category) => category === 'ldo' || category === 'voltage regulator' || category === 'battery charger')
   for (const requirement of requirements) {
     if (requirement.comparator !== undefined) continue
     if (requirement.kind === 'voltage' && isRegulator) requirement.comparator = '='
     else if (requirement.kind === 'tolerance') requirement.comparator = '<='
     else if (requirement.kind === 'size') requirement.comparator = '='
-    else if (requirement.kind === 'capacitance' || requirement.kind === 'resistance' || requirement.kind === 'inductance' || requirement.kind === 'frequency') requirement.comparator = '='
+    else if (requirement.kind === 'capacitance' || requirement.kind === 'resistance' || requirement.kind === 'inductance' || requirement.kind === 'frequency' || requirement.kind === 'pins') requirement.comparator = '='
     else requirement.comparator = '>='
   }
   return {
     raw: text,
     searchKeyword: keyword,
     package: packageName,
-    directCode,
-    modelGuess,
+    directCode: undefined,
+    modelGuess: false,
+    modelToken: undefined,
     categories,
     dielectric,
     requirements,
-    modelToken,
-    upper,
+    exact: false,
+    exactValue: undefined,
+    upper: text.toUpperCase(),
   }
 }
 
@@ -606,6 +688,13 @@ export function candidateMatches(item, need) {
   if (need.directCode !== undefined && String(item.code).toUpperCase() !== need.directCode) {
     return { ok: false, matched: [] }
   }
+  if (need.modelGuess === true) {
+    const candidate = normalizeModelToken(item.model)
+    if (need.modelToken === undefined || !candidate.includes(need.modelToken)) {
+      return { ok: false, matched: [] }
+    }
+    return { ok: true, matched: [`model=${item.model ?? need.exactValue}`] }
+  }
   if (need.package !== undefined && item.package !== undefined && !packageMatches(item.package, need.package)) {
     return { ok: false, matched: [] }
   }
@@ -642,6 +731,72 @@ export function candidateMatches(item, need) {
     matched.push(`${requirement.kind}=${requirement.raw}`)
   }
   return { ok: true, matched }
+}
+
+/**
+ * Explain why a candidate fails the parsed requirement (used by the relaxed
+ * fallback, so the agent can tell the user which constraint could not be met).
+ * @param {Record<string, unknown>} item
+ * @param {ReturnType<typeof parseNeed>} need
+ * @returns {string[]}
+ */
+export function mismatchReasons(item, need) {
+  const reasons = []
+  if (need.directCode !== undefined && String(item.code).toUpperCase() !== need.directCode) {
+    reasons.push(`LCSC 编号为 ${item.code}，不是 ${need.directCode}`)
+  }
+  if (need.modelGuess === true && !normalizeModelToken(item.model).includes(need.modelToken ?? '')) {
+    reasons.push(`型号 ${item.model ?? '?'} 与 ${need.exactValue ?? '?'} 不完全一致`)
+  }
+  if (need.package !== undefined && item.package !== undefined && !packageMatches(item.package, need.package)) {
+    reasons.push(`封装 ${item.package} ≠ ${need.package}`)
+  }
+  const text = candidateText(item)
+  if (need.dielectric !== undefined && !text.includes(need.dielectric.toLowerCase())) {
+    reasons.push(`介质/温度特性不含 ${need.dielectric}`)
+  }
+  if (need.categories.length > 0 && !need.categories.some((category) => text.includes(category.toLowerCase()))) {
+    reasons.push(`品类不匹配（期望 ${need.categories.slice(0, 2).join(' / ')}）`)
+  }
+  const quantities = extractCandidateQuantities(item)
+  for (const requirement of need.requirements) {
+    if (requirement.kind === 'size') continue
+    const values = quantities.filter((quantity) => quantity.kind === requirement.kind).map((quantity) => quantity.value)
+    if (values.length === 0) {
+      reasons.push(`缺少参数 ${requirement.kind}`)
+    } else if (!values.some((value) => satisfies(value, requirement))) {
+      reasons.push(`参数 ${requirement.kind} 不满足 ${requirement.comparator ?? '='} ${requirement.raw ?? requirement.value}`)
+    }
+    if (reasons.length >= 4) break
+  }
+  return reasons
+}
+
+/** Pick the ladder tier for `qty`, returning both the used threshold and price. */
+export function pickTier(tiers, qty) {
+  if (!Array.isArray(tiers) || tiers.length === 0) return undefined
+  const sorted = tiers
+    .filter((tier) => isRecord(tier) && Number.isFinite(asNumber(tier.qty)) && Number.isFinite(asNumber(tier.unit)))
+    .map((tier) => ({ qty: Number(tier.qty), unit: Number(tier.unit) }))
+    .sort((left, right) => left.qty - right.qty)
+  if (sorted.length === 0) return undefined
+  let chosen = sorted[0]
+  for (const tier of sorted) {
+    if (qty >= tier.qty) chosen = tier
+    else break
+  }
+  return { qty: chosen.qty, unit: chosen.unit, label: `${chosen.qty}+` }
+}
+
+/**
+ * Compare footprints for a substitution: same package = drop-in, otherwise the
+ * PCB needs a change.
+ * @param {string | undefined} left
+ * @param {string | undefined} right
+ */
+export function footprintCompatible(left, right) {
+  if (left === undefined || right === undefined) return undefined
+  return packageMatches(left, right)
 }
 
 /* -------------------------------------------------------------------------- */
@@ -785,6 +940,27 @@ function reasonsFor(candidate, context) {
  * @param {Record<string, unknown>} args
  * @param {{ signal?: AbortSignal }} [options]
  */
+/** Identity constraints that must not be relaxed when looking for substitutes. */
+const IDENTITY_REQUIREMENT_KINDS = new Set(['capacitance', 'resistance', 'inductance', 'pins'])
+
+/** Pin/contact count reported by the JLCPCB attributes, if available. */
+function candidatePinCount(item) {
+  for (const attribute of attributesOf(item)) {
+    if (/number of (contacts|positions|pins)|contacts|positions|pin count|number of pins/i.test(attribute.name)) {
+      const match = attribute.value.match(/\d{1,3}/)
+      if (match !== null) return Number(match[0])
+    }
+  }
+  const pins = extractCandidateQuantities(item).find((quantity) => quantity.kind === 'pins')
+  return pins === undefined ? undefined : pins.value
+}
+
+/**
+ * Find requirement-matching parts.
+ * @param {ReturnType<typeof createLcscService>} service
+ * @param {Record<string, unknown>} args
+ * @param {{ signal?: AbortSignal }} [options]
+ */
 export async function findParts(service, args, options = {}) {
   const needText = asString(args.need)
   if (needText === undefined) throw new Error('find_lcsc_parts requires a non-empty `need` string')
@@ -793,15 +969,26 @@ export async function findParts(service, args, options = {}) {
   const boards = clampInteger(args.boards, 1, 100000, 1)
   const limit = clampInteger(args.limit, 1, MAX_CANDIDATES, DEFAULT_LIMIT)
   const sort = ['cost', 'stock'].includes(args.sort) ? args.sort : 'balanced'
-  const includeCny = args.include_cny !== false && assembly === 'hand'
+  const baseOnly = args.base_only === true
+  const includeCny = args.include_cny === true || (args.include_cny === undefined && assembly === 'hand')
   const exclude = new Set(
     (Array.isArray(args.exclude_lcsc) ? args.exclude_lcsc : [])
       .map((code) => normalizeCode(code))
       .filter(Boolean),
   )
   const need = parseNeed(needText)
-  const context = { assembly, quantity, boards, orderQty: quantity * boards, sort, modelToken: need.modelGuess ? need.modelToken : undefined }
+  const orderQty = quantity * boards
+  const feeUsd = asNumber(service.settings?.extendedPartFeeUsd) ?? EXTENDED_PART_FEE_USD
   const usdToCnyFactor = asNumber(service.settings?.usdToCnyFactor) ?? 6.0
+  const context = {
+    assembly,
+    quantity,
+    boards,
+    orderQty,
+    sort,
+    modelToken: need.modelGuess ? need.modelToken : undefined,
+    feeUsd,
+  }
   const notes = []
   const hints = []
 
@@ -815,11 +1002,10 @@ export async function findParts(service, args, options = {}) {
     return pool.size
   }
 
+  // ---- Phase 1: candidate recall -------------------------------------------
   const queries = []
-  if (need.directCode !== undefined) {
-    queries.push({ keyword: need.directCode })
-  } else if (need.modelGuess) {
-    queries.push({ keyword: need.raw })
+  if (need.exact) {
+    queries.push({ keyword: need.searchKeyword })
   } else if (assembly === 'smt') {
     // Search the base library first so free-to-load parts are not drowned out.
     queries.push({ keyword: need.searchKeyword, libraryType: 'base' })
@@ -834,115 +1020,231 @@ export async function findParts(service, args, options = {}) {
       signal: options.signal,
     })
     absorb(result)
-    if (need.directCode !== undefined || need.modelGuess) break
   }
-  if (pool.size === 0 && need.searchKeyword !== need.raw) {
-    const fallback = await service.searchRaw(need.raw, { pageSize: SEARCH_PAGE_SIZE, signal: options.signal })
-    absorb(fallback)
+  // Degradation chain for recall: category+package, then the untouched raw text.
+  if (pool.size === 0 && !need.exact) {
+    const fallbackKeyword = [need.package, ...need.categories].filter(Boolean).join(' ')
+    if (fallbackKeyword !== '' && fallbackKeyword !== need.searchKeyword) {
+      notes.push(`关键词「${need.searchKeyword}」无结果，已回退到品类/封装关键词「${fallbackKeyword}」。`)
+      absorb(await service.searchRaw(fallbackKeyword, { pageSize: SEARCH_PAGE_SIZE, signal: options.signal }))
+    }
+    if (pool.size === 0 && need.searchKeyword !== need.raw) {
+      absorb(await service.searchRaw(need.raw, { pageSize: SEARCH_PAGE_SIZE, signal: options.signal }))
+    }
+  }
+  if (pool.size === 0 && need.exact) {
+    // The code/model search found nothing; the text may still be a model with
+    // punctuation that the API search does not match verbatim.
+    absorb(await service.searchRaw(need.raw, { pageSize: SEARCH_PAGE_SIZE, signal: options.signal }))
   }
 
-  let relaxed = false
-  let scored = [...pool.values()]
-    .filter((item) => !exclude.has(String(item.code)))
-    .filter((item) => (asInteger(item.stock) ?? 0) > 0)
-    .map((item) => scoreCandidate(item, need, context))
-    .filter((candidate) => candidate.match.ok)
-  if (scored.length === 0 && pool.size > 0) {
-    relaxed = true
-    notes.push('没有同时满足全部参数条件的候选；已放宽参数过滤，仅按关键词、库存和价格排序，请人工核对参数。')
-    scored = [...pool.values()]
+  // ---- Phase 2: strict filter, then staged relaxation ----------------------
+  const usablePool = () =>
+    [...pool.values()]
       .filter((item) => !exclude.has(String(item.code)))
       .filter((item) => (asInteger(item.stock) ?? 0) > 0)
-      .map((item) => scoreCandidate(item, need, context))
-      .map((candidate) => ({ ...candidate, match: { ...candidate.match, ok: true } }))
-  }
-  let ranked = rankCandidates(scored, context, context.orderQty)
+  const scoreWith = (needForFilter) =>
+    usablePool()
+      .map((item) => scoreCandidate(item, needForFilter, context))
+      .filter((candidate) => candidate.match.ok)
 
-  // Best-effort CNY enrichment for the top candidates in hand mode.
-  /** @type {Map<string, { ok: boolean, unit?: number, stock?: number, reason?: string }>} */
+  let relaxed = false
+  let relaxStage = 0
+  let droppedRequirements = []
+  let scored = scoreWith(need)
+  if (scored.length === 0 && !need.exact && need.requirements.length > 0) {
+    // Stage 1: keep identity (value/package) constraints, relax ratings.
+    const identity = need.requirements.filter((requirement) => IDENTITY_REQUIREMENT_KINDS.has(requirement.kind))
+    if (identity.length !== need.requirements.length) {
+      const stageScored = scoreWith({ ...need, requirements: identity })
+      if (stageScored.length > 0) {
+        scored = stageScored
+        relaxed = true
+        relaxStage = 1
+        droppedRequirements = need.requirements
+          .filter((requirement) => !IDENTITY_REQUIREMENT_KINDS.has(requirement.kind))
+          .map((requirement) => requirement.raw ?? requirement.kind)
+        notes.push(`严格匹配无结果：已放宽非核心参数（${droppedRequirements.join('、')}），保留容值/阻值/感值/引脚数等身份参数。`)
+      }
+    }
+    // Stage 2: drop the remaining requirements, keep package/category.
+    if (scored.length === 0) {
+      const stageScored = scoreWith({ ...need, requirements: [] })
+      if (stageScored.length > 0) {
+        scored = stageScored
+        relaxed = true
+        relaxStage = 2
+        droppedRequirements = need.requirements.map((requirement) => requirement.raw ?? requirement.kind)
+        notes.push('严格匹配无结果：已仅按封装/品类筛候选，参数需人工核对（见每行 mismatch_reasons）。')
+      }
+    }
+    // Stage 3: last resort, everything in the recall pool.
+    if (scored.length === 0) {
+      scored = usablePool().map((item) => ({
+        ...scoreCandidate(item, need, context),
+        match: { ok: true, matched: [] },
+      }))
+      if (scored.length > 0) {
+        relaxed = true
+        relaxStage = 3
+        notes.push('没有满足条件的候选；以下为最接近的候选，不匹配原因见 mismatch_reasons。')
+      }
+    }
+  }
+
+  if (baseOnly) {
+    const baseCandidates = scored.filter((candidate) => !candidate.expand)
+    if (baseCandidates.length === 0) {
+      hints.push('该品类没有找到基础库（base library）候选；可去掉 base_only 或接受扩展库（SMT 每料号有上料费）。')
+    } else {
+      scored = baseCandidates
+    }
+  }
+  if (assembly === 'smt' && !baseOnly) {
+    const hasBase = scored.some((candidate) => !candidate.expand) ||
+      [...pool.values()].some((item) => String(item.libraryType).toLowerCase() === 'base')
+    if (!hasBase && scored.length > 0) {
+      hints.push(`该品类未找到基础库候选（均为扩展库，$${feeUsd}/料号上料费）；请到下单页确认优选扩展库分类。`)
+    }
+  }
+
+  let ranked = rankCandidates(scored, context, orderQty)
+
+  // ---- Phase 3: real CNY prices (domestic store via Chrome) ----------------
+  /** @type {Map<string, Record<string, unknown>>} */
   const cnyByCode = new Map()
   if (includeCny && ranked.length > 0) {
     const targets = ranked.slice(0, Math.min(MAX_CNY_LOOKUPS, ranked.length))
     const results = await mapLimit(targets, 2, async (candidate) => {
+      const code = String(candidate.item.code)
       try {
-        return await service.cny(String(candidate.item.code), options.signal)
+        if (typeof service.cn?.query === 'function') {
+          const cn = await service.cn.query(code)
+          if (cn?.ok === true) return cn
+        }
+        if (typeof service.cny === 'function') return await service.cny(code, options.signal)
+        return { ok: false, reason: 'cny-adapter-unavailable' }
       } catch (error) {
         return { ok: false, reason: error instanceof Error ? error.message : String(error) }
       }
     })
     for (let index = 0; index < targets.length; index += 1) {
-      const result = results[index]
-      cnyByCode.set(String(targets[index].item.code), result)
-      if (index < targets.length - 1) await sleep(120, options.signal)
+      cnyByCode.set(String(targets[index].item.code), results[index])
     }
     const covered = [...cnyByCode.values()].filter((result) => result?.ok === true).length
-    if (covered > 0) notes.push(`人民币价来自立创商城国内站（best-effort，可能被限流）：${covered}/${targets.length} 个候选取到 CNY。排序仍以 USD 参考价为基准。`)
-    else hints.push('国内站 CNY 价本次不可用（WAF/限流），价格列为 USD 参考；可稍后重试或到立创商城页面确认。')
+    if (covered > 0) {
+      notes.push(`人民币价来自立创商城国内站（Chrome 渲染，${covered}/${targets.length} 个候选取到 CNY，24h 缓存）。USD 与 CNY 并列，不混算。`)
+    } else {
+      hints.push('国内站人民币价本次不可用（Chrome/WAF/限流），CNY 列已回退为「批量档 USD×系数」的参考估算。')
+    }
   }
 
+  // ---- Phase 4: build output ----------------------------------------------
   const candidates = ranked.slice(0, limit).map((candidate) => {
-    const cny = cnyByCode.get(String(candidate.item.code))
+    const code = String(candidate.item.code)
+    const cny = cnyByCode.get(code)
     const cnyUnit = cny?.ok === true ? asNumber(cny.unit) : undefined
-    const price = cnyUnit !== undefined
-      ? { currency: 'CNY', unit: money(cnyUnit), source: 'item.szlcsc.com' }
-      : candidate.unitUsd !== undefined
-        ? { currency: 'USD', unit: money(candidate.unitUsd), source: 'jlcpcb-smt' }
-        : undefined
+    const cnyStock = cny?.ok === true ? asInteger(cny.stock) : undefined
+    const tier = pickTier(candidate.item.priceUsdTiers, orderQty)
     const bulkUsd = bulkTierUsd(candidate.item)
-    const cnyEstimate = cnyUnit === undefined && assembly === 'hand'
-      ? estimateCnyFromUsd(bulkUsd, usdToCnyFactor)
-      : undefined
+    const cnyEstimate = cnyUnit === undefined ? estimateCnyFromUsd(bulkUsd, usdToCnyFactor) : undefined
+    const stockSmt = asInteger(candidate.item.stock) ?? 0
+    const stockLcsc = cnyStock ?? null
+    const stock = assembly === 'smt' ? stockSmt : (stockLcsc ?? stockSmt)
+    const priceUsd = tier === undefined
+      ? null
+      : {
+          currency: 'USD',
+          unit: money(tier.unit),
+          tier: tier.label,
+          source: 'jlcpcb-smt',
+          tiers: (candidate.item.priceUsdTiers ?? []).slice(0, 8).map((entry) => ({ qty: entry.qty, unit: money(entry.unit) })),
+        }
+    const priceCny = cnyUnit !== undefined
+      ? {
+          currency: 'CNY',
+          unit: money(cnyUnit),
+          source: cny.source ?? 'lcsc_cn_render',
+          estimated: false,
+          cached: cny.cached === true,
+          fetched_at: cny.fetched_at,
+        }
+      : cnyEstimate === undefined
+        ? null
+        : {
+            currency: 'CNY',
+            unit: cnyEstimate,
+            source: 'usd_x_factor',
+            estimated: true,
+            factor: usdToCnyFactor,
+            note: '参考估算（批量档 USD × 系数），非实际报价',
+          }
+    // The primary `price` field is the actual reference price. In hand mode a
+    // real CNY price wins; when CNY is only an estimate, USD stays primary (the
+    // estimate is still exposed in price_cny/cny_estimate and clearly labelled).
+    const primaryPrice = assembly === 'smt'
+      ? priceUsd
+      : (priceCny !== null && priceCny.estimated !== true ? priceCny : (priceUsd ?? priceCny))
     return {
       lcsc: candidate.item.code,
       model: candidate.item.model,
       brand: candidate.item.brand,
       package: candidate.item.package,
       category: candidate.item.category,
+      pin_count: candidatePinCount(candidate.item),
       library: candidate.expand ? 'expand' : 'base',
       preferred: candidate.item.preferred === true ? true : null,
-      stock: candidate.stock,
-      price,
+      stock,
+      stock_smt: stockSmt,
+      stock_lcsc: stockLcsc,
+      coverage: orderQty > 0 ? Math.min(1, Math.round((stock / orderQty) * 100) / 100) : undefined,
+      price: primaryPrice === null ? undefined : { currency: primaryPrice.currency, unit: primaryPrice.unit, source: primaryPrice.source },
+      price_usd: priceUsd,
+      price_cny: priceCny,
+      used_tier: tier?.label ?? null,
       effective_unit_usd: candidate.unitEffectiveUsd === undefined ? undefined : money(candidate.unitEffectiveUsd),
-      fee_per_board_usd: context.assembly === 'smt' ? money(candidate.feePerBoardUsd) : 0,
+      fee_per_board_usd: assembly === 'smt' ? money(candidate.feePerBoardUsd) : 0,
       cny_price: cnyUnit === undefined ? null : money(cnyUnit),
-      cny_estimate: cnyEstimate === undefined
+      cny_estimate: priceCny === null || priceCny.estimated !== true
         ? null
-        : {
-            unit: cnyEstimate,
-            factor: usdToCnyFactor,
-            basis: 'highest-volume USD tier × factor',
-            note: '参考估算，非实时汇率/非实际报价；以立创商城页面为准',
-          },
+        : { unit: priceCny.unit, factor: usdToCnyFactor, basis: 'highest-volume USD tier × factor', note: '参考估算，非实时汇率/非实际报价' },
       specs: pickSpecs(candidate.item),
       score: candidate.score,
       reasons: reasonsFor(candidate, context),
+      mismatch_reasons: relaxStage >= 2 && need.requirements.length > 0 ? mismatchReasons(candidate.item, need) : undefined,
       url: asString(candidate.item.url) ?? `https://www.lcsc.com/product-detail/${candidate.item.code}.html`,
     }
   })
 
   if (candidates.length === 0) {
-    hints.push('没有找到候选。建议：改用型号/LCSC 编号；或减少参数（如去掉精度/尺寸）；或把中文品类换成英文（capacitor / resistor / LDO / connector）。')
+    hints.push(
+      '没有找到候选。建议：改用型号/LCSC 编号（如 SMF5.0A / TP4054 / C307331）；或减少参数；或把中文品类换成英文（capacitor / resistor / LDO / connector）。',
+    )
   }
-  if (need.requirements.length > 0) {
+  if (need.exact) {
+    notes.push(`按${need.directCode !== undefined ? ' LCSC 编号' : '型号'}精确查询（${need.exactValue}），未做参数解析。`)
+  } else if (need.requirements.length > 0) {
     notes.push(`解析到参数条件：${need.requirements.map((requirement) => `${requirement.kind}${requirement.comparator ?? '='}${requirement.value}`).join(', ')}`)
   }
-  if (context.assembly === 'hand') notes.push('assembly=hand：不考虑嘉立创上料费与基础库偏好，价格优先展示立创商城人民币零售价（取不到时回退 USD 参考价）。')
-  if (candidates.some((candidate) => candidate.cny_estimate !== null)) {
-    notes.push(`CNY 估算 = 该料最高采购量档 USD × ${usdToCnyFactor}（Recording_card 实测中位误差约 1.6%），仅供参考；USD 为实际参考价。`)
+  if (assembly === 'hand') {
+    notes.push('assembly=hand：不考虑嘉立创上料费与基础库偏好；价格优先展示立创商城人民币零售价，USD 并列参考。')
+  } else {
+    notes.push(`assembly=smt：扩展库按每料号 $${feeUsd}/单上料费摊销；基础库优先度体现在排序里。`)
   }
-  else notes.push(`assembly=smt：扩展库按每料号 $${EXTENDED_PART_FEE_USD}/单摊销；优选扩展库分类接口未暴露，以下单页为准。`)
 
   return {
     need: needText,
+    exact: need.exact,
     assembly,
     quantity,
     boards,
-    order_qty: context.orderQty,
-    currency: includeCny ? 'CNY (best effort) + USD reference' : 'USD',
+    order_qty: orderQty,
+    currency: includeCny ? 'USD + CNY（并列，不混算）' : 'USD（CNY 为参考估算）',
+    relaxed,
+    relax_stage: relaxStage,
     candidates,
     hints,
     notes,
-    relaxed,
     fetched_at: new Date().toISOString(),
   }
 }
@@ -952,6 +1254,17 @@ export async function findParts(service, args, options = {}) {
 /* -------------------------------------------------------------------------- */
 
 /** @param {unknown} input @returns {{ line: number, code: string, qty: number, designators?: string, comment?: string }[]} */
+/** Normalise a per-line placement value to `smt` | `hand` | `dnp`. */
+export function normalizePlace(value) {
+  const text = String(value ?? '').trim().toLowerCase()
+  if (text === '') return 'smt'
+  if (/dnp|do ?not|不贴|未贴|不焊|no ?populate|不上件/.test(text)) return 'dnp'
+  if (/hand|手焊|手工|烙铁|manual/.test(text)) return 'hand'
+  if (/smt|贴片|机贴|回流|reflow/.test(text)) return 'smt'
+  return 'smt'
+}
+
+/** @param {unknown} input @returns {{ rows: { line: number, code: string, qty: number, designators?: string, comment?: string, place?: string }[], skipped: { line: number, raw?: string, comment?: string, designators?: string }[] }} */
 function parseBomInput(input) {
   if (typeof input === 'string') {
     const head = input.slice(0, 8)
@@ -981,11 +1294,12 @@ function parseBomInput(input) {
         qty: Math.max(1, asInteger(row.qty) ?? 1),
         designators: row.designators,
         comment: row.comment,
+        place: row.place,
       })),
     }
   }
   if (Array.isArray(input)) return { rows: parseBomRows(input), skipped: [] }
-  throw new Error('audit_lcsc_bom requires `bom` as CSV text or an array of {lcsc/code, qty} rows')
+  throw new Error('audit_lcsc_bom requires `bom` as CSV text or an array of {lcsc/code, qty, place} rows')
 }
 
 /** @param {unknown[]} rows */
@@ -999,11 +1313,48 @@ function parseBomRows(rows) {
       line: result.length + 1,
       code: code ?? '',
       qty,
-      designators: asString(row.designators ?? row.refs),
+      designators: asString(row.designators ?? row.refs ?? row.ref),
       comment: asString(row.comment ?? row.description ?? row.model),
+      place: asString(row.place ?? row.mount ?? row.assembly),
     })
   }
   return result
+}
+
+/**
+ * Merge BOM rows that reference the same LCSC code: quantities and designators
+ * are combined, the feeder fee is charged once per unique part, and the price
+ * tier is taken at the combined order quantity.
+ */
+function mergeBomRows(rows) {
+  /** @type {Map<string, { code: string, qty: number, designators: string[], comments: string[], places: string[], lines: { line: number, qty: number, designators?: string, place: string }[] }>} */
+  const byCode = new Map()
+  for (const row of rows) {
+    const place = normalizePlace(row.place)
+    const key = `${row.code}|${place}`
+    const entry = byCode.get(key)
+    if (entry === undefined) {
+      byCode.set(key, {
+        code: row.code,
+        qty: row.qty,
+        designators: row.designators === undefined ? [] : [row.designators],
+        comments: row.comment === undefined ? [] : [row.comment],
+        places: [place],
+        lines: [{ line: row.line, qty: row.qty, designators: row.designators, place }],
+      })
+      continue
+    }
+    entry.qty += row.qty
+    if (row.designators !== undefined) entry.designators.push(row.designators)
+    if (row.comment !== undefined) entry.comments.push(row.comment)
+    entry.places.push(place)
+    entry.lines.push({ line: row.line, qty: row.qty, designators: row.designators, place })
+  }
+  for (const entry of byCode.values()) {
+    // groups are keyed by code|place, so every entry has a single place
+    entry.place = entry.places[0] ?? 'smt'
+  }
+  return [...byCode.values()]
 }
 
 /**
@@ -1047,14 +1398,21 @@ function needFromItem(item, originalNeed) {
 }
 
 /**
- * Find one basic-library substitute for an extended part.
+ * Find one basic-library substitute for an extended part, with the net saving
+ * (feeder fee avoided minus component price delta at the order quantity).
+ * "换成基础库不一定更便宜" is why the caller needs the net number, not just
+ * "free feeder loading".
  * @param {ReturnType<typeof createLcscService>} service
  * @param {Record<string, unknown>} item
  * @param {ReturnType<typeof parseNeed>} originalNeed
- * @param {{ signal?: AbortSignal }} [options]
+ * @param {{ signal?: AbortSignal, orderQty?: number, feeUsd?: number }} [options]
  */
 export async function findAlternative(service, item, originalNeed, options = {}) {
   const packageName = asString(item.package)
+  const orderQty = Math.max(1, asInteger(options.orderQty) ?? 1)
+  const feeUsd = asNumber(options.feeUsd) ?? EXTENDED_PART_FEE_USD
+  const originalTier = pickTier(item.priceUsdTiers, orderQty)
+  const originalUnit = originalTier?.unit
   const tryCodes = []
   const alternatives = asString(item.alternatives)
   if (alternatives !== undefined) {
@@ -1068,79 +1426,74 @@ export async function findAlternative(service, item, originalNeed, options = {})
   }
   if (candidates.length === 0) {
     const need = needFromItem(item, originalNeed)
-    const result = await service.searchRaw(need.searchKeyword, {
+    const categoryName = asString(item.category)
+    /** @param {Record<string, unknown>[]} items */
+    const collect = (items) => {
+      for (const candidate of items) {
+        if (String(candidate.libraryType).toLowerCase() !== 'base') continue
+        // A substitute must be the same kind of device; a different package is
+        // allowed but flagged (footprint_compatible=false means a PCB respin).
+        if (categoryName !== undefined) {
+          const candidateCategory = asString(candidate.category)
+          if (candidateCategory === undefined || candidateCategory.toLowerCase() !== categoryName.toLowerCase()) continue
+        }
+        if ((asInteger(candidate.stock) ?? 0) <= 0) continue
+        if (candidateMatches(candidate, need).ok) candidates.push(candidate)
+      }
+    }
+    // First try same package + identity values, then relax the package prefix so
+    // e.g. 0603 ferrite beads can surface an 0805 base part (flagged as needing
+    // a footprint change) instead of reporting "no alternative" wrongly.
+    const withPackage = await service.searchRaw(need.searchKeyword, {
       pageSize: 50,
       libraryType: 'base',
       signal: options.signal,
     })
-    const categoryName = asString(item.category)
-    for (const candidate of result.items) {
-      if (String(candidate.libraryType).toLowerCase() !== 'base') continue
-      if (packageName !== undefined && !packageMatches(asString(candidate.package), packageName)) continue
-      // Stay conservative: a substitute must be the same kind of device.
-      if (categoryName !== undefined) {
-        const candidateCategory = asString(candidate.category)
-        if (candidateCategory === undefined || candidateCategory.toLowerCase() !== categoryName.toLowerCase()) continue
+    collect(withPackage.items)
+    if (candidates.length === 0) {
+      const withoutPackageKeyword = attributesOf(item)
+        .filter((attribute) => /capacitance|resistance|voltage rating|output voltage|output current|inductance|impedance/i.test(attribute.name))
+        .slice(0, 3)
+        .map((attribute) => attribute.value)
+        .filter(Boolean)
+        .join(' ')
+      if (withoutPackageKeyword !== '' && withoutPackageKeyword !== need.searchKeyword) {
+        const withoutPackage = await service.searchRaw(withoutPackageKeyword, {
+          pageSize: 50,
+          libraryType: 'base',
+          signal: options.signal,
+        })
+        collect(withoutPackage.items)
       }
-      if ((asInteger(candidate.stock) ?? 0) <= 0) continue
-      if (candidateMatches(candidate, need).ok) candidates.push(candidate)
     }
   }
   if (candidates.length === 0) return undefined
-  const scored = candidates.map((candidate) => scoreCandidate(candidate, originalNeed, { assembly: 'smt', quantity: 1, boards: 1, orderQty: 1, sort: 'cost' }))
-  scored.sort((left, right) => (left.unitUsd ?? Number.POSITIVE_INFINITY) - (right.unitUsd ?? Number.POSITIVE_INFINITY))
-  const best = scored[0]
-  return {
-    lcsc: best.item.code,
-    model: best.item.model,
-    package: best.item.package,
-    library: 'base',
-    stock: asInteger(best.item.stock) ?? 0,
-    unit_usd: best.unitUsd === undefined ? undefined : money(best.unitUsd),
-    fee_saved_per_board_usd: undefined,
+  const scored = candidates.map((candidate) => {
+    const context = { assembly: 'smt', quantity: 1, boards: 1, orderQty, sort: 'cost', feeUsd }
+    return scoreCandidate(candidate, originalNeed, context)
+  })
+  /** @type {{ score: ReturnType<typeof scoreCandidate>, net: number, componentDelta: number }[]} */
+  const evaluated = []
+  for (const candidate of scored) {
+    const tier = pickTier(candidate.item.priceUsdTiers, orderQty)
+    const unit = tier?.unit
+    const componentDelta = originalUnit !== undefined && unit !== undefined ? (unit - originalUnit) * orderQty : 0
+    const net = feeUsd - componentDelta
+    evaluated.push({ score: candidate, net, componentDelta })
   }
-}
-
-/**
- * Reduce the data layer's source-aware `part()` detail into the flat shape the
- * auditor consumes.
- *
- * The two warehouses are not interchangeable: hand soldering buys from the LCSC
- * store (lcsc.com / 立创商城), while assembly="smt" is limited to JLCPCB's SMT
- * parts library. A part can exist in one and not the other, and their stock
- * counts are unrelated.
- * @param {Record<string, unknown>} detail
- * @param {'hand' | 'smt'} assembly
- */
-function itemFromPartDetail(detail, assembly) {
-  const stock = isRecord(detail.stock) ? detail.stock : {}
-  const countOf = (key) => (isRecord(stock[key]) ? asInteger(stock[key].count) : undefined)
-  const intl = countOf('intl')
-  const domestic = countOf('domestic')
-  const jlc = countOf('jlcpcb')
-  // Stock source preference, identical for both modes: the verifiable JLCPCB
-  // SMT count first, then lcsc.com's *international* warehouse, then domestic.
-  // Hand buyers draw on the LCSC store, but lcsc.com only reports its
-  // international allocation — many domestic-stocked parts read 0 there
-  // (measured C15849: lcsc.com 0 vs JLCPCB 12.46M) — and the domestic stock page
-  // is blocked, so we keep the verifiable count and label its source rather than
-  // passing an international-warehouse 0 off as "立创商城无库存".
-  const order = [['jlcpcb-smt', jlc], ['lcsc.com', intl], ['item.szlcsc.com', domestic]]
-  const picked = order.find(([, value]) => value !== undefined)
-  const prices = isRecord(detail.prices) ? detail.prices : {}
-  const usd = isRecord(prices.usd) ? prices.usd : undefined
-  const identity = isRecord(detail.identity) ? detail.identity : {}
+  evaluated.sort((left, right) => right.net - left.net)
+  const best = evaluated[0]
   return {
-    code: asString(detail.code) ?? '',
-    model: asString(identity.model),
-    brand: asString(identity.brand),
-    package: asString(detail.package) ?? asString(identity.package),
-    libraryType: asString(detail.libraryType),
-    minPurchaseNum: asInteger(detail.minPurchaseNum),
-    stock: picked === undefined ? undefined : picked[1],
-    stockSource: picked === undefined ? undefined : picked[0],
-    priceSource: usd === undefined ? undefined : asString(usd.source),
-    priceUsdTiers: usd !== undefined && Array.isArray(usd.tiers) ? usd.tiers : [],
+    lcsc: best.score.item.code,
+    model: best.score.item.model,
+    package: best.score.item.package,
+    library: 'base',
+    stock: asInteger(best.score.item.stock) ?? 0,
+    unit_usd: best.score.unitUsd === undefined ? undefined : money(best.score.unitUsd),
+    fee_saved_usd: money(feeUsd),
+    component_delta_usd: money(best.componentDelta),
+    net_saving_usd: money(best.net),
+    footprint_compatible: footprintCompatible(packageName, asString(best.score.item.package)),
   }
 }
 
@@ -1159,203 +1512,276 @@ export async function auditBom(service, args, options = {}) {
   }
   const assembly = args.assembly === 'smt' ? 'smt' : 'hand'
   const boards = clampInteger(args.boards, 1, 100000, 1)
-  const includeCny = args.include_cny === true
+  let includeCny = args.include_cny === true
   const suggestAlternatives = args.suggest_alternatives !== false
+  const exportBom = args.export_bom === true
+  const region = args.region === 'cn' ? 'cn' : 'global'
+  const settings = service.settings ?? {}
+  const feeUsd = asNumber(settings.extendedPartFeeUsd) ?? EXTENDED_PART_FEE_USD
+  const setupFeeUsd = asNumber(settings.setupFeeUsd) ?? 0
+  const stencilFeeUsd = asNumber(settings.stencilFeeUsd) ?? 0
+  const usdToCnyFactor = asNumber(settings.usdToCnyFactor) ?? 6.0
   const notes = []
   const hints = []
-  const usdToCnyFactor = asNumber(service.settings?.usdToCnyFactor) ?? 6.0
+  const errors = []
 
-  const codes = [...new Set(rows.map((row) => row.code).filter((code) => code !== ''))]
-  // Hand assembly buys parts from the LCSC store, so it must read the LCSC
-  // availability; SMT assembly can only use JLCPCB's own SMT library. Using one
-  // warehouse's stock number for the other mode reports the wrong inventory, and
-  // worse, marks LCSC-stocked parts as NOT-FOUND just because SMT does not carry
-  // them.
-  const useLcscStore = assembly === 'hand' && typeof service.part === 'function'
-  const infoEntries = await mapLimit(codes, 3, async (code) => {
+  const merged = mergeBomRows(rows)
+  const codes = [...new Set(merged.map((entry) => entry.code).filter((code) => code !== ''))]
+  if (args.include_cny === undefined && assembly === 'hand' && merged.length <= 8) includeCny = true
+  if (args.include_cny === undefined && assembly === 'hand' && merged.length > 8) {
+    hints.push('BOM 较大，默认跳过 Chrome 逐料取人民币价（较慢）：设 include_cny=true 可强制获取真实 CNY（有 24h 缓存）。')
+  }
+
+  // ---- JLCPCB library data (one exact lookup per unique code) --------------
+  const jlcEntries = await mapLimit(codes, 3, async (code) => {
     try {
-      if (useLcscStore) {
-        const detail = await service.part(code, { includeCny: false, signal: options.signal })
-        if (detail === undefined || asString(detail.status) === 'NOT-FOUND') {
-          return [code, undefined, 'not found in the LCSC store or the JLCPCB SMT library']
-        }
-        return [code, itemFromPartDetail(detail, assembly)]
-      }
       const result = await service.searchRaw(code, { pageSize: 5, signal: options.signal })
-      // Never accept a fuzzy hit as if it were the requested part: JLCPCB search
-      // is keyword-based, so searching a code that is not a real part (e.g. the
-      // footprint string "C0603") returns thousands of unrelated components.
       const hit = result.items.find((candidate) => String(candidate.code).toUpperCase() === code)
-      if (hit === undefined) {
-        const nearest = result.items[0]
-        return [
-          code,
-          undefined,
-          nearest === undefined
-            ? 'not found in JLCPCB library'
-            : `exact LCSC code not in JLCPCB library; rejected nearest fuzzy hit ${nearest.code} (${nearest.model ?? '?'})`,
-        ]
-      }
-      return [code, hit]
+      return [code, hit, hit === undefined ? 'not found in JLCPCB library' : undefined]
     } catch (error) {
       return [code, undefined, error instanceof Error ? error.message : String(error)]
     }
   })
   /** @type {Map<string, Record<string, unknown> | undefined>} */
-  const infoByCode = new Map()
-  const errors = []
-  for (const entry of infoEntries) {
+  const jlcByCode = new Map()
+  for (const entry of jlcEntries) {
     const [code, hit, error] = entry
-    infoByCode.set(code, hit)
-    if (hit === undefined) errors.push(`${code}: ${error ?? 'not found in JLCPCB library'}`)
+    jlcByCode.set(code, hit)
+    if (hit === undefined && error !== undefined) errors.push(`${code}: ${error}`)
   }
 
+  // ---- LCSC domestic CNY data (Chrome adapter, capped) ----------------------
+  /** @type {Map<string, Record<string, unknown>>} */
   const cnyByCode = new Map()
-  if (includeCny) {
-    const cnyTargets = codes.slice(0, MAX_AUDIT_CNY_LOOKUPS)
-    const results = await mapLimit(cnyTargets, 2, async (code) => {
+  if (includeCny && codes.length > 0) {
+    const targets = codes.slice(0, MAX_AUDIT_CNY_LOOKUPS)
+    const results = await mapLimit(targets, 2, async (code) => {
       try {
-        return await service.cny(code, options.signal)
+        if (typeof service.cn?.query === 'function') {
+          const cn = await service.cn.query(code)
+          if (cn?.ok === true) return cn
+        }
+        if (typeof service.cny === 'function') return await service.cny(code, options.signal)
+        return { ok: false, reason: 'cny-adapter-unavailable' }
       } catch (error) {
         return { ok: false, reason: error instanceof Error ? error.message : String(error) }
       }
     })
-    results.forEach((result, index) => cnyByCode.set(cnyTargets[index], result))
-    notes.push(`CNY prices requested for ${cnyTargets.length}/${codes.length} parts (best effort; domestic site is WAF/rate limited).`)
+    results.forEach((result, index) => cnyByCode.set(targets[index], result))
+    const covered = [...cnyByCode.values()].filter((result) => result?.ok === true).length
+    notes.push(
+      `国内站人民币价：${covered}/${targets.length} 个料取到真实 CNY（Chrome 渲染 + 24h 缓存）；未取到的行回退为批量档 USD×${usdToCnyFactor} 估算并标 estimated=true。`,
+    )
+    if (targets.length < codes.length) {
+      notes.push(`CNY 查询上限 ${MAX_AUDIT_CNY_LOOKUPS} 个料号，其余行只有 USD 参考；可用 include_cny 配合缓存分批复核。`)
+    }
   }
 
-  let extendedUnique = new Set()
-  const auditRows = rows.map((row) => {
-    const item = infoByCode.get(row.code)
-    const qty = row.qty
+  // ---- Build rows -----------------------------------------------------------
+  const auditRows = merged.map((entry) => {
+    const jlc = jlcByCode.get(entry.code)
+    const cn = cnyByCode.get(entry.code)
+    const place = entry.place
+    const qty = entry.qty
     const orderQty = qty * boards
-    if (item === undefined) {
-      return {
-        line: row.line,
-        lcsc: row.code || '(missing)',
-        qty,
-        designators: row.designators,
-        status: 'NOT-FOUND',
-        flags: [
-          assembly === 'hand'
-            ? '立创商城与嘉立创 SMT 库均未查到该编号'
-            : 'LCSC 编号在嘉立创 SMT 元件库中未找到',
-        ],
-      }
-    }
-    const rawLibrary = String(item.libraryType ?? '').toLowerCase()
+    const rawLibrary = jlc === undefined ? undefined : String(jlc.libraryType ?? '').toLowerCase()
     const library = rawLibrary === 'base' ? 'base' : rawLibrary === 'expand' ? 'expand' : undefined
-    if (library === 'expand') extendedUnique.add(String(item.code))
-    const tiers = Array.isArray(item.priceUsdTiers) ? item.priceUsdTiers : []
-    const unitUsd = pickTierPrice(tiers, orderQty)
-    const stock = asInteger(item.stock) ?? 0
+    const tier = jlc === undefined ? undefined : pickTier(jlc.priceUsdTiers, orderQty)
+    const unitUsd = tier?.unit
+    const cnOk = cn?.ok === true
+    const unitCny = cnOk ? asNumber(cn.unit) : undefined
+    const stockSmt = jlc === undefined ? undefined : asInteger(jlc.stock)
+    const stockLcsc = cnOk ? asInteger(cn.stock) : undefined
+    const bulkUsd = jlc === undefined ? undefined : bulkTierUsd(jlc)
+    const unitCnyEstimate = unitCny === undefined ? estimateCnyFromUsd(bulkUsd, usdToCnyFactor) : undefined
+    const billableSmt = assembly === 'smt' && place === 'smt' && jlc !== undefined
+    const billableHand = place !== 'dnp' && (assembly === 'hand' || place === 'hand')
+    const countsForUsd = assembly === 'hand' ? billableHand : billableSmt
+    const subtotalUsd = countsForUsd && unitUsd !== undefined ? unitUsd * orderQty : undefined
+    const subtotalCny = unitCny !== undefined && (billableSmt || billableHand) ? unitCny * orderQty : undefined
     const flags = []
-    if (stock <= 0) flags.push('无库存')
-    else if (stock < orderQty) flags.push(`库存不足（需 ${orderQty}）`)
-    if (library === 'expand') flags.push(assembly === 'smt' ? '扩展库：$3/料号上料费' : '扩展库（手焊无上料费）')
-    if (library === undefined && assembly === 'hand') flags.push('不在嘉立创 SMT 库（手焊可单独买）')
-    if (unitUsd === undefined) flags.push('无价格数据')
-    const minPurchase = asInteger(item.minPurchaseNum)
-    if (minPurchase !== undefined && minPurchase > orderQty) flags.push(`起订量 ${minPurchase}`)
-    const cny = cnyByCode.get(String(item.code))
-    const unitCny = cny?.ok === true ? asNumber(cny.unit) : undefined
-    const bulkUsd = bulkTierUsd(item)
-    const unitCnyEstimate =
-      unitCny === undefined && assembly === 'hand' ? estimateCnyFromUsd(bulkUsd, usdToCnyFactor) : undefined
+    if (place === 'dnp') flags.push('DNP：不贴/不计元件与上料费')
+    else if (assembly === 'smt' && place === 'hand') flags.push('手焊：不计入 SMT 贴片与上料费')
+    if (jlc === undefined && cnOk) flags.push('不在嘉立创 SMT 库，但立创商城有货（手焊可买）')
+    if (library === 'expand' && billableSmt) flags.push(`扩展库：$${feeUsd}/料号上料费`)
+    if (library === 'expand' && !billableSmt) flags.push('扩展库（手焊/DNP 无上料费）')
+    const stockForMode = assembly === 'smt' ? stockSmt : (stockLcsc ?? stockSmt)
+    if (place !== 'dnp' && stockForMode !== undefined) {
+      if (stockForMode <= 0) flags.push('无库存')
+      else if (stockForMode < orderQty) flags.push(`库存不足（需 ${orderQty}）`)
+    }
+    if (tier === undefined && jlc !== undefined) flags.push('无价格数据')
+    if (place !== 'dnp' && jlc === undefined && !cnOk) flags.push('嘉立创/立创均未查到')
+    let status = 'verified'
+    if (place === 'dnp') status = 'DNP'
+    else if (jlc === undefined && !cnOk) status = 'NOT-FOUND'
+    else if (assembly === 'smt' && place !== 'smt') status = place === 'hand' ? 'HAND' : 'DNP'
+    else if (stockForMode === 0) status = 'NO-STOCK'
     return {
-      line: row.line,
-      lcsc: String(item.code),
+      lcsc: entry.code || '(missing)',
+      designators: entry.designators.length > 0 ? entry.designators : undefined,
       qty,
-      designators: row.designators,
-      status: stock <= 0 ? 'NO-STOCK' : 'verified',
-      model: item.model,
-      brand: item.brand,
-      package: item.package,
+      lines: entry.lines,
+      place,
+      status,
+      model: jlc === undefined ? (cnOk ? cn.model : undefined) : jlc.model,
+      brand: jlc === undefined ? (cnOk ? cn.brand : undefined) : jlc.brand,
+      package: jlc === undefined ? (cnOk ? cn.package : undefined) : jlc.package,
       library,
-      stock,
-      stock_source: item.stockSource ?? 'jlcpcb-smt',
-      price_source: item.priceSource ?? 'jlcpcb-smt',
+      billable_smt: billableSmt,
+      billable: countsForUsd,
+      stock: stockForMode,
+      stock_smt: stockSmt,
+      stock_lcsc: stockLcsc,
+      stock_source: assembly === 'smt' ? 'jlcpcb-smt' : (stockLcsc !== undefined ? 'lcsc_cn_render' : 'jlcpcb-smt'),
+      coverage: orderQty > 0 && stockForMode !== undefined ? Math.min(1, Math.round((stockForMode / orderQty) * 100) / 100) : undefined,
+      price_source: jlc === undefined ? (cnOk ? 'lcsc_cn_render' : undefined) : 'jlcpcb-smt',
       unit_usd: unitUsd === undefined ? undefined : money(unitUsd),
-      subtotal_usd: unitUsd === undefined ? undefined : money(unitUsd * orderQty),
+      price_usd_tier: tier?.label,
+      price_usd_ladder: jlc === undefined ? undefined : (jlc.priceUsdTiers ?? []).slice(0, 8).map((item) => ({ qty: item.qty, unit: money(item.unit) })),
+      subtotal_usd: subtotalUsd === undefined ? undefined : money(subtotalUsd),
       unit_cny: unitCny === undefined ? undefined : money(unitCny),
-      subtotal_cny: unitCny === undefined ? undefined : money(unitCny * orderQty),
+      price_cny_source: unitCny === undefined ? undefined : (cn.source ?? 'lcsc_cn_render'),
+      price_cny_estimated: false,
+      subtotal_cny: subtotalCny === undefined ? undefined : money(subtotalCny),
       unit_cny_estimate: unitCnyEstimate === undefined ? undefined : money(unitCnyEstimate),
       subtotal_cny_estimate: unitCnyEstimate === undefined ? undefined : money(unitCnyEstimate * orderQty),
+      fetched_at: new Date().toISOString(),
       flags,
     }
   })
 
-  // Alternatives for extended parts (bounded, best effort).
-  const alternatives = new Map()
-  if (suggestAlternatives && assembly === 'smt') {
-    const costByCode = new Map()
-    for (const row of auditRows) {
-      if (row.library !== 'expand') continue
-      costByCode.set(row.lcsc, (costByCode.get(row.lcsc) ?? 0) + (row.subtotal_usd ?? 0))
+  // ---- Summary --------------------------------------------------------------
+  const smtRows = auditRows.filter((row) => row.billable_smt)
+  const handRows = auditRows.filter((row) => row.billable_smt !== true && row.place !== 'dnp' && row.status !== 'NOT-FOUND')
+  const dnpRows = auditRows.filter((row) => row.place === 'dnp')
+  const extendedUnique = new Set(smtRows.filter((row) => row.library === 'expand').map((row) => row.lcsc))
+  const costRows = assembly === 'hand' ? handRows : smtRows
+  const componentUsd = costRows.reduce((sum, row) => sum + (row.subtotal_usd ?? 0), 0)
+  const componentCny = costRows.reduce((sum, row) => sum + (row.subtotal_cny ?? 0), 0)
+  const componentCnyEstimate = costRows.reduce((sum, row) => sum + (row.subtotal_cny_estimate ?? 0), 0)
+  const handUsd = handRows.reduce((sum, row) => sum + (row.unit_usd ?? 0) * row.qty * boards, 0)
+  const handCny = handRows.reduce((sum, row) => sum + (row.subtotal_cny ?? 0), 0)
+  const dnpUsd = dnpRows.reduce((sum, row) => sum + (row.unit_usd ?? 0) * (row.qty * boards), 0)
+  const extendedFee = assembly === 'smt' ? extendedUnique.size * feeUsd : 0
+  const setupFees = setupFeeUsd + stencilFeeUsd
+  const totalUsd = componentUsd + extendedFee + setupFees
+  const cnyCovered = auditRows.filter((row) => row.unit_cny !== undefined).length
+
+  // Batch amortisation table: price tiers are re-evaluated per scenario.
+  const scenarioBoards = [...new Set([20, 100, 300, 1000, boards])].filter((value) => value <= 100000).sort((left, right) => left - right)
+  const costTable = scenarioBoards.map((scenario) => {
+    let scenarioComponents = 0
+    for (const row of costRows) {
+      const jlc = jlcByCode.get(row.lcsc)
+      if (jlc === undefined) continue
+      const tier = pickTier(jlc.priceUsdTiers, row.qty * scenario)
+      if (tier !== undefined) scenarioComponents += tier.unit * row.qty * scenario
     }
-    const expandCodes = [...extendedUnique]
-      .sort((left, right) => (costByCode.get(right) ?? 0) - (costByCode.get(left) ?? 0))
-      .slice(0, MAX_ALTERNATIVE_LOOKUPS)
+    const scenarioFee = extendedUnique.size * feeUsd
+    const scenarioTotal = scenarioComponents + scenarioFee + setupFees
+    return {
+      boards: scenario,
+      components_usd: money(scenarioComponents),
+      extended_fee_usd: money(scenarioFee),
+      setup_fees_usd: money(setupFees),
+      total_usd: money(scenarioTotal),
+      per_board_usd: money(scenarioTotal / scenario),
+      extended_fee_per_board_usd: money(scenarioFee / scenario),
+    }
+  })
+
+  // ---- Alternatives & net-saving optimisation ------------------------------
+  const optimize = {
+    extended_parts_before: extendedUnique.size,
+    extended_parts_after: extendedUnique.size,
+    fee_before_usd: money(assembly === 'smt' ? extendedUnique.size * feeUsd : 0),
+    fee_after_usd: money(assembly === 'smt' ? extendedUnique.size * feeUsd : 0),
+    saving_usd_per_order: 0,
+    actions: [],
+    alternatives: [],
+  }
+  if (suggestAlternatives && assembly === 'smt') {
     const originalNeed = parseNeed('')
+    const expandCodes = [...extendedUnique].slice(0, MAX_ALTERNATIVE_LOOKUPS)
     const pairs = await mapLimit(expandCodes, 2, async (code) => {
-      const item = infoByCode.get(code)
-      if (item === undefined) return [code, undefined]
+      const item = jlcByCode.get(code)
+      const entry = smtRows.find((candidate) => candidate.lcsc === code)
+      if (item === undefined || entry === undefined) return [code, undefined]
+      const orderQty = entry.qty * boards
       try {
-        return [code, await findAlternative(service, item, originalNeed, { signal: options.signal })]
+        return [code, await findAlternative(service, item, originalNeed, { signal: options.signal, orderQty, feeUsd })]
       } catch {
         return [code, undefined]
       }
     })
+    let saving = 0
+    let replaced = 0
+    const alternativesByCode = new Map()
     for (const [code, alternative] of pairs) {
-      if (alternative !== undefined) alternatives.set(code, alternative)
+      if (alternative === undefined) continue
+      alternativesByCode.set(code, alternative)
+      optimize.alternatives.push({ from: code, ...alternative })
+      if (alternative.net_saving_usd > 0) {
+        saving += alternative.net_saving_usd
+        replaced += 1
+        const packageNote = alternative.footprint_compatible === false
+          ? `封装不同（${jlcByCode.get(code)?.package ?? '?'}→${alternative.package ?? '?'}，需改 PCB）`
+          : '封装兼容'
+        optimize.actions.push(
+          `${code}→${alternative.lcsc}：${packageNote}，上料费省 $${feeUsd}，元件成本变化 $${alternative.component_delta_usd}，净省 $${alternative.net_saving_usd}`,
+        )
+      }
     }
+    optimize.extended_parts_after = extendedUnique.size - replaced
+    optimize.fee_after_usd = money(Math.max(0, optimize.extended_parts_after * feeUsd))
+    optimize.fee_before_usd = money(extendedUnique.size * feeUsd)
+    optimize.saving_usd_per_order = money(saving)
+    for (const row of auditRows) {
+      if (row.place === 'hand' && assembly === 'smt') optimize.actions.push(`${row.lcsc} place=hand：不占上料费（已从 SMT 费用中剔除）`)
+    }
+    for (const row of dnpRows) optimize.actions.push(`${row.lcsc} DNP：不贴片、不计元件与上料费`)
     if (expandCodes.length < extendedUnique.size) {
       notes.push(`替代料建议仅检查了 ${expandCodes.length}/${extendedUnique.size} 个扩展库料号（每次最多 ${MAX_ALTERNATIVE_LOOKUPS} 个）。`)
     }
-  }
-
-  const componentUsd = auditRows.reduce((sum, row) => sum + (row.subtotal_usd ?? 0), 0)
-  const componentCny = auditRows.reduce((sum, row) => sum + (row.subtotal_cny ?? 0), 0)
-  const componentCnyEstimate = auditRows.reduce((sum, row) => sum + (row.subtotal_cny_estimate ?? 0), 0)
-  const extendedFee = assembly === 'smt' ? extendedUnique.size * EXTENDED_PART_FEE_USD : 0
-  const cnyCovered = auditRows.filter((row) => row.unit_cny !== undefined).length
-  const summary = {
-    lines: auditRows.length,
-    lines_in_bom: auditRows.length + skipped.length,
-    skipped_lines: skipped.length,
-    unique_parts: codes.length,
-    verified: auditRows.filter((row) => row.status === 'verified').length,
-    no_stock: auditRows.filter((row) => row.status === 'NO-STOCK').length,
-    not_found: auditRows.filter((row) => row.status === 'NOT-FOUND').length,
-    base_parts: auditRows.filter((row) => row.library === 'base').length,
-    expand_parts: extendedUnique.size,
-    library_unknown: auditRows.filter((row) => row.status !== 'NOT-FOUND' && row.library === undefined).length,
-    extended_fee_per_order_usd: money(extendedFee),
-    components_usd: money(componentUsd),
-    components_per_board_usd: money(componentUsd / Math.max(1, boards)),
-    total_usd: money(componentUsd + extendedFee),
-    total_per_board_usd: money((componentUsd + extendedFee) / Math.max(1, boards)),
-    cny_covered_lines: cnyCovered,
-    components_cny: money(componentCny),
-    cny_estimated_lines: auditRows.filter((row) => row.unit_cny_estimate !== undefined).length,
-    components_cny_estimate: money(componentCnyEstimate),
-  }
-
-  notes.push(
-    assembly === 'smt'
-      ? 'assembly=smt：价格与库存均取嘉立创 SMT 元件库（USD 阶梯价按采购数量取档），这是贴片备料仓的实际数据。'
-      : 'assembly=hand：价格优先取立创商城零售阶梯价（lcsc.com），库存取嘉立创 SMT 备料仓（立创国内站当前不可达，国际站库存≠国内仓库存，故不冒充）。行内 stock_source / price_source 标明来源。',
-  )
-  notes.push('USD 与 CNY 从不互相换算；每条价格都带 currency 与 source。')
-  if (assembly === 'smt') notes.push(`扩展库上料费按每唯一料号 $${EXTENDED_PART_FEE_USD}/单估算，未包含工程费、钢网费、焊点费和手焊费。`)
-  else {
-    notes.push('assembly=hand：不计嘉立创上料费；价格供参考，手焊请以立创商城实际下单页为准。')
-    if (componentCnyEstimate > 0) {
-      notes.push(`CNY 估算 = 各料最高采购量档 USD × ${usdToCnyFactor}（Recording_card 实测中位误差约 1.6%），仅供参考；USD 为实际参考价。`)
+    if (alternativesByCode.size > 0) {
+      for (const row of auditRows) {
+        const alternative = alternativesByCode.get(row.lcsc)
+        if (alternative !== undefined) row.alternative = alternative
+      }
     }
   }
-  notes.push('优选扩展库（Preferred Extended）分类未在公开接口暴露，若需免上料费请到嘉立创 SMT 下单页确认。')
 
+  // ---- Optional JLCPCB BOM CSV export ---------------------------------------
+  let bomCsv
+  if (exportBom) {
+    const lines = ['Comment,Designator,Footprint,LCSC Part #']
+    for (const row of smtRows) {
+      if (row.lcsc === '(missing)') continue
+      const designators = Array.isArray(row.designators) ? row.designators.join(',') : ''
+      const comment = row.model ?? row.lcsc
+      const footprint = row.package ?? ''
+      lines.push([comment, designators, footprint, row.lcsc].map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(','))
+    }
+    bomCsv = lines.join('\n')
+  }
+
+  // ---- Notes ---------------------------------------------------------------
+  notes.push(
+    assembly === 'smt'
+      ? 'assembly=smt：价格与库存取嘉立创 SMT 元件库（USD 阶梯价按采购数量取档）；上料费只计 smt 且为扩展库的唯一料号。'
+      : 'assembly=hand：不计嘉立创上料费；价格优先取立创商城国内站人民币价（Chrome 渲染），未取到的行给 estimated 估算。',
+  )
+  notes.push('USD 与 CNY 并列展示、不互相换算；每行带 price_source / fetched_at / estimated。')
+  notes.push(
+    assembly === 'smt'
+      ? `上料费按每唯一扩展库料号 $${feeUsd}/单估算；工程费 $${setupFeeUsd}、钢网费 $${stencilFeeUsd} 已单列（默认 0，可在插件 config 配置）。`
+      : `上料费 0；工程费 $${setupFeeUsd}、钢网费 $${stencilFeeUsd} 可配置。`,
+  )
+  if (region === 'cn') {
+    notes.push('region=cn：国内嘉立创 SMT 的费用规则以官方计价页为准；本工具仍按 USD 上料费估算并显式标注。')
+  }
+  notes.push('优选扩展库（Preferred Extended）分类未在公开接口暴露，若需免上料费请到嘉立创 SMT 下单页确认。')
   if (skipped.length > 0) {
     const list = skipped
       .slice(0, 30)
@@ -1365,21 +1791,54 @@ export async function auditBom(service, args, options = {}) {
       })
       .filter((text) => text !== '')
       .join('；')
-    notes.push(
-      `BOM 中有 ${skipped.length} 行没有可识别的 LCSC 编号，未计入成本：${list}${skipped.length > 30 ? ' 等' : ''}`,
-    )
+    notes.push(`BOM 中有 ${skipped.length} 行没有可识别的 LCSC 编号，未计入成本：${list}${skipped.length > 30 ? ' 等' : ''}`)
     hints.push('以上行需先选型（补上 LCSC 编号）再重新审计，否则单板成本会偏低。')
+  }
+  if (costTable.length > 0) {
+    const scenario = costTable.find((row) => row.boards === 100) ?? costTable[costTable.length - 1]
+    notes.push(`批量摊销参考：${scenario.boards} 片时约 $${scenario.per_board_usd}/片（含上料费 $${scenario.extended_fee_per_board_usd}/片 + 工程/钢网 $${money(setupFees / scenario.boards)}/片）。`)
+  }
+
+  const summary = {
+    lines: auditRows.length,
+    lines_in_bom: rows.length,
+    skipped_lines: skipped.length,
+    smt_lines: smtRows.length,
+    hand_lines: handRows.length,
+    dnp_lines: dnpRows.length,
+    unique_parts: codes.length,
+    verified: auditRows.filter((row) => row.status === 'verified').length,
+    no_stock: auditRows.filter((row) => row.status === 'NO-STOCK').length,
+    not_found: auditRows.filter((row) => row.status === 'NOT-FOUND').length,
+    base_parts: smtRows.filter((row) => row.library === 'base').length,
+    expand_parts: extendedUnique.size,
+    library_unknown: smtRows.filter((row) => row.library === undefined).length,
+    extended_fee_per_order_usd: money(extendedFee),
+    setup_fee_usd: money(setupFeeUsd),
+    stencil_fee_usd: money(stencilFeeUsd),
+    components_usd: money(componentUsd),
+    components_per_board_usd: money(componentUsd / Math.max(1, boards)),
+    total_usd: money(totalUsd),
+    total_per_board_usd: money(totalUsd / Math.max(1, boards)),
+    hand_components_usd_reference: money(handUsd),
+    hand_components_cny: money(handCny),
+    dnp_components_usd_excluded: money(dnpUsd),
+    cny_covered_lines: cnyCovered,
+    components_cny: money(componentCny),
+    cny_estimated_lines: auditRows.filter((row) => row.unit_cny_estimate !== undefined).length,
+    components_cny_estimate: money(componentCnyEstimate),
+    cost_table: costTable,
   }
 
   return {
     assembly,
     boards,
-    currency: includeCny ? 'USD + CNY (best effort)' : 'USD',
+    region,
+    currency: includeCny ? 'USD + CNY（并列，不混算）' : 'USD（CNY 为参考估算）',
     summary,
-    rows: auditRows.map((row) => {
-      const alternative = alternatives.get(row.lcsc)
-      return alternative === undefined ? row : { ...row, alternative }
-    }),
+    rows: auditRows,
+    optimize,
+    bom_csv: bomCsv,
     skipped: skipped.slice(0, 50),
     errors,
     hints,
@@ -1395,17 +1854,26 @@ export async function auditBom(service, args, options = {}) {
 /** @param {Record<string, unknown>} value */
 export function renderFindText(value) {
   const candidates = Array.isArray(value.candidates) ? value.candidates : []
-  const lines = [
-    `Find "${value.need}" [${value.assembly}] qty ${value.quantity}/board x ${value.boards} board(s) => ${candidates.length} candidate(s)`,
-  ]
+  const header =
+    `Find "${value.need}" [${value.assembly}] qty ${value.quantity}/board x ${value.boards} board(s)` +
+    (value.exact === true ? ' (exact part query)' : '') +
+    (value.relaxed === true ? ` (relaxed stage ${value.relax_stage})` : '') +
+    ` => ${candidates.length} candidate(s)`
+  const lines = [header]
   for (const candidate of candidates) {
     if (!isRecord(candidate)) continue
-    const price = isRecord(candidate.price) ? `${candidate.price.unit} ${candidate.price.currency}` : 'n/a'
-    const cnyEstimate = isRecord(candidate.cny_estimate) ? ` | CNY≈${candidate.cny_estimate.unit}(估算)` : ''
+    const priceUsd = isRecord(candidate.price_usd) ? `USD ${candidate.price_usd.unit} @${candidate.price_usd.tier}` : 'USD n/a'
+    const priceCny = isRecord(candidate.price_cny)
+      ? `CNY ${candidate.price_cny.unit}${candidate.price_cny.estimated === true ? '(est.)' : ''}`
+      : 'CNY n/a'
     lines.push(
-      `- ${candidate.lcsc} | ${candidate.model ?? '?'} | ${candidate.package ?? '?'} | lib ${candidate.library} | stock ${candidate.stock} | ${price}${cnyEstimate} | score ${candidate.score}`,
+      `- ${candidate.lcsc} | ${candidate.model ?? '?'} | ${candidate.package ?? '?'} | lib ${candidate.library} | ` +
+      `stock smt ${candidate.stock_smt ?? '?'} / lcsc ${candidate.stock_lcsc ?? '?'} | ${priceUsd} | ${priceCny} | score ${candidate.score}`,
     )
     if (Array.isArray(candidate.reasons) && candidate.reasons.length > 0) lines.push(`  ${candidate.reasons.join('; ')}`)
+    if (Array.isArray(candidate.mismatch_reasons) && candidate.mismatch_reasons.length > 0) {
+      lines.push(`  不匹配原因: ${candidate.mismatch_reasons.join('; ')}`)
+    }
   }
   for (const hint of Array.isArray(value.hints) ? value.hints : []) lines.push(`hint: ${hint}`)
   for (const note of Array.isArray(value.notes) ? value.notes : []) lines.push(`note: ${note}`)
@@ -1416,25 +1884,45 @@ export function renderFindText(value) {
 export function renderAuditText(value) {
   const summary = isRecord(value.summary) ? value.summary : {}
   const rows = Array.isArray(value.rows) ? value.rows : []
+  const optimize = isRecord(value.optimize) ? value.optimize : {}
   const lines = [
-    `BOM audit [${value.assembly}] boards=${value.boards}: ${summary.lines ?? 0} lines, ${summary.unique_parts ?? 0} unique | base ${summary.base_parts ?? 0} / expand ${summary.expand_parts ?? 0}` +
-      (summary.skipped_lines > 0 ? ` | ${summary.skipped_lines} line(s) skipped (no LCSC code)` : ''),
-    `components USD ${summary.components_usd ?? 0} + extended fee USD ${summary.extended_fee_per_order_usd ?? 0} = USD ${summary.total_usd ?? 0}` +
+    `BOM audit [${value.assembly}] region=${value.region ?? 'global'} boards=${value.boards}: ` +
+      `${summary.lines ?? 0} lines (${summary.smt_lines ?? 0} smt / ${summary.hand_lines ?? 0} hand / ${summary.dnp_lines ?? 0} dnp), ` +
+      `${summary.unique_parts ?? 0} unique | base ${summary.base_parts ?? 0} / expand ${summary.expand_parts ?? 0}`,
+    `components USD ${summary.components_usd ?? 0} + extended fee USD ${summary.extended_fee_per_order_usd ?? 0}` +
+      ` + setup USD ${money((summary.setup_fee_usd ?? 0) + (summary.stencil_fee_usd ?? 0))} = USD ${summary.total_usd ?? 0}` +
+      ` (USD ${summary.total_per_board_usd ?? 0}/board)` +
       (summary.cny_covered_lines > 0 ? ` | CNY ${summary.components_cny ?? 0} (${summary.cny_covered_lines} lines)` : '') +
-      (summary.components_cny_estimate > 0 ? ` | CNY est. ≈ ${summary.components_cny_estimate} (估算参考)` : ''),
+      (summary.components_cny_estimate > 0 ? ` | CNY est. ≈ ${summary.components_cny_estimate}` : ''),
   ]
   for (const row of rows) {
     if (!isRecord(row)) continue
     const flags = Array.isArray(row.flags) && row.flags.length > 0 ? ` [${row.flags.join('; ')}]` : ''
-    const alternative = isRecord(row.alternative) ? ` -> base alt: ${row.alternative.lcsc} (${row.alternative.model ?? '?'})` : ''
-    const cnyEstimate = typeof row.unit_cny_estimate === 'number' ? ` | CNY≈${row.unit_cny_estimate}(估算)` : ''
+    const designators = Array.isArray(row.designators) && row.designators.length > 0 ? ` {${row.designators.join(',')}}` : ''
+    const priceUsd = row.unit_usd === undefined ? 'USD -' : `USD ${row.unit_usd}@${row.price_usd_tier ?? '?'}`
+    const priceCny = row.unit_cny !== undefined
+      ? `CNY ${row.unit_cny}`
+      : row.unit_cny_estimate !== undefined ? `CNY≈${row.unit_cny_estimate}(est.)` : 'CNY -'
+    const alternative = isRecord(row.alternative) && typeof row.alternative.lcsc === 'string'
+      ? ` -> base alt: ${row.alternative.lcsc} (${row.alternative.model ?? '?'}, net $${row.alternative.net_saving_usd ?? '?'})`
+      : ''
     lines.push(
-      `${row.lcsc} x${row.qty} | ${row.status} | lib ${row.library ?? '?'} | stock ${row.stock ?? '?'}${row.stock_source === undefined ? '' : `(${row.stock_source})`} | USD ${row.unit_usd ?? '-'} (sub ${row.subtotal_usd ?? '-'})${cnyEstimate}${flags}${alternative}`,
+      `${row.lcsc} x${row.qty}${designators} | ${row.place ?? '?'} | ${row.status} | lib ${row.library ?? '?'} | ` +
+      `stock smt ${row.stock_smt ?? '?'} / lcsc ${row.stock_lcsc ?? '?'} | ${priceUsd} | ${priceCny}${flags}${alternative}`,
     )
+  }
+  const costTable = Array.isArray(summary.cost_table) ? summary.cost_table : []
+  if (costTable.length > 0) {
+    lines.push('批量摊销: ' + costTable.map((row) => `${row.boards}片≈$${row.per_board_usd}/片`).join(' | '))
+  }
+  if (Array.isArray(optimize.actions) && optimize.actions.length > 0) {
+    lines.push(`优化建议（净省 $${optimize.saving_usd_per_order ?? 0}/单，扩展库 ${optimize.extended_parts_before}→${optimize.extended_parts_after}）:`)
+    for (const action of optimize.actions) lines.push(`  * ${action}`)
   }
   for (const error of Array.isArray(value.errors) ? value.errors : []) lines.push(`error: ${error}`)
   for (const hint of Array.isArray(value.hints) ? value.hints : []) lines.push(`hint: ${hint}`)
   for (const note of Array.isArray(value.notes) ? value.notes : []) lines.push(`note: ${note}`)
+  if (typeof value.bom_csv === 'string' && value.bom_csv !== '') lines.push('BOM CSV: 已生成（bom_csv 字段，可直接用于嘉立创 BOM 下单）')
   return lines.join('\n')
 }
 
@@ -1446,18 +1934,23 @@ const FIND_DESCRIPTION =
   'Find LCSC / JLCPCB components that match a real requirement (package, capacitance, voltage rating, current, resistance, tolerance, dimensions, …) ' +
   'and return up to 8 candidates ranked by practical cost-effectiveness: unit price at the actual order quantity, stock coverage, parameter match, and ' +
   'basic-vs-extended JLCPCB library. ' +
-  'Default assembly="hand" for DIY parts you buy and solder yourself (library type ignored, LCSC domestic CNY retail price used when reachable, USD reference otherwise). ' +
+  'Part numbers and LCSC codes are detected first and queried exactly (e.g. "SMF5.0A", "AO3401A", "TP4054", "C307331"), so digit-letter patterns are never misread as values; ' +
+  'otherwise the requirement is parsed, filtered, and relaxed in stages when nothing matches (each relaxed candidate carries mismatch reasons). ' +
+  'Default assembly="hand" for DIY parts you buy and solder yourself (library type ignored; LCSC domestic CNY retail price via Chrome render when reachable, USD reference otherwise). ' +
   'Set assembly="smt" only when the board will be assembled by JLCPCB: extended-library parts then add a USD 3 feeder fee per part number per order, amortized per board. ' +
-  'Use a precise `need` such as "0402 100nF 50V X7R capacitor", "3.3V LDO SOT-23-5 500mA", "TP4054" or "C1581". ' +
-  'When the LCSC domestic CNY price is unavailable in hand mode, a clearly-labelled reference CNY estimate (bulk-tier USD × configurable factor, default 6.0) is included; the USD price stays the actual reference. ' +
+  'Every candidate reports stock_smt AND stock_lcsc, price_usd AND price_cny side by side (never mixed), the used price tier, and package/pin count. ' +
+  'When the real CNY price is unavailable, a clearly-labelled reference CNY estimate (bulk-tier USD × configurable factor, default 6.0) is included; USD stays the actual reference. ' +
   'This is NOT a generic keyword search tool: it parses requirements, filters candidates and explains the ranking.'
 
 const AUDIT_DESCRIPTION =
-  'Audit an existing BOM against the JLCPCB parts library: per line price (USD ladder at the order quantity), stock, basic-vs-extended library, ' +
-  'and for assembly="smt" the USD 3 extended-part feeder fee amortization, plus basic-library alternative suggestions for extended parts. ' +
-  'Input `bom` as CSV/TSV text (LCSC codes required; header optional) or a JSON array like [{"lcsc":"C1581","qty":5}]. ' +
+  'Audit an existing BOM against the JLCPCB parts library and the LCSC domestic store: per line USD price (tier shown, taken at qty x boards), stock_smt, stock_lcsc, ' +
+  'basic-vs-extended library, placement (smt / hand / dnp), and for assembly="smt" the USD 3 extended-part feeder fee, plus basic-library alternative suggestions with NET saving. ' +
+  'Input `bom` as CSV/TSV text (LCSC codes required; header optional; optional place/mount column) or a JSON array like [{"lcsc":"C1581","qty":5,"place":"smt"}]. ' +
+  'Duplicate LCSC lines are merged (feeder fee charged once, tier taken at the combined quantity). DNP and hand lines are excluded from the SMT component/fee totals and reported separately. ' +
   'Default assembly="hand" (no feeder fees); set assembly="smt" for JLCPCB assembly cost planning. ' +
-  'CNY retail prices are optional (include_cny=true, best effort, rate limited) and never mixed into USD totals; in hand mode a reference CNY estimate from bulk-tier USD × the configurable factor is reported when the real CNY price is unavailable.'
+  'Outputs a batch amortisation table (20/100/300/1000 boards), an optimisation summary of net savings, and optionally a JLCPCB BOM CSV for ordering (export_bom=true). ' +
+  'Real CNY retail prices are fetched via headless Chrome (24h cache) when include_cny=true; otherwise a reference estimate from bulk-tier USD × the configurable factor is reported and marked estimated=true. ' +
+  'USD and CNY are never mixed into one total.'
 
 /** Build the two DSH tool definitions bound to a service instance. */
 export function createToolDefinitions(service) {
@@ -1483,8 +1976,9 @@ export function createToolDefinitions(service) {
           boards: { type: 'integer', minimum: 1, maximum: 100000, description: 'Number of boards to build (default 1; used for price tiers and SMT fee amortization).' },
           sort: { type: 'string', enum: ['balanced', 'cost', 'stock'], description: 'Ranking preference (default balanced).' },
           limit: { type: 'integer', minimum: 1, maximum: 8, description: 'Candidates to return (default 5, max 8).' },
-          include_cny: { type: 'boolean', description: 'hand mode only: try to fetch LCSC domestic CNY retail prices for the top candidates (default true; set false to skip the slower, rate-limited lookups).' },
+          include_cny: { type: 'boolean', description: 'Fetch real LCSC domestic CNY retail prices for the top candidates via headless Chrome (default true in hand mode, false in smt mode; 24h cache). When unavailable, a marked reference estimate is shown.' },
           exclude_lcsc: { type: 'array', items: { type: 'string' }, description: 'LCSC codes to exclude, e.g. when looking for an alternative to a part you already have.' },
+          base_only: { type: 'boolean', description: 'Only return JLCPCB basic-library parts (no feeder fee). If none exist the tool says so instead of silently returning extended parts.' },
         },
       },
       output: {
@@ -1503,6 +1997,8 @@ export function createToolDefinitions(service) {
             hints: { type: 'array', items: { type: 'string' } },
             notes: { type: 'array', items: { type: 'string' } },
             relaxed: { type: 'boolean' },
+            relax_stage: { type: 'integer' },
+            exact: { type: 'boolean' },
             fetched_at: { type: 'string' },
           },
         },
@@ -1531,8 +2027,10 @@ export function createToolDefinitions(service) {
             description: 'hand = no JLCPCB feeder fees (default); smt = include USD 3 per extended part number per order.',
           },
           boards: { type: 'integer', minimum: 1, maximum: 100000, description: 'Number of boards the BOM is for (default 1).' },
-          include_cny: { type: 'boolean', description: 'Also try LCSC domestic CNY retail prices (best effort, capped; default false).' },
-          suggest_alternatives: { type: 'boolean', description: 'For extended-library parts, suggest a basic-library substitute (default true; only in smt mode).' },
+          include_cny: { type: 'boolean', description: 'Fetch real LCSC domestic CNY prices via headless Chrome (24h cache, capped; default true in hand mode for small BOMs, false for large BOMs — pass true to force).' },
+          suggest_alternatives: { type: 'boolean', description: 'For extended-library parts, suggest a basic-library substitute with net saving (default true; only in smt mode).' },
+          export_bom: { type: 'boolean', description: 'Also return a JLCPCB BOM CSV (Comment/Designator/Footprint/LCSC Part) for the smt-placed lines (default false).' },
+          region: { type: 'string', enum: ['global', 'cn'], description: 'Fee/currency context label. global = JLCPCB international (USD); cn = 嘉立创国内 (fee rules shown as assumptions, always labelled). Default global.' },
         },
       },
       output: {
@@ -1543,8 +2041,11 @@ export function createToolDefinitions(service) {
           properties: {
             assembly: { type: 'string' },
             boards: { type: 'integer' },
+            region: { type: 'string' },
             currency: { type: 'string' },
             summary: { type: 'object' },
+            optimize: { type: 'object' },
+            bom_csv: { type: 'string' },
             rows: { type: 'array', items: { type: 'object' } },
             skipped: { type: 'array', items: { type: 'object' } },
             errors: { type: 'array', items: { type: 'string' } },
@@ -1578,9 +2079,36 @@ export function apply(ctx, config) {
   const logger = safeLogger(ctx)
   for (const warning of warnings) logger?.warn?.(`[lcsc] ${warning}`)
   const service = createLcscService(settings)
+  // Domestic CNY adapter: headless Chrome + 24h cache. Kept optional so the
+  // plugin still works on hosts without Chrome (falls back to USD estimates).
+  let cnAdapter
+  if (settings.cnRender !== false) {
+    try {
+      cnAdapter = createCnAdapter({
+        chromePath: settings.chromePath ?? undefined,
+        cacheDir: settings.cnCacheDir ?? undefined,
+        cacheTtlMs: settings.cnCacheTtlMs,
+        timeoutMs: settings.cnTimeoutMs,
+        concurrency: settings.cnConcurrency,
+        verbose: settings.verbose,
+        logger,
+      })
+      service.cn = cnAdapter
+      if (settings.verbose) {
+        logger?.info?.(cnAdapter.chromePath === undefined
+          ? '[lcsc] Chrome not found: CNY prices will fall back to USD estimates'
+          : `[lcsc] CNY adapter ready (chrome: ${cnAdapter.chromePath})`)
+      }
+    } catch (error) {
+      logger?.warn?.(`[lcsc] CNY adapter init failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
   /** @type {{ effect?: (fn: () => (() => void)) => void, tools?: { register: (definition: unknown) => void } }} */
   const context = isRecord(ctx) ? ctx : {}
-  context.effect?.(() => () => service.clearCache())
+  context.effect?.(() => () => {
+    service.clearCache()
+    cnAdapter?.clearMemory?.()
+  })
   for (const definition of createToolDefinitions(service)) {
     context.tools?.register(definition)
   }

@@ -8,18 +8,24 @@
  */
 
 import { normalizeConfig } from './lcsc-dsh-plugin/data.js'
+import { parseItemHtml } from './lcsc-dsh-plugin/cn.js'
 import {
   EXTENDED_PART_FEE_USD,
   auditBom,
   bulkTierUsd,
   candidateMatches,
   createToolDefinitions,
+  detectExactQuery,
   estimateCnyFromUsd,
   extractCandidateQuantities,
   extractRequirements,
   findAlternative,
   findParts,
+  footprintCompatible,
+  mismatchReasons,
+  normalizePlace,
   parseNeed,
+  pickTier,
   rankCandidates,
   renderAuditText,
   renderFindText,
@@ -486,6 +492,104 @@ check('tool execute output is lossless JSON', (() => {
   const definitions = createToolDefinitions({ searchRaw: async () => ({ total: 0, items: [] }), cny: async () => ({ ok: false }) })
   return definitions.length === 2
 })())
+
+/* -------------------------------------------------------------------------- */
+/* 6. Improvements from Recording_card review (2026-11-11)                     */
+/* -------------------------------------------------------------------------- */
+
+section('improvements: exact model / synonyms / tiers')
+
+check('SMF5.0A detected as exact model', detectExactQuery('SMF5.0A')?.type === 'model', detectExactQuery('SMF5.0A'))
+check('AO3401A detected as exact model', detectExactQuery('AO3401A')?.type === 'model')
+check('TP4054 detected as exact model', detectExactQuery('TP4054')?.type === 'model')
+check('C307331 detected as LCSC code', detectExactQuery('C307331')?.type === 'code')
+check('C+10-digit long code detected', detectExactQuery('C9900021114')?.type === 'code')
+check('100nF is NOT a part number', detectExactQuery('100nF') === undefined, detectExactQuery('100nF'))
+check('3.3V is NOT a part number', detectExactQuery('3.3V') === undefined)
+check('SOT-23-5 package is NOT a part number', detectExactQuery('SOT-23-5') === undefined)
+check('mixed requirement keeps parameter parsing', detectExactQuery('22 ohm 0402 resistor 1%') === undefined)
+check('parseNeed(SMF5.0A) has no numeric requirements', parseNeed('SMF5.0A').requirements.length === 0, parseNeed('SMF5.0A').requirements)
+check('parseNeed(TP4054) is exact', parseNeed('TP4054').exact === true)
+
+const memsNeed = parseNeed('MEMS 麦克风 模拟输出')
+check('MEMS 麦克风 -> microphone', memsNeed.categories.includes('microphone'), memsNeed.categories)
+const ptcNeed = parseNeed('自恢复保险丝 PTC')
+check('自恢复保险丝 -> ptc resettable fuse', ptcNeed.categories.includes('ptc resettable fuse'), ptcNeed.categories)
+const chargerNeed = parseNeed('单节锂电池线性充电 IC')
+check('充电IC -> battery charger', chargerNeed.categories.includes('battery charger'), chargerNeed.categories)
+const typeCNeed = parseNeed('USB Type-C 16P 母座')
+check('Type-C 16P -> pins=16', typeCNeed.requirements.some((r) => r.kind === 'pins' && r.value === 16), typeCNeed.requirements)
+check('Type-C 母座 -> receptacle-ish category', typeCNeed.categories.length > 0, typeCNeed.categories)
+
+const tier = pickTier([{ qty: 1, unit: 1 }, { qty: 100, unit: 0.5 }], 500)
+check('pickTier returns used threshold', tier?.qty === 100 && tier?.label === '100+', tier)
+check('footprintCompatible same package', footprintCompatible('0402', '0402') === true)
+check('footprintCompatible different package', footprintCompatible('0603', '0805') === false)
+
+section('improvements: exact model match / mismatch reasons')
+const tpNeed = parseNeed('TP4054')
+const tpItem = fixture({ code: 'C668215', model: 'TP4054', package: 'SOT-23-5', priceUsdTiers: [{ qty: 1, unit: 0.0385 }] })
+const tpOther = fixture({ code: 'C999', model: 'LM317', package: 'SOT-23-5' })
+check('exact model matches same model', candidateMatches(tpItem, tpNeed).ok)
+check('exact model rejects a different part', !candidateMatches(tpOther, tpNeed).ok)
+const badNeed = parseNeed('0402 100nF 50V X7R ±10% capacitor')
+check('mismatchReasons explains tolerance', mismatchReasons(capExpand, badNeed).some((reason) => /tolerance/.test(reason)), mismatchReasons(capExpand, badNeed))
+
+section('improvements: placement / merge / net saving')
+check('normalizePlace smt', normalizePlace('SMT') === 'smt')
+check('normalizePlace hand', normalizePlace('手焊') === 'hand')
+check('normalizePlace dnp', normalizePlace('DNP') === 'dnp')
+check('normalizePlace dnp chinese', normalizePlace('不贴') === 'dnp')
+
+const placeService = {
+  settings: { extendedPartFeeUsd: 3, setupFeeUsd: 0, stencilFeeUsd: 0, usdToCnyFactor: 6 },
+  async searchRaw(code) {
+    const item = code === 'C1581' ? capExpand : capBase
+    return { total: 1, items: [item] }
+  },
+  async cny() {
+    return { ok: false, reason: 'fixture' }
+  },
+}
+const placeBom = [
+  { lcsc: 'C1581', qty: 2, place: 'smt' },
+  { lcsc: 'C1581', qty: 3, place: 'smt' },
+  { lcsc: 'C1581', qty: 1, place: 'hand' },
+  { lcsc: 'C1581', qty: 1, place: 'dnp' },
+].map((row) => JSON.stringify(row)).join('\n')
+const placeAudit = await auditBom(placeService, { bom: `[${placeBom.split('\n').join(',')}]`, assembly: 'smt', boards: 10, suggest_alternatives: false })
+check('same-code same-place lines merged (smt 2+3 -> one row)', placeAudit.rows.filter((row) => row.place === 'smt').length === 1)
+check('merged smt quantity summed', placeAudit.rows.find((row) => row.place === 'smt')?.qty === 5, placeAudit.rows.map((row) => [row.place, row.qty]))
+check('DNP row kept visible for the same code', placeAudit.rows.some((row) => row.place === 'dnp' && row.qty === 1))
+check('hand row kept visible for the same code', placeAudit.rows.some((row) => row.place === 'hand' && row.qty === 1))
+check('feeder fee charged once for merged expand part', placeAudit.summary.extended_fee_per_order_usd === 3, placeAudit.summary.extended_fee_per_order_usd)
+check('cost table covers 20/100/300/1000', [20, 100, 300, 1000].every((boards) => placeAudit.summary.cost_table.some((row) => row.boards === boards)))
+check('optimize block present', typeof placeAudit.optimize === 'object' && Array.isArray(placeAudit.optimize.actions))
+
+const netService = {
+  settings: { extendedPartFeeUsd: 3 },
+  async searchRaw(keyword) {
+    // C307331 is the base alternative (cheaper than the original capExpand unit)
+    return { total: 1, items: [capBase] }
+  },
+}
+const netAlternative = await findAlternative(netService, capExpand, parseNeed(''), { orderQty: 1000, feeUsd: 3 })
+check('alternative reports net saving', typeof netAlternative?.net_saving_usd === 'number', netAlternative)
+check('alternative footprint compatible', netAlternative?.footprint_compatible === true)
+
+const exportAudit = await auditBom(placeService, { bom: 'C1581,2,smt', assembly: 'smt', boards: 1, export_bom: true, suggest_alternatives: false })
+check('BOM CSV export present', typeof exportAudit.bom_csv === 'string' && exportAudit.bom_csv.includes('LCSC Part #'), exportAudit.bom_csv)
+check('BOM CSV has smt line', exportAudit.bom_csv.includes('C1581'))
+
+section('improvements: CN adapter parsing (offline fixture)')
+const fakeHtml = `<html><script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+  props: { pageProps: { price: 0.0239, webData: { productRecord: { productModel: '0402F104M500NT', stockNumber: 299962, encapsulationModel: '0402', productGradePlateName: 'FH(风华)', minBuyNumber: 50 } } } },
+})}</script></html>`
+const parsedItem = parseItemHtml(fakeHtml)
+check('CN render parse price', parsedItem?.price === 0.0239, parsedItem)
+check('CN render parse stock', parsedItem?.stock === 299962)
+check('CN render parse model', parsedItem?.model === '0402F104M500NT')
+check('CN render rejects empty page', parseItemHtml('<html></html>') === undefined)
 
 /* -------------------------------------------------------------------------- */
 /* Result                                                                     */

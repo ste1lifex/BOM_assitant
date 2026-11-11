@@ -80,6 +80,17 @@ export const DEFAULT_CONFIG = Object.freeze({
   cacheMaxEntries: 300,
   verbose: false,
   usdToCnyFactor: 6.0,
+  // Domestic CNY adapter (Chrome headless render + 24h cache).
+  cnRender: true,
+  chromePath: null,
+  cnCacheDir: null,
+  cnCacheTtlMs: 86400000,
+  cnTimeoutMs: 30000,
+  cnConcurrency: 2,
+  // JLCPCB extended-part feeder fee and optional engineering fees (USD).
+  extendedPartFeeUsd: 3.0,
+  setupFeeUsd: 0.0,
+  stencilFeeUsd: 0.0,
 })
 
 // LCSC codes are normally C + 4–7 digits, but the catalogue also carries
@@ -496,7 +507,7 @@ export function parseBomCsv(text) {
  * costed" instead of silently dropping them.
  * @param {string} text
  * @returns {{
- *   rows: { line: number, code: string, qty: number, designators?: string, comment?: string, footprint?: string }[],
+ *   rows: { line: number, code: string, qty: number, designators?: string, comment?: string, footprint?: string, place?: string }[],
  *   skipped: { line: number, raw?: string, comment?: string, designators?: string }[],
  * }}
  */
@@ -525,7 +536,7 @@ export function parseBomCsvDetailed(text) {
       qtyIndex = detectQuantityColumn(cells.slice(1), codeIndex)
     }
   }
-  /** @type {{ line: number, code: string, qty: number, designators?: string, comment?: string, footprint?: string }[]} */
+  /** @type {{ line: number, code: string, qty: number, designators?: string, comment?: string, footprint?: string, place?: string }[]} */
   const rows = []
   /** @type {{ line: number, raw?: string, comment?: string, designators?: string }[]} */
   const skipped = []
@@ -548,6 +559,7 @@ export function parseBomCsvDetailed(text) {
           designators,
           comment,
           footprint: optionally(header.footprintIndex, row[header.footprintIndex]),
+          place: optionally(header.placeIndex, row[header.placeIndex]),
         }),
       )
     }
@@ -639,6 +651,7 @@ function splitCsvLine(line, delimiter) {
  *   designatorsIndex?: number,
  *   commentIndex?: number,
  *   footprintIndex?: number,
+ *   placeIndex?: number,
  * }}
  */
 function classifyHeader(cells) {
@@ -652,6 +665,7 @@ function classifyHeader(cells) {
     else if (result.designatorsIndex === undefined && /designator|ref ?des|references|位号/.test(key)) result.designatorsIndex = index
     else if (result.commentIndex === undefined && /comment|description|name|名称|注释|value|型号/.test(key)) result.commentIndex = index
     else if (result.footprintIndex === undefined && /footprint|package|封装/.test(key)) result.footprintIndex = index
+    else if (result.placeIndex === undefined && /place|mount|assembly|贴装|焊接|装配|是否贴|dnp/.test(key)) result.placeIndex = index
   })
   return { hasCode: result.codeIndex !== undefined, ...result }
 }
@@ -1590,6 +1604,22 @@ export function normalizeConfig(raw, options = {}) {
       usdToCnyFactor = factorValue
     }
   }
+  const boolean = (key, fallback) => {
+    if (source[key] === undefined) return fallback
+    if (typeof source[key] === 'boolean') return source[key]
+    warn(`config.${key}=${JSON.stringify(source[key])} is invalid; using ${fallback}`)
+    return fallback
+  }
+  /** @param {string} key @param {number} fallback @param {number} min @param {number} max */
+  const float = (key, fallback, min, max) => {
+    const value = asNumber(source[key])
+    if (source[key] === undefined) return fallback
+    if (value === undefined || value < min || value > max) {
+      warn(`config.${key}=${JSON.stringify(source[key])} is invalid; using ${fallback}`)
+      return fallback
+    }
+    return value
+  }
   return {
     timeoutMs: number('timeoutMs', DEFAULT_CONFIG.timeoutMs, 100, 60000),
     retries: number('retries', DEFAULT_CONFIG.retries, 0, 10),
@@ -1600,6 +1630,15 @@ export function normalizeConfig(raw, options = {}) {
     userAgent,
     fetchImpl,
     usdToCnyFactor,
+    cnRender: boolean('cnRender', DEFAULT_CONFIG.cnRender),
+    chromePath: asString(source.chromePath) ?? DEFAULT_CONFIG.chromePath,
+    cnCacheDir: asString(source.cnCacheDir) ?? DEFAULT_CONFIG.cnCacheDir,
+    cnCacheTtlMs: number('cnCacheTtlMs', DEFAULT_CONFIG.cnCacheTtlMs, 0, 7 * 24 * 60 * 60 * 1000),
+    cnTimeoutMs: number('cnTimeoutMs', DEFAULT_CONFIG.cnTimeoutMs, 5000, 120000),
+    cnConcurrency: number('cnConcurrency', DEFAULT_CONFIG.cnConcurrency, 1, 4),
+    extendedPartFeeUsd: float('extendedPartFeeUsd', DEFAULT_CONFIG.extendedPartFeeUsd, 0, 100),
+    setupFeeUsd: float('setupFeeUsd', DEFAULT_CONFIG.setupFeeUsd, 0, 10000),
+    stencilFeeUsd: float('stencilFeeUsd', DEFAULT_CONFIG.stencilFeeUsd, 0, 10000),
   }
 }
 

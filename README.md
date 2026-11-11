@@ -20,13 +20,15 @@
 docs/
   立创找料DSH插件_调研与决策.md      # 开源生态调研、prior art、数据源实测、决策建议
   工具设计_LCSC选料插件.md           # 工具面/参数/排序算法/实现状态
+  改进记录_0.3.0.md                  # 对 Recording_card 改进建议的逐条落地与验收
 research/
   prior-art.md                       # 20+ 同类项目调研（初稿）
   lcsc-probe/                        # 数据源探针脚本
 poc/
-  lcsc-dsh-plugin/                   # 可安装 DSH bundle（index.js 工具层 + data.js 数据层，零依赖）
-  validate.mjs                       # 离线测试（60 项）
-  test-recording-card.mjs            # 用 Recording_card 真实 BOM 联网实测
+  lcsc-dsh-plugin/                   # 可安装 DSH bundle（index.js 工具层 + data.js 数据层 + cn.js 国内站适配器，零依赖）
+  validate.mjs                       # 离线测试（103 项）
+  test-improvements.mjs              # 0.3.0 联网验收（BOM v0.6 + 人民币 golden 数据）
+  test-recording-card.mjs            # 早期集成脚本（BOM v0.5）
   test-output/                       # 实测 JSON 输出
 ```
 
@@ -53,9 +55,15 @@ node poc/test-recording-card.mjs
 
 ## 状态
 
-- 插件 v0.2.0，已安装到本机 DSH desktop profile 并端到端验证通过
-- Recording_card BOM v0.5（28 个唯一料）：基础库 12 / 扩展库 16；SMT 5 片打样扩展库上料费 16×$3 = $48
-- 替代料验证：C1581（扩展库 100nF）→ C307331（基础库），每换掉 1 个扩展库料每单省 $3
+- 插件 **v0.3.0**：按 Recording_card《工具改进建议》（docs/改进记录_0.3.0.md）完成 P0/P1 改进
+  - 型号/LCSC 精确匹配优先（SMF5.0A / AO3401A / TP4054 不再被误解析）
+  - BOM 逐行 place=smt/hand/dnp；重复料号合并、上料费按唯一料号只计一次
+  - 双库存（stock_smt / stock_lcsc）+ 双价格（USD / CNY）并列不混算
+  - 真实人民币价：Chrome 无头渲染国内站 + 24h 缓存（C1581 ¥0.0239、C7434398 ¥1.097 已验证；失败自动降级估算）
+  - 批量摊销表（20/100/300/1000 片）+ 净节省替代建议 + 嘉立创 BOM CSV 导出
+- 测试：`node poc/validate.mjs` 103 项离线全过；`node poc/test-improvements.mjs` 联网验收 OK
+- Recording_card BOM v0.6.1（100 片 SMT）：25 smt / 1 hand / 6 dnp，基础库 13 / 扩展库 12；元件 + 上料费合计约 USD 144.60（当日价格）
+- 历史：v0.2.0 时 BOM v0.5（28 个唯一料）基础库 12 / 扩展库 16，SMT 5 片打样上料费 16×$3=$48
 
 ## License
 

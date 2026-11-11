@@ -1,7 +1,7 @@
 {
   "name": "dsh-plugin-lcsc",
-  "version": "0.2.1",
-  "description": "Requirement-driven LCSC/JLC part finder and BOM cost auditor for DeepSeek Harness agents: rank parts by price, stock, parameters and basic-vs-extended library fees",
+  "version": "0.3.0",
+  "description": "Requirement-driven LCSC/JLC part finder and BOM cost auditor for DeepSeek Harness agents: real CNY+USD dual pricing, basic-vs-extended library fees, DNP/hand placement, net-saving alternatives",
   "keywords": [
     "dsh-plugin",
     "dsh-bundle",
@@ -25,11 +25,11 @@
   "files": [
     "index.js",
     "data.js",
+    "cn.js",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
-    "README.md",
-    "LICENSE"
+    "README.md"
   ],
   "engines": {
     "node": ">=20",
