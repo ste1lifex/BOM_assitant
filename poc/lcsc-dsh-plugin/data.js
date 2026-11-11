@@ -582,6 +582,11 @@ export function parseBomCsvDetailed(text) {
     const rest = row.filter((cell) => !/^C\d{4,11}$/i.test(cell.trim()))
     let qty = 1
     let designators
+    let place
+    // Headerless rows may be `code,qty,place` — recognise the placement token so
+    // it is not mistaken for a designator (and DNP/hand rows stay separate).
+    const placeCell = rest.find((cell) => /^(smt|hand|dnp|不贴|手焊|手工|贴片|机贴|mount)$/i.test(cell.trim()))
+    if (placeCell !== undefined) place = placeCell.trim()
     for (const cell of rest) {
       const integer = Number(cell)
       if (Number.isInteger(integer) && integer > 0 && cell.trim() !== '') {
@@ -590,12 +595,13 @@ export function parseBomCsvDetailed(text) {
       }
     }
     for (const cell of rest) {
+      if (cell === placeCell) continue
       if (cell.trim() !== '' && !Number.isFinite(Number(cell)) && !/C\d{4,11}/i.test(cell)) {
         designators = cell.trim()
         break
       }
     }
-    rows.push(clean({ line: index + 1, code, qty, designators }))
+    rows.push(clean({ line: index + 1, code, qty, designators, place }))
   }
   return { rows, skipped }
 }

@@ -10,7 +10,7 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { normalizeConfig } from './lcsc-dsh-plugin/data.js'
+import { normalizeConfig, parseBomCsvDetailed } from './lcsc-dsh-plugin/data.js'
 import { parseItemHtml, pruneChromeProfile, pruneJsonCache } from './lcsc-dsh-plugin/cn.js'
 import {
   EXTENDED_PART_FEE_USD,
@@ -537,6 +537,13 @@ check('exact model matches same model', candidateMatches(tpItem, tpNeed).ok)
 check('exact model rejects a different part', !candidateMatches(tpOther, tpNeed).ok)
 const badNeed = parseNeed('0402 100nF 50V X7R ±10% capacitor')
 check('mismatchReasons explains tolerance', mismatchReasons(capExpand, badNeed).some((reason) => /tolerance/.test(reason)), mismatchReasons(capExpand, badNeed))
+
+section('improvements: headerless place parsing')
+const headerlessBom = parseBomCsvDetailed('C1581,1,dnp\nC1581,2,smt\nC307331,1,hand\n')
+check('headerless dnp place parsed', headerlessBom.rows[0]?.place === 'dnp', headerlessBom.rows)
+check('headerless smt place parsed', headerlessBom.rows[1]?.place === 'smt', headerlessBom.rows)
+check('headerless hand place parsed', headerlessBom.rows[2]?.place === 'hand', headerlessBom.rows)
+check('place token not kept as designator', headerlessBom.rows.every((row) => row.designators === undefined), headerlessBom.rows)
 
 section('improvements: placement / merge / net saving')
 check('normalizePlace smt', normalizePlace('SMT') === 'smt')
