@@ -4,7 +4,7 @@
 > LCSC/JLCPCB part finder and BOM cost auditor for DeepSeek Harness agents.
 
 只暴露 **2 个工具**，避免与其他插件一起装时污染模型上下文。
-当前版本 **0.3.0**（对齐 Recording_card 的《工具改进建议》，见仓库 `docs/改进记录_0.3.0.md`）。
+当前版本 **0.3.1**（对齐 Recording_card 的《工具改进建议》，见仓库 `docs/改进记录_0.3.0.md`）。
 
 ## 安装
 
@@ -89,11 +89,23 @@ CSV / TSV / JSON 行入，逐行给出价格、双库存、基础库/扩展库�
     cnRender: true             # 国内站 Chrome 渲染
     cnCacheTtlMs: 86400000     # 24h
     cnTimeoutMs: 30000
-    cnConcurrency: 2
+    cnConcurrency: 4           # 并发标签数（常驻 Chrome，CDP 多标签）
+    cnBrowserIdleTtlMs: 120000 # Chrome 空闲多久自动关闭
+    cnQueryBudgetMs: 90000     # 单次 BOM 取 CNY 的时间预算（超时则先返回，缓存已写入）
     extendedPartFeeUsd: 3.0    # 嘉立创扩展库上料费
     setupFeeUsd: 0.0           # 工程费（可选）
     stencilFeeUsd: 0.0         # 钢网费（可选）
 ```
+
+## 速度与准确性（2026-11-11 实测）
+
+- 常驻 Chrome + CDP 多标签（`--remote-debugging-pipe`）：冷启动/首屏 ~5s，之后每料 ~1–2s，4–8 标签并发。
+- **28 料的完整手焊 BOM**：全新缓存首次 **26.5s**（含 JLC 查价 + 32/32 行真实 CNY），缓存命中后 **0.0s / 次**；单条需求 `find` 带真实 CNY ~1–5s。
+- 准确性：
+  - C1581 **¥0.0239**、C7434398 **¥1.097**、C307331 **¥0.0251**（与 Recording_card 官方渲染核对值一致）
+  - 28 个料的 BOM 总价 **¥4.0791**，Recording_card 官方口径 **¥4.0793**（差 ¥0.0002）
+  - 库存是**实时快照**（会在一天内变化，例如 C25744 今早 177000 → 现在 22），不是历史值。
+- 无 Chrome / WAF / 超时时自动降级为标注的 USD×系数估算，不阻塞其他功能。
 
 ## 测试
 

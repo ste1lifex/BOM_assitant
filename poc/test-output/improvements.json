@@ -245,8 +245,8 @@
           "category": "ESD and Surge Protection (TVS/ESD)",
           "library": "expand",
           "preferred": null,
-          "stock": 276331,
-          "stock_smt": 276331,
+          "stock": 276281,
+          "stock_smt": 276281,
           "stock_lcsc": null,
           "coverage": 1,
           "price": {
@@ -318,7 +318,7 @@
           "reasons": [
             "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
             "阶梯价 $0.0187（按采购量 100）",
-            "库存 276331",
+            "库存 276281",
             "库存覆盖需求（100%）",
             "型号精确匹配",
             "参数匹配：model=SMF5.0A"
@@ -333,8 +333,8 @@
           "category": "ESD and Surge Protection (TVS/ESD)",
           "library": "expand",
           "preferred": true,
-          "stock": 822343,
-          "stock_smt": 822343,
+          "stock": 822128,
+          "stock_smt": 822128,
           "stock_lcsc": null,
           "coverage": 1,
           "price": {
@@ -406,7 +406,7 @@
           "reasons": [
             "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
             "阶梯价 $0.0283（按采购量 100）",
-            "库存 822343",
+            "库存 822128",
             "库存覆盖需求（100%）",
             "型号精确匹配",
             "参数匹配：model=SMF5.0A"
@@ -505,8 +505,8 @@
           "category": "ESD and Surge Protection (TVS/ESD)",
           "library": "expand",
           "preferred": null,
-          "stock": 465127,
-          "stock_smt": 465127,
+          "stock": 465067,
+          "stock_smt": 465067,
           "stock_lcsc": null,
           "coverage": 1,
           "price": {
@@ -578,7 +578,7 @@
           "reasons": [
             "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
             "阶梯价 $0.0283（按采购量 100）",
-            "库存 465127",
+            "库存 465067",
             "库存覆盖需求（100%）",
             "型号精确匹配",
             "参数匹配：model=SMF5.0A"
@@ -765,7 +765,7 @@
         "按型号精确查询（SMF5.0A），未做参数解析。",
         "assembly=smt：扩展库按每料号 $3/单上料费摊销；基础库优先度体现在排序里。"
       ],
-      "fetched_at": "2026-11-11T08:50:46.356Z"
+      "fetched_at": "2026-11-11T10:04:10.304Z"
     },
     "find_AO3401A": {
       "need": "AO3401A",
@@ -786,8 +786,8 @@
           "category": "MOSFETs",
           "library": "base",
           "preferred": null,
-          "stock": 1608615,
-          "stock_smt": 1608615,
+          "stock": 1617489,
+          "stock_smt": 1617489,
           "stock_lcsc": null,
           "coverage": 1,
           "price": {
@@ -867,7 +867,7 @@
           "reasons": [
             "基础库：无上料费",
             "阶梯价 $0.064（按采购量 100）",
-            "库存 1608615",
+            "库存 1617489",
             "库存覆盖需求（100%）",
             "型号精确匹配",
             "参数匹配：model=AO3401A"
@@ -882,8 +882,8 @@
           "category": "MOSFETs",
           "library": "expand",
           "preferred": null,
-          "stock": 817311,
-          "stock_smt": 817311,
+          "stock": 814023,
+          "stock_smt": 814023,
           "stock_lcsc": null,
           "coverage": 1,
           "price": {
@@ -963,7 +963,7 @@
           "reasons": [
             "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
             "阶梯价 $0.0318（按采购量 100）",
-            "库存 817311",
+            "库存 814023",
             "库存覆盖需求（100%）",
             "型号精确匹配",
             "参数匹配：model=AO3401A"
@@ -978,8 +978,8 @@
           "category": "MOSFETs",
           "library": "expand",
           "preferred": null,
-          "stock": 41388,
-          "stock_smt": 41388,
+          "stock": 41368,
+          "stock_smt": 41368,
           "stock_lcsc": null,
           "coverage": 1,
           "price": {
@@ -1055,7 +1055,7 @@
           "reasons": [
             "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
             "阶梯价 $0.0287（按采购量 100）",
-            "库存 41388",
+            "库存 41368",
             "库存覆盖需求（100%）",
             "型号精确匹配",
             "参数匹配：model=AO3401A"
@@ -1070,8 +1070,8 @@
           "category": "MOSFETs",
           "library": "expand",
           "preferred": null,
-          "stock": 52500,
-          "stock_smt": 52500,
+          "stock": 52490,
+          "stock_smt": 52490,
           "stock_lcsc": null,
           "coverage": 1,
           "price": {
@@ -1151,7 +1151,7 @@
           "reasons": [
             "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
             "阶梯价 $0.0329（按采购量 100）",
-            "库存 52500",
+            "库存 52490",
             "库存覆盖需求（100%）",
             "型号精确匹配",
             "参数匹配：model=AO3401A"
@@ -1356,7 +1356,7 @@
         "按型号精确查询（AO3401A），未做参数解析。",
         "assembly=smt：扩展库按每料号 $3/单上料费摊销；基础库优先度体现在排序里。"
       ],
-      "fetched_at": "2026-11-11T08:50:47.736Z"
+      "fetched_at": "2026-11-11T10:04:10.897Z"
     },
     "find_TP4054": {
       "need": "TP4054",
@@ -1377,8 +1377,8 @@
           "category": "Battery Management",
           "library": "expand",
           "preferred": null,
-          "stock": 328284,
-          "stock_smt": 328284,
+          "stock": 328196,
+          "stock_smt": 328196,
           "stock_lcsc": null,
           "coverage": 1,
           "price": {
@@ -1441,7 +1441,7 @@
           "reasons": [
             "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
             "阶梯价 $0.0215（按采购量 100）",
-            "库存 328284",
+            "库存 328196",
             "库存覆盖需求（100%）",
             "型号精确匹配",
             "参数匹配：model=TP4054"
@@ -1535,8 +1535,8 @@
           "category": "Battery Management",
           "library": "expand",
           "preferred": null,
-          "stock": 88009,
-          "stock_smt": 88009,
+          "stock": 88000,
+          "stock_smt": 88000,
           "stock_lcsc": null,
           "coverage": 1,
           "price": {
@@ -1599,7 +1599,7 @@
           "reasons": [
             "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
             "阶梯价 $0.0385（按采购量 100）",
-            "库存 88009",
+            "库存 88000",
             "库存覆盖需求（100%）",
             "型号精确匹配",
             "参数匹配：model=TP4054"
@@ -1693,8 +1693,8 @@
           "category": "Battery Management",
           "library": "expand",
           "preferred": null,
-          "stock": 17942,
-          "stock_smt": 17942,
+          "stock": 17868,
+          "stock_smt": 17868,
           "stock_lcsc": null,
           "coverage": 1,
           "price": {
@@ -1757,7 +1757,7 @@
           "reasons": [
             "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
             "阶梯价 $0.0365（按采购量 100）",
-            "库存 17942",
+            "库存 17868",
             "库存覆盖需求（100%）",
             "型号精确匹配",
             "参数匹配：model=TP4054"
@@ -1851,7 +1851,7 @@
         "按型号精确查询（TP4054），未做参数解析。",
         "assembly=smt：扩展库按每料号 $3/单上料费摊销；基础库优先度体现在排序里。"
       ],
-      "fetched_at": "2026-11-11T08:50:48.651Z"
+      "fetched_at": "2026-11-11T10:04:11.614Z"
     },
     "find_C307331": {
       "need": "C307331",
@@ -1872,8 +1872,8 @@
           "category": "Multilayer Ceramic Capacitors MLCC - SMD/SMT",
           "library": "base",
           "preferred": null,
-          "stock": 20627138,
-          "stock_smt": 20627138,
+          "stock": 20457349,
+          "stock_smt": 20457349,
           "stock_lcsc": null,
           "coverage": 1,
           "price": {
@@ -1953,7 +1953,7 @@
           "reasons": [
             "基础库：无上料费",
             "阶梯价 $0.0085（按采购量 100）",
-            "库存 20627138",
+            "库存 20457349",
             "库存覆盖需求（100%）"
           ],
           "url": "https://www.lcsc.com/product-detail/multilayer-ceramic-capacitors-mlcc-smd-smt_samsung-electro-mechanics-cl05b104kb54pnc_C307331.html"
@@ -1964,7 +1964,7 @@
         "按 LCSC 编号精确查询（C307331），未做参数解析。",
         "assembly=smt：扩展库按每料号 $3/单上料费摊销；基础库优先度体现在排序里。"
       ],
-      "fetched_at": "2026-11-11T08:50:49.802Z"
+      "fetched_at": "2026-11-11T10:04:12.228Z"
     },
     "find_22ohm": {
       "need": "22 ohm 0402 resistor 1%",
@@ -1985,8 +1985,8 @@
           "category": "Chip Resistor - Surface Mount",
           "library": "base",
           "preferred": null,
-          "stock": 3118613,
-          "stock_smt": 3118613,
+          "stock": 2991998,
+          "stock_smt": 2991998,
           "stock_lcsc": 0,
           "coverage": 1,
           "price": {
@@ -2057,11 +2057,11 @@
               "value": "±100ppm/℃"
             }
           ],
-          "score": 0.982,
+          "score": 0.981,
           "reasons": [
             "基础库：无上料费",
             "阶梯价 $0.0012（按采购量 100）",
-            "库存 3118613",
+            "库存 2991998",
             "库存覆盖需求（100%）",
             "参数匹配：resistance=22 ohm, tolerance=1%"
           ],
@@ -2075,8 +2075,8 @@
           "category": "Chip Resistor - Surface Mount",
           "library": "expand",
           "preferred": null,
-          "stock": 5247177,
-          "stock_smt": 5247177,
+          "stock": 5232972,
+          "stock_smt": 5232972,
           "stock_lcsc": 4730872,
           "coverage": 1,
           "price": {
@@ -2151,7 +2151,7 @@
           "reasons": [
             "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
             "阶梯价 $0.0018（按采购量 100）",
-            "库存 5247177",
+            "库存 5232972",
             "库存覆盖需求（100%）",
             "参数匹配：resistance=22 ohm, tolerance=1%"
           ],
@@ -2165,8 +2165,8 @@
           "category": "Chip Resistor - Surface Mount",
           "library": "expand",
           "preferred": null,
-          "stock": 3778442,
-          "stock_smt": 3778442,
+          "stock": 3777347,
+          "stock_smt": 3777347,
           "stock_lcsc": 3472682,
           "coverage": 1,
           "price": {
@@ -2211,7 +2211,7 @@
             "unit": 0.0037,
             "source": "lcsc_cn_render",
             "estimated": false,
-            "cached": false,
+            "cached": true,
             "fetched_at": "2026-11-11T08:51:05.637Z"
           },
           "used_tier": "1+",
@@ -2241,7 +2241,7 @@
           "reasons": [
             "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
             "阶梯价 $0.0012（按采购量 100）",
-            "库存 3778442",
+            "库存 3777347",
             "库存覆盖需求（100%）",
             "参数匹配：resistance=22 ohm, tolerance=1%"
           ],
@@ -2255,8 +2255,8 @@
           "category": "Chip Resistor - Surface Mount",
           "library": "expand",
           "preferred": null,
-          "stock": 2681312,
-          "stock_smt": 2681312,
+          "stock": 2681112,
+          "stock_smt": 2681112,
           "stock_lcsc": null,
           "coverage": 1,
           "price": {
@@ -2336,7 +2336,7 @@
           "reasons": [
             "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
             "阶梯价 $0.0008（按采购量 100）",
-            "库存 2681312",
+            "库存 2681112",
             "库存覆盖需求（100%）",
             "参数匹配：resistance=22 ohm, tolerance=1%"
           ],
@@ -2350,8 +2350,8 @@
           "category": "Chip Resistor - Surface Mount",
           "library": "expand",
           "preferred": null,
-          "stock": 525150,
-          "stock_smt": 525150,
+          "stock": 525012,
+          "stock_smt": 525012,
           "stock_lcsc": null,
           "coverage": 1,
           "price": {
@@ -2431,7 +2431,7 @@
           "reasons": [
             "扩展库：每片板摊 $0.03 上料费（每料号 $3/单）",
             "阶梯价 $0.0014（按采购量 100）",
-            "库存 525150",
+            "库存 525012",
             "库存覆盖需求（100%）",
             "参数匹配：resistance=22 ohm, tolerance=1%"
           ],
@@ -2444,7 +2444,7 @@
         "解析到参数条件：resistance=22, tolerance<=1",
         "assembly=smt：扩展库按每料号 $3/单上料费摊销；基础库优先度体现在排序里。"
       ],
-      "fetched_at": "2026-11-11T08:51:05.638Z"
+      "fetched_at": "2026-11-11T10:04:13.808Z"
     },
     "bomV06": {
       "assembly": "smt",
@@ -2574,7 +2574,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 1.0764,
           "subtotal_cny_estimate": 107.64,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.880Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -2597,8 +2597,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 88009,
-          "stock_smt": 88009,
+          "stock": 88000,
+          "stock_smt": 88000,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -2634,7 +2634,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0984,
           "subtotal_cny_estimate": 9.84,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.880Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -2657,8 +2657,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 817311,
-          "stock_smt": 817311,
+          "stock": 814023,
+          "stock_smt": 814023,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -2694,7 +2694,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0918,
           "subtotal_cny_estimate": 9.18,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.880Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -2717,8 +2717,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 320724,
-          "stock_smt": 320724,
+          "stock": 317359,
+          "stock_smt": 317359,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -2754,7 +2754,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.2202,
           "subtotal_cny_estimate": 22.02,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.880Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -2777,8 +2777,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 77270,
-          "stock_smt": 77270,
+          "stock": 76997,
+          "stock_smt": 76997,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -2814,7 +2814,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.1326,
           "subtotal_cny_estimate": 13.26,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -2837,8 +2837,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 465127,
-          "stock_smt": 465127,
+          "stock": 465067,
+          "stock_smt": 465067,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -2874,7 +2874,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.087,
           "subtotal_cny_estimate": 17.4,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -2897,8 +2897,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 2823934,
-          "stock_smt": 2823934,
+          "stock": 2814634,
+          "stock_smt": 2814634,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -2934,7 +2934,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0924,
           "subtotal_cny_estimate": 9.24,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": []
         },
         {
@@ -2992,7 +2992,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.1236,
           "subtotal_cny_estimate": 12.36,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -3015,8 +3015,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 390620,
-          "stock_smt": 390620,
+          "stock": 388502,
+          "stock_smt": 388502,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -3052,7 +3052,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0696,
           "subtotal_cny_estimate": 6.96,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": []
         },
         {
@@ -3110,7 +3110,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.3876,
           "subtotal_cny_estimate": 38.76,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -3170,7 +3170,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.2208,
           "subtotal_cny_estimate": 22.08,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -3193,8 +3193,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 156109,
-          "stock_smt": 156109,
+          "stock": 155771,
+          "stock_smt": 155771,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -3230,7 +3230,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.261,
           "subtotal_cny_estimate": 26.1,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -3253,8 +3253,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 164373,
-          "stock_smt": 164373,
+          "stock": 164439,
+          "stock_smt": 164439,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -3290,7 +3290,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0744,
           "subtotal_cny_estimate": 7.44,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -3313,8 +3313,8 @@
           "library": "expand",
           "billable_smt": false,
           "billable": false,
-          "stock": 17839,
-          "stock_smt": 17839,
+          "stock": 17884,
+          "stock_smt": 17884,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -3349,7 +3349,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0858,
           "subtotal_cny_estimate": 8.58,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "手焊：不计入 SMT 贴片与上料费",
             "扩展库（手焊/DNP 无上料费）"
@@ -3373,8 +3373,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 834296,
-          "stock_smt": 834296,
+          "stock": 835453,
+          "stock_smt": 835453,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -3410,7 +3410,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0714,
           "subtotal_cny_estimate": 7.14,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": []
         },
         {
@@ -3431,8 +3431,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 6121141,
-          "stock_smt": 6121141,
+          "stock": 6115971,
+          "stock_smt": 6115971,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -3468,7 +3468,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0216,
           "subtotal_cny_estimate": 4.32,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": []
         },
         {
@@ -3489,8 +3489,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 20853703,
-          "stock_smt": 20853703,
+          "stock": 20678810,
+          "stock_smt": 20678810,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -3526,7 +3526,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.003,
           "subtotal_cny_estimate": 1.5,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": []
         },
         {
@@ -3547,8 +3547,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 32272095,
-          "stock_smt": 32272095,
+          "stock": 32242374,
+          "stock_smt": 32242374,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -3584,7 +3584,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0054,
           "subtotal_cny_estimate": 1.08,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": []
         },
         {
@@ -3605,8 +3605,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 4168497,
-          "stock_smt": 4168497,
+          "stock": 4165303,
+          "stock_smt": 4165303,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -3642,7 +3642,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0042,
           "subtotal_cny_estimate": 1.26,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": []
         },
         {
@@ -3663,8 +3663,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 5247177,
-          "stock_smt": 5247177,
+          "stock": 5232972,
+          "stock_smt": 5232972,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -3700,7 +3700,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0054,
           "subtotal_cny_estimate": 1.62,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ],
@@ -3709,7 +3709,7 @@
             "model": "0402WGF220JTCE",
             "package": "0402",
             "library": "base",
-            "stock": 3118613,
+            "stock": 2991998,
             "unit_usd": 0.0012,
             "fee_saved_usd": 3,
             "component_delta_usd": -0.18,
@@ -3735,8 +3735,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 7950240,
-          "stock_smt": 7950240,
+          "stock": 7909414,
+          "stock_smt": 7909414,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -3772,7 +3772,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0036,
           "subtotal_cny_estimate": 0.72,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": []
         },
         {
@@ -3793,8 +3793,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 11304287,
-          "stock_smt": 11304287,
+          "stock": 11289574,
+          "stock_smt": 11289574,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -3830,7 +3830,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0042,
           "subtotal_cny_estimate": 0.42,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": []
         },
         {
@@ -3851,8 +3851,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 16154927,
-          "stock_smt": 16154927,
+          "stock": 16065354,
+          "stock_smt": 16065354,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -3888,7 +3888,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0036,
           "subtotal_cny_estimate": 0.72,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": []
         },
         {
@@ -3909,8 +3909,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 20627138,
-          "stock_smt": 20627138,
+          "stock": 20457349,
+          "stock_smt": 20457349,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -3946,7 +3946,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0252,
           "subtotal_cny_estimate": 12.6,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": []
         },
         {
@@ -3967,8 +3967,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 10744195,
-          "stock_smt": 10744195,
+          "stock": 10744070,
+          "stock_smt": 10744070,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -4004,7 +4004,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0174,
           "subtotal_cny_estimate": 12.18,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": []
         },
         {
@@ -4025,8 +4025,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 8244993,
-          "stock_smt": 8244993,
+          "stock": 8269151,
+          "stock_smt": 8269151,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -4062,7 +4062,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0942,
           "subtotal_cny_estimate": 47.1,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": []
         },
         {
@@ -4083,8 +4083,8 @@
           "library": "base",
           "billable_smt": false,
           "billable": false,
-          "stock": 834296,
-          "stock_smt": 834296,
+          "stock": 835453,
+          "stock_smt": 835453,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -4119,7 +4119,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0714,
           "subtotal_cny_estimate": 21.42,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "DNP：不贴/不计元件与上料费"
           ]
@@ -4142,8 +4142,8 @@
           "library": "base",
           "billable_smt": false,
           "billable": false,
-          "stock": 32272095,
-          "stock_smt": 32272095,
+          "stock": 32242374,
+          "stock_smt": 32242374,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -4178,7 +4178,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0054,
           "subtotal_cny_estimate": 0.54,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "DNP：不贴/不计元件与上料费"
           ]
@@ -4201,8 +4201,8 @@
           "library": "expand",
           "billable_smt": false,
           "billable": false,
-          "stock": 761787,
-          "stock_smt": 761787,
+          "stock": 761537,
+          "stock_smt": 761537,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -4237,7 +4237,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0036,
           "subtotal_cny_estimate": 0.36,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "DNP：不贴/不计元件与上料费",
             "扩展库（手焊/DNP 无上料费）"
@@ -4261,8 +4261,8 @@
           "library": "base",
           "billable_smt": false,
           "billable": false,
-          "stock": 15057559,
-          "stock_smt": 15057559,
+          "stock": 15042382,
+          "stock_smt": 15042382,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -4297,7 +4297,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0054,
           "subtotal_cny_estimate": 0.54,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "DNP：不贴/不计元件与上料费"
           ]
@@ -4320,8 +4320,8 @@
           "library": "base",
           "billable_smt": false,
           "billable": false,
-          "stock": 16154927,
-          "stock_smt": 16154927,
+          "stock": 16065354,
+          "stock_smt": 16065354,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -4356,7 +4356,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0036,
           "subtotal_cny_estimate": 1.08,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "DNP：不贴/不计元件与上料费"
           ]
@@ -4379,8 +4379,8 @@
           "library": "base",
           "billable_smt": false,
           "billable": false,
-          "stock": 20627138,
-          "stock_smt": 20627138,
+          "stock": 20457349,
+          "stock_smt": 20457349,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -4415,7 +4415,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0252,
           "subtotal_cny_estimate": 2.52,
-          "fetched_at": "2026-11-11T08:51:16.268Z",
+          "fetched_at": "2026-11-11T10:04:18.881Z",
           "flags": [
             "DNP：不贴/不计元件与上料费"
           ]
@@ -4444,7 +4444,7 @@
             "model": "0402WGF220JTCE",
             "package": "0402",
             "library": "base",
-            "stock": 3118613,
+            "stock": 2991998,
             "unit_usd": 0.0012,
             "fee_saved_usd": 3,
             "component_delta_usd": -0.18,
@@ -4464,7 +4464,7 @@
         "优选扩展库（Preferred Extended）分类未在公开接口暴露，若需免上料费请到嘉立创 SMT 下单页确认。",
         "批量摊销参考：100 片时约 $1.446/片（含上料费 $0.36/片 + 工程/钢网 $0/片）。"
       ],
-      "fetched_at": "2026-11-11T08:51:25.957Z"
+      "fetched_at": "2026-11-11T10:04:23.801Z"
     },
     "bomV06AllSmt": {
       "assembly": "smt",
@@ -4594,7 +4594,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 1.0764,
           "subtotal_cny_estimate": 107.64,
-          "fetched_at": "2026-11-11T08:51:25.959Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -4617,8 +4617,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 88009,
-          "stock_smt": 88009,
+          "stock": 88000,
+          "stock_smt": 88000,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -4654,7 +4654,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0984,
           "subtotal_cny_estimate": 9.84,
-          "fetched_at": "2026-11-11T08:51:25.959Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -4677,8 +4677,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 817311,
-          "stock_smt": 817311,
+          "stock": 814023,
+          "stock_smt": 814023,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -4714,7 +4714,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0918,
           "subtotal_cny_estimate": 9.18,
-          "fetched_at": "2026-11-11T08:51:25.959Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -4737,8 +4737,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 320724,
-          "stock_smt": 320724,
+          "stock": 317359,
+          "stock_smt": 317359,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -4774,7 +4774,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.2202,
           "subtotal_cny_estimate": 22.02,
-          "fetched_at": "2026-11-11T08:51:25.959Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -4797,8 +4797,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 77270,
-          "stock_smt": 77270,
+          "stock": 76997,
+          "stock_smt": 76997,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -4834,7 +4834,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.1326,
           "subtotal_cny_estimate": 13.26,
-          "fetched_at": "2026-11-11T08:51:25.959Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -4857,8 +4857,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 465127,
-          "stock_smt": 465127,
+          "stock": 465067,
+          "stock_smt": 465067,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -4894,7 +4894,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.087,
           "subtotal_cny_estimate": 17.4,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -4917,8 +4917,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 2823934,
-          "stock_smt": 2823934,
+          "stock": 2814634,
+          "stock_smt": 2814634,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -4954,7 +4954,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0924,
           "subtotal_cny_estimate": 9.24,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": []
         },
         {
@@ -5012,7 +5012,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.1236,
           "subtotal_cny_estimate": 12.36,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -5035,8 +5035,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 390620,
-          "stock_smt": 390620,
+          "stock": 388502,
+          "stock_smt": 388502,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -5072,7 +5072,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0696,
           "subtotal_cny_estimate": 6.96,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": []
         },
         {
@@ -5130,7 +5130,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.3876,
           "subtotal_cny_estimate": 38.76,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -5190,7 +5190,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.2208,
           "subtotal_cny_estimate": 22.08,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -5213,8 +5213,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 156109,
-          "stock_smt": 156109,
+          "stock": 155771,
+          "stock_smt": 155771,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -5250,7 +5250,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.261,
           "subtotal_cny_estimate": 26.1,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -5273,8 +5273,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 164373,
-          "stock_smt": 164373,
+          "stock": 164439,
+          "stock_smt": 164439,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -5310,7 +5310,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0744,
           "subtotal_cny_estimate": 7.44,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -5333,8 +5333,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 17839,
-          "stock_smt": 17839,
+          "stock": 17884,
+          "stock_smt": 17884,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -5370,7 +5370,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0858,
           "subtotal_cny_estimate": 8.58,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -5393,8 +5393,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 834296,
-          "stock_smt": 834296,
+          "stock": 835453,
+          "stock_smt": 835453,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -5430,7 +5430,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0714,
           "subtotal_cny_estimate": 7.14,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": []
         },
         {
@@ -5451,8 +5451,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 6121141,
-          "stock_smt": 6121141,
+          "stock": 6115971,
+          "stock_smt": 6115971,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -5488,7 +5488,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0216,
           "subtotal_cny_estimate": 4.32,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": []
         },
         {
@@ -5509,8 +5509,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 20853703,
-          "stock_smt": 20853703,
+          "stock": 20678810,
+          "stock_smt": 20678810,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -5546,7 +5546,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.003,
           "subtotal_cny_estimate": 1.5,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": []
         },
         {
@@ -5567,8 +5567,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 32272095,
-          "stock_smt": 32272095,
+          "stock": 32242374,
+          "stock_smt": 32242374,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -5604,7 +5604,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0054,
           "subtotal_cny_estimate": 1.08,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": []
         },
         {
@@ -5625,8 +5625,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 4168497,
-          "stock_smt": 4168497,
+          "stock": 4165303,
+          "stock_smt": 4165303,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -5662,7 +5662,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0042,
           "subtotal_cny_estimate": 1.26,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": []
         },
         {
@@ -5683,8 +5683,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 5247177,
-          "stock_smt": 5247177,
+          "stock": 5232972,
+          "stock_smt": 5232972,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -5720,7 +5720,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0054,
           "subtotal_cny_estimate": 1.62,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -5743,8 +5743,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 7950240,
-          "stock_smt": 7950240,
+          "stock": 7909414,
+          "stock_smt": 7909414,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -5780,7 +5780,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0036,
           "subtotal_cny_estimate": 0.72,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": []
         },
         {
@@ -5801,8 +5801,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 11304287,
-          "stock_smt": 11304287,
+          "stock": 11289574,
+          "stock_smt": 11289574,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -5838,7 +5838,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0042,
           "subtotal_cny_estimate": 0.42,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": []
         },
         {
@@ -5859,8 +5859,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 16154927,
-          "stock_smt": 16154927,
+          "stock": 16065354,
+          "stock_smt": 16065354,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -5896,7 +5896,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0036,
           "subtotal_cny_estimate": 0.72,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": []
         },
         {
@@ -5917,8 +5917,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 20627138,
-          "stock_smt": 20627138,
+          "stock": 20457349,
+          "stock_smt": 20457349,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -5954,7 +5954,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0252,
           "subtotal_cny_estimate": 12.6,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": []
         },
         {
@@ -5975,8 +5975,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 10744195,
-          "stock_smt": 10744195,
+          "stock": 10744070,
+          "stock_smt": 10744070,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -6012,7 +6012,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0174,
           "subtotal_cny_estimate": 12.18,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": []
         },
         {
@@ -6033,8 +6033,8 @@
           "library": "base",
           "billable_smt": true,
           "billable": true,
-          "stock": 8244993,
-          "stock_smt": 8244993,
+          "stock": 8269151,
+          "stock_smt": 8269151,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -6070,7 +6070,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0942,
           "subtotal_cny_estimate": 47.1,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": []
         },
         {
@@ -6091,8 +6091,8 @@
           "library": "base",
           "billable_smt": false,
           "billable": false,
-          "stock": 834296,
-          "stock_smt": 834296,
+          "stock": 835453,
+          "stock_smt": 835453,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -6127,7 +6127,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0714,
           "subtotal_cny_estimate": 21.42,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "DNP：不贴/不计元件与上料费"
           ]
@@ -6150,8 +6150,8 @@
           "library": "base",
           "billable_smt": false,
           "billable": false,
-          "stock": 32272095,
-          "stock_smt": 32272095,
+          "stock": 32242374,
+          "stock_smt": 32242374,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -6186,7 +6186,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0054,
           "subtotal_cny_estimate": 0.54,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "DNP：不贴/不计元件与上料费"
           ]
@@ -6209,8 +6209,8 @@
           "library": "expand",
           "billable_smt": false,
           "billable": false,
-          "stock": 761787,
-          "stock_smt": 761787,
+          "stock": 761537,
+          "stock_smt": 761537,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -6245,7 +6245,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0036,
           "subtotal_cny_estimate": 0.36,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "DNP：不贴/不计元件与上料费",
             "扩展库（手焊/DNP 无上料费）"
@@ -6269,8 +6269,8 @@
           "library": "base",
           "billable_smt": false,
           "billable": false,
-          "stock": 15057559,
-          "stock_smt": 15057559,
+          "stock": 15042382,
+          "stock_smt": 15042382,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -6305,7 +6305,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0054,
           "subtotal_cny_estimate": 0.54,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "DNP：不贴/不计元件与上料费"
           ]
@@ -6328,8 +6328,8 @@
           "library": "base",
           "billable_smt": false,
           "billable": false,
-          "stock": 16154927,
-          "stock_smt": 16154927,
+          "stock": 16065354,
+          "stock_smt": 16065354,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -6364,7 +6364,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0036,
           "subtotal_cny_estimate": 1.08,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "DNP：不贴/不计元件与上料费"
           ]
@@ -6387,8 +6387,8 @@
           "library": "base",
           "billable_smt": false,
           "billable": false,
-          "stock": 20627138,
-          "stock_smt": 20627138,
+          "stock": 20457349,
+          "stock_smt": 20457349,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -6423,7 +6423,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.0252,
           "subtotal_cny_estimate": 2.52,
-          "fetched_at": "2026-11-11T08:51:25.960Z",
+          "fetched_at": "2026-11-11T10:04:23.802Z",
           "flags": [
             "DNP：不贴/不计元件与上料费"
           ]
@@ -6448,7 +6448,7 @@
         "优选扩展库（Preferred Extended）分类未在公开接口暴露，若需免上料费请到嘉立创 SMT 下单页确认。",
         "批量摊销参考：100 片时约 $1.5099/片（含上料费 $0.39/片 + 工程/钢网 $0/片）。"
       ],
-      "fetched_at": "2026-11-11T08:51:25.961Z"
+      "fetched_at": "2026-11-11T10:04:23.802Z"
     },
     "cnyAudit": {
       "assembly": "hand",
@@ -6551,7 +6551,7 @@
           "billable_smt": false,
           "billable": true,
           "stock": 268391,
-          "stock_smt": 345354,
+          "stock_smt": 343354,
           "stock_lcsc": 268391,
           "stock_source": "lcsc_cn_render",
           "coverage": 1,
@@ -6589,7 +6589,7 @@
           "price_cny_source": "lcsc_cn_render",
           "price_cny_estimated": false,
           "subtotal_cny": 0.0239,
-          "fetched_at": "2026-11-11T08:51:27.071Z",
+          "fetched_at": "2026-11-11T10:04:24.308Z",
           "flags": [
             "扩展库（手焊/DNP 无上料费）"
           ]
@@ -6651,7 +6651,7 @@
           "price_cny_source": "lcsc_cn_render",
           "price_cny_estimated": false,
           "subtotal_cny": 1.097,
-          "fetched_at": "2026-11-11T08:51:27.071Z",
+          "fetched_at": "2026-11-11T10:04:24.308Z",
           "flags": [
             "扩展库（手焊/DNP 无上料费）"
           ]
@@ -6677,7 +6677,7 @@
         "优选扩展库（Preferred Extended）分类未在公开接口暴露，若需免上料费请到嘉立创 SMT 下单页确认。",
         "批量摊销参考：100 片时约 $0.2932/片（含上料费 $0/片 + 工程/钢网 $0/片）。"
       ],
-      "fetched_at": "2026-11-11T08:51:27.072Z"
+      "fetched_at": "2026-11-11T10:04:24.309Z"
     },
     "duplicates": {
       "assembly": "smt",
@@ -6790,8 +6790,8 @@
           "library": "expand",
           "billable_smt": true,
           "billable": true,
-          "stock": 345354,
-          "stock_smt": 345354,
+          "stock": 343354,
+          "stock_smt": 343354,
           "stock_source": "jlcpcb-smt",
           "coverage": 1,
           "price_source": "jlcpcb-smt",
@@ -6827,7 +6827,7 @@
           "price_cny_estimated": false,
           "unit_cny_estimate": 0.024,
           "subtotal_cny_estimate": 1.2,
-          "fetched_at": "2026-11-11T08:51:27.072Z",
+          "fetched_at": "2026-11-11T10:04:24.309Z",
           "flags": [
             "扩展库：$3/料号上料费"
           ]
@@ -6852,7 +6852,7 @@
         "优选扩展库（Preferred Extended）分类未在公开接口暴露，若需免上料费请到嘉立创 SMT 下单页确认。",
         "批量摊销参考：100 片时约 $0.0655/片（含上料费 $0.03/片 + 工程/钢网 $0/片）。"
       ],
-      "fetched_at": "2026-11-11T08:51:27.072Z"
+      "fetched_at": "2026-11-11T10:04:24.309Z"
     }
   }
 }

@@ -203,6 +203,7 @@ check('feeder fee counted once', dupAudit.summary.extended_fee_per_order_usd ===
 /* -------------------------------------------------------------------------- */
 
 fs.mkdirSync(outputDir, { recursive: true })
+service.cn?.dispose?.()
 const outputPath = path.join(outputDir, 'improvements.json')
 fs.writeFileSync(outputPath, JSON.stringify(results, null, 2))
 console.log(`\nfull JSON: ${outputPath}`)

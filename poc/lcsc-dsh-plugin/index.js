@@ -1555,7 +1555,10 @@ export async function auditBom(service, args, options = {}) {
   const cnyByCode = new Map()
   if (includeCny && codes.length > 0) {
     const targets = codes.slice(0, MAX_AUDIT_CNY_LOOKUPS)
+    const budgetMs = asNumber(settings.cnQueryBudgetMs) ?? 90000
+    const deadline = budgetMs > 0 ? Date.now() + budgetMs : Number.POSITIVE_INFINITY
     const results = await mapLimit(targets, 2, async (code) => {
+      if (Date.now() > deadline) return { ok: false, reason: 'cn-budget-exceeded' }
       try {
         if (typeof service.cn?.query === 'function') {
           const cn = await service.cn.query(code)
@@ -1569,6 +1572,10 @@ export async function auditBom(service, args, options = {}) {
     })
     results.forEach((result, index) => cnyByCode.set(targets[index], result))
     const covered = [...cnyByCode.values()].filter((result) => result?.ok === true).length
+    const budgetHit = results.some((result) => result?.reason === 'cn-budget-exceeded')
+    if (budgetHit) {
+      hints.push(`人民币价查询达到时间预算（${Math.round(budgetMs / 1000)}s）后提前返回；已取到的结果已写入 24h 缓存，直接再调用一次会更快补齐剩余料号。`)
+    }
     notes.push(
       `国内站人民币价：${covered}/${targets.length} 个料取到真实 CNY（Chrome 渲染 + 24h 缓存）；未取到的行回退为批量档 USD×${usdToCnyFactor} 估算并标 estimated=true。`,
     )
@@ -2090,6 +2097,7 @@ export function apply(ctx, config) {
         cacheTtlMs: settings.cnCacheTtlMs,
         timeoutMs: settings.cnTimeoutMs,
         concurrency: settings.cnConcurrency,
+        browserIdleTtlMs: settings.cnBrowserIdleTtlMs,
         verbose: settings.verbose,
         logger,
       })
@@ -2107,6 +2115,7 @@ export function apply(ctx, config) {
   const context = isRecord(ctx) ? ctx : {}
   context.effect?.(() => () => {
     service.clearCache()
+    cnAdapter?.dispose?.()
     cnAdapter?.clearMemory?.()
   })
   for (const definition of createToolDefinitions(service)) {
