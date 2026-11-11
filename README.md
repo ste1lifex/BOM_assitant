@@ -64,6 +64,8 @@ node poc/test-recording-card.mjs
 - 测试：`node poc/validate.mjs` 103 项离线全过；`node poc/test-improvements.mjs` 联网验收 OK
 - Recording_card BOM v0.6.1（100 片 SMT）：25 smt / 1 hand / 6 dnp，基础库 13 / 扩展库 12；元件 + 上料费合计约 USD 144.60（当日价格）
 - 历史：v0.2.0 时 BOM v0.5（28 个唯一料）基础库 12 / 扩展库 16，SMT 5 片打样上料费 16×$3=$48
+- **数据边界/使用注意**（价格口径、库存时效、Chrome 依赖、上料费假设、替代料局限）统一写在
+  [poc/lcsc-dsh-plugin/README.md#先说边界重要](poc/lcsc-dsh-plugin/README.md#先说边界重要)
 
 ## License
 
