@@ -30,28 +30,88 @@ const EASYEDA_URL = 'https://easyeda.com/api/products/'
 const LCEDA_URL = 'https://lceda.cn/api/products/'
 const ITEM_URL = 'https://item.szlcsc.com/'
 
-const CHROME_CANDIDATES = [
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  '/Applications/Chromium.app/Contents/MacOS/Chromium',
-  '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-  '/usr/bin/google-chrome',
-  '/usr/bin/chromium',
-  '/usr/bin/chromium-browser',
-]
+/**
+ * Common Chrome/Chromium locations. Windows roots are read from the
+ * environment so the list follows the real install (drive/ProgramFiles can be
+ * relocated) instead of a hard-coded path.
+ * @returns {string[]}
+ */
+function chromeCandidates() {
+  const candidates = [
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/snap/bin/chromium',
+  ]
+  if (process.platform === 'win32') {
+    const roots = [process.env.ProgramFiles, process.env['ProgramFiles(x86)'], process.env.ProgramW6432, process.env.LOCALAPPDATA]
+      .filter((root) => typeof root === 'string' && root !== '')
+    const relatives = [
+      ['Google', 'Chrome', 'Application', 'chrome.exe'],
+      ['Chromium', 'Application', 'chrome.exe'],
+      ['Microsoft', 'Edge', 'Application', 'msedge.exe'],
+    ]
+    for (const root of roots) {
+      for (const relative of relatives) candidates.push(path.join(root, ...relative))
+    }
+  }
+  return candidates
+}
 
 const DEFAULT_USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
 
-/** Locate a Chrome/Chromium binary. `explicit` wins (e.g. config.chromePath). */
-export function findChrome(explicit) {
-  if (typeof explicit === 'string' && explicit !== '' && fs.existsSync(explicit)) return explicit
-  const env = process.env.CHROME_BIN
-  if (typeof env === 'string' && env !== '' && fs.existsSync(env)) return env
-  for (const candidate of CHROME_CANDIDATES) {
-    if (fs.existsSync(candidate)) return candidate
+/**
+ * How to fix a missing Chrome, phrased so an agent can act on it directly.
+ * @param {{ path?: string, source?: string, tried: string[], configPath?: string, envPath?: string }} info
+ * @returns {string}
+ */
+export function chromeHint(info) {
+  const parts = ['未找到可用的 Chrome/Chromium，国内站人民币价与国内库存不可用（已回退为 USD 估算）。']
+  if (info.configPath !== undefined || info.envPath !== undefined) {
+    const missing = []
+    if (info.configPath !== undefined) missing.push(`config.chromePath=${info.configPath}`)
+    if (info.envPath !== undefined) missing.push(`CHROME_BIN=${info.envPath}`)
+    parts.push(`当前指定的路径不存在：${missing.join('，')}。`)
   }
-  return undefined
+  parts.push(`已尝试 ${info.tried.length} 个常见路径${info.tried.length === 0 ? '' : `（${info.tried.slice(0, 5).join(' ; ')}${info.tried.length > 5 ? ' …' : ''}）`}。`)
+  parts.push(
+    '请任选其一修复后重试：① 在本插件配置里加 chromePath: "<本机 Chrome 可执行文件绝对路径>"' +
+      '（profile 的 cordis.patch.yml，条目 id 为 lcsc-parts）；② 给宿主进程设置环境变量 CHROME_BIN。' +
+      '定位方法：Windows `where chrome` 或查看 %ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe；' +
+      'macOS `ls /Applications | grep -i chrome`；Linux `which google-chrome chromium`。',
+  )
+  return parts.join('')
+}
+
+/**
+ * Locate a Chrome/Chromium binary and explain where it came from.
+ * Precedence: explicit config → CHROME_BIN → auto-discovery.
+ * @param {string} [explicit]
+ * @returns {{ path?: string, source?: 'config' | 'chrome_bin' | 'auto', tried: string[], configPath?: string, envPath?: string }}
+ */
+export function findChromeInfo(explicit) {
+  const configPath = typeof explicit === 'string' && explicit !== '' ? explicit : undefined
+  if (configPath !== undefined && fs.existsSync(configPath)) return { path: configPath, source: 'config', tried: [], configPath }
+  const envPath = typeof process.env.CHROME_BIN === 'string' && process.env.CHROME_BIN !== '' ? process.env.CHROME_BIN : undefined
+  if (envPath !== undefined && fs.existsSync(envPath)) return { path: envPath, source: 'chrome_bin', tried: [], envPath }
+  const tried = []
+  for (const candidate of chromeCandidates()) {
+    if (tried.includes(candidate)) continue
+    tried.push(candidate)
+    if (fs.existsSync(candidate)) return { path: candidate, source: 'auto', tried, configPath, envPath }
+  }
+  return { path: undefined, source: undefined, tried, configPath, envPath }
+}
+
+/** Locate a Chrome/Chromium binary (compatibility wrapper around findChromeInfo). */
+export function findChrome(explicit) {
+  return findChromeInfo(explicit).path
 }
 
 /** Extract the `__NEXT_DATA__` JSON from an HTML document (or undefined). */
@@ -229,7 +289,9 @@ function sleep(ms) {
  * }} [options]
  */
 export function createCnAdapter(options = {}) {
-  const chromePath = findChrome(options.chromePath)
+  const chromeInfo = findChromeInfo(options.chromePath)
+  const chromePath = chromeInfo.path
+  const chromeHintText = chromePath === undefined ? chromeHint(chromeInfo) : undefined
   const cacheDir =
     typeof options.cacheDir === 'string' && options.cacheDir !== ''
       ? options.cacheDir
@@ -622,7 +684,9 @@ export function createCnAdapter(options = {}) {
   async function query(code, callOptions = {}) {
     const normalized = String(code ?? '').trim().toUpperCase()
     if (normalized === '') return { ok: false, reason: 'empty-code' }
-    if (chromePath === undefined) return { ok: false, reason: 'chrome-not-found' }
+    if (chromePath === undefined) {
+      return { ok: false, reason: 'chrome-not-found', tried: chromeInfo.tried, hint: chromeHintText }
+    }
     queryCount += 1
     // Prune expired JSON cache entries lazily (about once per hour / 50 hits).
     if (queryCount === 1 || Date.now() - lastJsonPruneAt > 60 * 60 * 1000 || queryCount % 50 === 0) {
@@ -674,6 +738,9 @@ export function createCnAdapter(options = {}) {
 
   return {
     chromePath,
+    /** Where the binary came from and what was tried; used by the tools' hints. */
+    chrome: { ...chromeInfo, hint: chromeHintText },
+    available: chromePath !== undefined,
     cacheDir,
     query,
     resolvePid,

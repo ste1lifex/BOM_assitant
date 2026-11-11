@@ -642,6 +642,50 @@ try {
 }
 
 /* -------------------------------------------------------------------------- */
+/* CNY 失败诊断                                                               */
+/* -------------------------------------------------------------------------- */
+
+section('CNY 失败诊断（Chrome 缺失必须让 agent 知道怎么修）')
+
+const cnyDownService = {
+  searchRaw: async (code) => ({ total: 1, items: [capBase].filter((item) => item.code === String(code).toUpperCase()) }),
+  cn: {
+    query: async () => ({ ok: false, reason: 'chrome-not-found' }),
+    chrome: { tried: ['/opt/chrome'], hint: 'CHROME_FIX_HINT：请配置 chromePath 或 CHROME_BIN。' },
+  },
+}
+const auditCnDown = await auditBom(cnyDownService, { bom: 'C307331,2\n', assembly: 'hand', boards: 5, include_cny: true }, {})
+check(
+  'audit 缺 Chrome 时给出 chrome-not-found',
+  auditCnDown.hints.some((hint) => hint.includes('chrome-not-found')),
+  auditCnDown.hints,
+)
+check(
+  'audit 缺 Chrome 时给出可执行修复提示',
+  auditCnDown.hints.some((hint) => hint.includes('CHROME_FIX_HINT')),
+  auditCnDown.hints,
+)
+check(
+  'audit 缺 Chrome 时仍回退估算',
+  auditCnDown.summary.cny_covered_lines === 0 && auditCnDown.summary.cny_estimated_lines > 0,
+  auditCnDown.summary,
+)
+
+const findCnDown = await findParts(
+  cnyDownService,
+  { need: 'C307331', assembly: 'hand', quantity: 1, boards: 1, include_cny: true, limit: 1 },
+  {},
+)
+check(
+  'find 缺 Chrome 时给出可执行修复提示',
+  findCnDown.hints.some((hint) => hint.includes('CHROME_FIX_HINT')),
+  findCnDown.hints,
+)
+
+check('place 空值跟随 hand 口径', normalizePlace('', 'hand') === 'hand')
+check('place 空值默认 smt 口径', normalizePlace(undefined) === 'smt')
+
+/* -------------------------------------------------------------------------- */
 /* Result                                                                     */
 /* -------------------------------------------------------------------------- */
 

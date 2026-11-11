@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-lcsc",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Requirement-driven LCSC/JLC part finder and BOM cost auditor for DeepSeek Harness agents: real CNY+USD dual pricing, basic-vs-extended library fees, DNP/hand placement, net-saving alternatives",
   "keywords": [
     "dsh-plugin",

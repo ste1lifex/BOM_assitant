@@ -88,6 +88,7 @@ Host-only bundle，无 UI 面板；`engines.dsh >= 0.2.2-rc.1 < 0.3.0`。装完�
 - id: lcsc-parts
   config:
     cnRender: true             # 国内站 Chrome 渲染（关掉则只有 USD + 估算）
+    chromePath: ''             # 本机 Chrome/Chromium 路径；留空则自动嗅探（见下）
     cnConcurrency: 4           # 常驻 Chrome 并发标签数 1-8
     cnBrowserIdleTtlMs: 120000 # 空闲多久关 Chrome
     cnQueryBudgetMs: 90000     # 单次 BOM 取 CNY 时间预算；超时先返回，缓存续跑
@@ -97,6 +98,29 @@ Host-only bundle，无 UI 面板；`engines.dsh >= 0.2.2-rc.1 < 0.3.0`。装完�
     extendedPartFeeUsd: 3.0    # 扩展库上料费
     setupFeeUsd: 0.0           # 工程费（可选）
     stencilFeeUsd: 0.0         # 钢网费（可选）
+```
+
+### Chrome 路径：自动嗅探 + 可配置 + 失败可诊断
+
+真实人民币价依赖本机 Chrome/Chromium。查找顺序：
+
+1. 配置 `chromePath`（绝对路径，优先级最高）
+2. 环境变量 `CHROME_BIN`
+3. 自动嗅探：macOS/Linux 常见路径；Windows 按 `ProgramFiles` / `ProgramFiles(x86)` / `ProgramW6432` / `LOCALAPPDATA` 依次找 Chrome、Chromium、Edge
+
+**找不到时会显式报错并给出修复步骤**：工具输出的 `hints` 里会写明失败原因、已尝试的路径，以及「配置 `chromePath` 或设置 `CHROME_BIN`」的具体做法。不会有"静默降级成估算"却没人知道的情况。
+
+定位 Chrome：
+
+```bash
+where chrome                                   # Windows
+ls /Applications | grep -i chrom               # macOS
+which google-chrome chromium                   # Linux
+```
+
+```yaml
+# 例：Windows 自定义安装位置
+chromePath: 'D:\Apps\Chrome\Application\chrome.exe'
 ```
 
 ## 测试

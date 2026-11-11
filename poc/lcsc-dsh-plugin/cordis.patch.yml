@@ -11,6 +11,11 @@
         usdToCnyFactor: 6.0
         # 国内站人民币价：Chrome 无头渲染 + 24h 缓存（无 Chrome 时自动降级为 USD 估算）
         cnRender: true
+        # 本机 Chrome/Chromium 路径。留空则按顺序尝试：config.chromePath → 环境变量
+        # CHROME_BIN → 自动嗅探（macOS/Linux 常见路径；Windows 读 ProgramFiles /
+        # ProgramW6432 / LOCALAPPDATA 下的 Chrome、Chromium、Edge）。
+        # 都找不到时工具会在 hints 里给出可执行的修复指引（含已尝试的路径）。
+        # chromePath: 'C:\Program Files\Google\Chrome\Application\chrome.exe'
         cnCacheTtlMs: 86400000
         cnTimeoutMs: 30000
         cnConcurrency: 4

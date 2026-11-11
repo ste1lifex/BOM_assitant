@@ -1120,7 +1120,9 @@ export async function findParts(service, args, options = {}) {
       try {
         if (typeof service.cn?.query === 'function') {
           const cn = await service.cn.query(code)
-          if (cn?.ok === true) return cn
+          // Keep the adapter's own failure reason (chrome-not-found, WAF, …) so
+          // the caller can see WHY real CNY is missing and how to fix it.
+          if (cn !== undefined && cn !== null) return cn
         }
         if (typeof service.cny === 'function') return await service.cny(code, options.signal)
         return { ok: false, reason: 'cny-adapter-unavailable' }
@@ -1134,9 +1136,9 @@ export async function findParts(service, args, options = {}) {
     const covered = [...cnyByCode.values()].filter((result) => result?.ok === true).length
     if (covered > 0) {
       notes.push(`人民币价来自立创商城国内站（Chrome 渲染，${covered}/${targets.length} 个候选取到 CNY，24h 缓存）。USD 与 CNY 并列，不混算。`)
-    } else {
-      hints.push('国内站人民币价本次不可用（Chrome/WAF/限流），CNY 列已回退为「批量档 USD×系数」的参考估算。')
     }
+    const cnyFailure = cnFailureHint(results, service.cn)
+    if (cnyFailure !== undefined) hints.push(cnyFailure)
   }
 
   // ---- Phase 4: build output ----------------------------------------------
@@ -1254,14 +1256,59 @@ export async function findParts(service, args, options = {}) {
 /* -------------------------------------------------------------------------- */
 
 /** @param {unknown} input @returns {{ line: number, code: string, qty: number, designators?: string, comment?: string }[]} */
-/** Normalise a per-line placement value to `smt` | `hand` | `dnp`. */
-export function normalizePlace(value) {
+/**
+ * Normalise a per-line placement value to `smt` | `hand` | `dnp`.
+ * A BOM without a placement column inherits the audit's assembly mode: a hand
+ * audit must not label every line `smt` (that contradicted the summary).
+ * @param {unknown} value
+ * @param {'smt' | 'hand'} [fallback]
+ */
+export function normalizePlace(value, fallback = 'smt') {
+  const defaultPlace = fallback === 'hand' ? 'hand' : 'smt'
   const text = String(value ?? '').trim().toLowerCase()
-  if (text === '') return 'smt'
+  if (text === '') return defaultPlace
   if (/dnp|do ?not|不贴|未贴|不焊|no ?populate|不上件/.test(text)) return 'dnp'
   if (/hand|手焊|手工|烙铁|manual/.test(text)) return 'hand'
   if (/smt|贴片|机贴|回流|reflow/.test(text)) return 'smt'
-  return 'smt'
+  return defaultPlace
+}
+
+/**
+ * Explain why real CNY prices were missing and tell the calling agent how to
+ * fix the local Chrome configuration. Without this the tool silently degrades
+ * to USD estimates and nobody knows a one-line config change would fix it.
+ * @param {Record<string, unknown>[]} results per-code CNY query results
+ * @param {{ chrome?: { path?: string, source?: string, tried?: string[], hint?: string } } | undefined} adapter
+ * @returns {string | undefined}
+ */
+function cnFailureHint(results, adapter) {
+  const total = results.length
+  if (total === 0) return undefined
+  const failed = results.filter((result) => result?.ok !== true)
+  if (failed.length === 0) return undefined
+  const counts = new Map()
+  for (const result of failed) {
+    const reason = String(result?.reason ?? 'unknown')
+    counts.set(reason, (counts.get(reason) ?? 0) + 1)
+  }
+  const breakdown = [...counts.entries()]
+    .sort((left, right) => right[1] - left[1])
+    .map(([reason, count]) => `${reason}×${count}`)
+    .join('，')
+  const parts = [`国内站人民币价 ${total - failed.length}/${total} 成功，失败原因：${breakdown}。`]
+  if (counts.has('chrome-not-found')) {
+    parts.push(
+      typeof adapter?.chrome?.hint === 'string'
+        ? adapter.chrome.hint
+        : '未找到 Chrome/Chromium：请配置 chromePath 或设置环境变量 CHROME_BIN 后重试。',
+    )
+  } else if (adapter?.chrome?.path !== undefined) {
+    parts.push(`当前 Chrome：${adapter.chrome.path}（来源 ${adapter.chrome.source ?? 'auto'}）。`)
+  }
+  if (counts.has('cn-budget-exceeded')) {
+    parts.push('部分料号超出时间预算未查完；结果已写入 24h 缓存，再调用一次会更快补齐。')
+  }
+  return parts.join('')
 }
 
 /** @param {unknown} input @returns {{ rows: { line: number, code: string, qty: number, designators?: string, comment?: string, place?: string }[], skipped: { line: number, raw?: string, comment?: string, designators?: string }[] }} */
@@ -1326,11 +1373,12 @@ function parseBomRows(rows) {
  * are combined, the feeder fee is charged once per unique part, and the price
  * tier is taken at the combined order quantity.
  */
-function mergeBomRows(rows) {
+function mergeBomRows(rows, assembly = 'smt') {
   /** @type {Map<string, { code: string, qty: number, designators: string[], comments: string[], places: string[], lines: { line: number, qty: number, designators?: string, place: string }[] }>} */
   const byCode = new Map()
+  const fallbackPlace = assembly === 'hand' ? 'hand' : 'smt'
   for (const row of rows) {
-    const place = normalizePlace(row.place)
+    const place = normalizePlace(row.place, fallbackPlace)
     const key = `${row.code}|${place}`
     const entry = byCode.get(key)
     if (entry === undefined) {
@@ -1525,7 +1573,7 @@ export async function auditBom(service, args, options = {}) {
   const hints = []
   const errors = []
 
-  const merged = mergeBomRows(rows)
+  const merged = mergeBomRows(rows, assembly)
   const codes = [...new Set(merged.map((entry) => entry.code).filter((code) => code !== ''))]
   if (args.include_cny === undefined && assembly === 'hand' && merged.length <= 8) includeCny = true
   if (args.include_cny === undefined && assembly === 'hand' && merged.length > 8) {
@@ -1562,7 +1610,9 @@ export async function auditBom(service, args, options = {}) {
       try {
         if (typeof service.cn?.query === 'function') {
           const cn = await service.cn.query(code)
-          if (cn?.ok === true) return cn
+          // Keep the adapter's own failure reason (chrome-not-found, WAF, …) so
+          // the caller can see WHY real CNY is missing and how to fix it.
+          if (cn !== undefined && cn !== null) return cn
         }
         if (typeof service.cny === 'function') return await service.cny(code, options.signal)
         return { ok: false, reason: 'cny-adapter-unavailable' }
@@ -1579,6 +1629,8 @@ export async function auditBom(service, args, options = {}) {
     notes.push(
       `国内站人民币价：${covered}/${targets.length} 个料取到真实 CNY（Chrome 渲染 + 24h 缓存）；未取到的行回退为批量档 USD×${usdToCnyFactor} 估算并标 estimated=true。`,
     )
+    const cnyFailure = cnFailureHint(results, service.cn)
+    if (cnyFailure !== undefined) hints.push(cnyFailure)
     if (targets.length < codes.length) {
       notes.push(`CNY 查询上限 ${MAX_AUDIT_CNY_LOOKUPS} 个料号，其余行只有 USD 参考；可用 include_cny 配合缓存分批复核。`)
     }
