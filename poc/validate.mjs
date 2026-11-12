@@ -831,6 +831,72 @@ check('CNY per board and per order reported', cnyBasisAudit.summary.components_c
 check('CNY price tier labelled', cnyBasisAudit.summary.cny_price_tier === 'retail_1pc', cnyBasisAudit.summary.cny_price_tier)
 
 /* -------------------------------------------------------------------------- */
+/* 9. Round-3: USD/CNY separation + 嘉立创国内 SMT CNY (economic/standard)     */
+/* -------------------------------------------------------------------------- */
+
+section('round-3: CNY-only / USD-only separation')
+const capBase3 = fixture({ code: 'C307331', model: 'CL05B104KB54PNC', package: '0402', category: 'Ceramic Capacitors', description: '100nF 50V X7R 0402', libraryType: 'base', stock: 100000, priceUsdTiers: [{ qty: 1, unit: 0.0085 }], attributes: [{ name: 'Capacitance', value: '100nF' }] })
+const resExpand3 = fixture({ code: 'C114765', model: 'RC0402FR-0722RL', package: '0402', category: 'Chip Resistor - Surface Mount', description: '22Ω ±1% 0402', libraryType: 'expand', stock: 5000000, priceUsdTiers: [{ qty: 1, unit: 0.0018 }], attributes: [{ name: 'Resistance', value: '22Ω' }] })
+const cnyStub3 = {
+  settings: { extendedPartFeeUsd: 3 },
+  async searchRaw(code) {
+    const text = String(code).toUpperCase()
+    if (text === 'C307331') return { total: 1, items: [capBase3] }
+    if (text === 'C114765') return { total: 1, items: [resExpand3] }
+    return { total: 0, items: [] }
+  },
+  async cny(code) {
+    if (String(code) === 'C307331') return { ok: true, unit: 0.0251, stock: 1000, source: 'lcsc_cn_render', fetched_at: '2026-11-12T00:00:00Z' }
+    if (String(code) === 'C114765') return { ok: true, unit: 0.0052, stock: 1000, source: 'lcsc_cn_render', fetched_at: '2026-11-12T00:00:00Z' }
+    return { ok: false }
+  },
+}
+const cnyOnly3 = await auditBom(cnyStub3, { bom: 'C307331,2\nC114765,5\n', assembly: 'smt', boards: 10, include_cny: true, include_usd: false, suggest_alternatives: false })
+check('CNY-only suppresses USD rows', cnyOnly3.rows.every((row) => row.unit_usd === undefined && row.subtotal_usd === undefined))
+check('CNY-only suppresses USD totals', cnyOnly3.summary.total_usd === undefined && cnyOnly3.summary.components_usd === undefined)
+check('CNY-only currency label has no USD', !String(cnyOnly3.currency).includes('USD'), cnyOnly3.currency)
+check('CNY-only renders without $', !renderAuditText(cnyOnly3).includes('$'), renderAuditText(cnyOnly3).slice(0, 120))
+
+const usdOnlyCalls = []
+const usdOnlyStub3 = { ...cnyStub3, async cny(code) { usdOnlyCalls.push(code); return { ok: false } } }
+const usdOnly3 = await auditBom(usdOnlyStub3, { bom: 'C307331,2\nC114765,5\n', assembly: 'smt', boards: 10, include_cny: false, suggest_alternatives: false })
+check('USD-only does not call CNY adapter', usdOnlyCalls.length === 0, usdOnlyCalls)
+check('USD-only has no real CNY row fields', usdOnly3.rows.every((row) => row.unit_cny === undefined && row.subtotal_cny === undefined))
+check('USD-only keeps USD totals', usdOnly3.summary.total_usd > 0)
+
+section('round-3: 嘉立创国内 SMT CNY (economic vs standard)')
+const econ3 = await auditBom(cnyStub3, {
+  bom: 'C307331,2\nC114765,5\n', assembly: 'smt', boards: 10, include_cny: true,
+  smt_cost_basis: 'cny_jlc_cn', smt_service_type: 'economic', suggest_alternatives: false,
+})
+check('economic CNY SMT basis set', econ3.smt_cost_basis === 'cny_jlc_cn' && econ3.smt_service_type === 'economic')
+check('economic engineering fee = ¥50', econ3.cn_smt.engineering_fee_cny === 50, econ3.cn_smt.engineering_fee_cny)
+check('economic stencil fee = ¥0', econ3.cn_smt.stencil_fee_cny === 0, econ3.cn_smt.stencil_fee_cny)
+check('economic extended fee = ¥20 (1 part)', econ3.cn_smt.extended_fee_cny === 20, econ3.cn_smt.extended_fee_cny)
+check('economic joint count estimated', econ3.cn_smt.joint_count_estimated === true, econ3.cn_smt.joint_count)
+check('economic CNY total = 72.162', Math.abs(econ3.cn_smt.total_cny - 72.162) < 0.01, econ3.cn_smt.total_cny)
+check('CNY SMT totals separate from USD', econ3.totals.smt_total_cny === econ3.cn_smt.total_cny && econ3.totals.smt_total_usd > 0)
+
+const std3 = await auditBom(cnyStub3, {
+  bom: 'C307331,2\nC114765,5\n', assembly: 'smt', boards: 10, include_cny: true,
+  smt_cost_basis: 'cny_jlc_cn', smt_service_type: 'standard', suggest_alternatives: false,
+})
+check('standard engineering fee = ¥150', std3.cn_smt.engineering_fee_cny === 150, std3.cn_smt.engineering_fee_cny)
+check('standard stencil fee = ¥50', std3.cn_smt.stencil_fee_cny === 50, std3.cn_smt.stencil_fee_cny)
+check('standard extended fee = ¥8 (1 part)', std3.cn_smt.extended_fee_cny === 8, std3.cn_smt.extended_fee_cny)
+check('standard CNY total = 210.162', Math.abs(std3.cn_smt.total_cny - 210.162) < 0.01, std3.cn_smt.total_cny)
+check('economic and standard totals differ', econ3.cn_smt.total_cny !== std3.cn_smt.total_cny, { economic: econ3.cn_smt.total_cny, standard: std3.cn_smt.total_cny })
+check('economic/standard never auto-mixed', econ3.cn_smt.service_type === 'economic' && std3.cn_smt.service_type === 'standard')
+
+const missingService3 = await auditBom(cnyStub3, { bom: 'C307331,1\n', assembly: 'smt', boards: 1, include_cny: true, smt_cost_basis: 'cny_jlc_cn' })
+check('cny_jlc_cn without service type is refused', missingService3.cn_smt === undefined && missingService3.errors.some((error) => /smt_service_type/.test(error)), missingService3.errors)
+const econ3TwoSides = await auditBom(cnyStub3, { bom: 'C307331,1\n', assembly: 'smt', boards: 1, include_cny: true, smt_cost_basis: 'cny_jlc_cn', smt_service_type: 'economic', smt_sides: 2 })
+check('economic + 2 sides is refused', econ3TwoSides.cn_smt === undefined && econ3TwoSides.errors.some((error) => /单面/.test(error)), econ3TwoSides.errors)
+const manualJoints3 = await auditBom(cnyStub3, { bom: 'C307331,2\n', assembly: 'smt', boards: 10, include_cny: true, smt_cost_basis: 'cny_jlc_cn', smt_service_type: 'standard', smt_joint_count: 100000 })
+check('explicit smt_joint_count used', manualJoints3.cn_smt.joint_count === 100000 && manualJoints3.cn_smt.joint_count_estimated === false, manualJoints3.cn_smt.joint_count)
+check('standard joint tiers applied', Math.abs(manualJoints3.cn_smt.joint_fee_cny - (50000 * 0.01 + 50000 * 0.008)) < 0.01, manualJoints3.cn_smt.joint_fee_cny)
+
+/* -------------------------------------------------------------------------- */
 /* Result                                                                     */
 /* -------------------------------------------------------------------------- */
 

@@ -68,6 +68,11 @@
 | `suggest_alternatives` | true | 基础库替代 + 净节省（省上料费 − 元件价差；封装不同标注；替代带双库存） |
 | `require_stock` | `any` | 替代建议的库存口径：`any` / `lcsc`（立创零售，DIY 配单）/ `smt`（嘉立创 SMT，PCBA）；库存不满足的候选会列为 skipped |
 | `export_bom` | false | 输出嘉立创 BOM CSV |
+| `include_usd` | true | 是否输出 USD 列/合计；`false` = 纯 CNY 模式（无 `$` 列） |
+| `smt_cost_basis` | `usd_jlc_global` | SMT 成本口径：`usd_jlc_global`（JLCPCB 海外 USD）/ `cny_retail`（立创零售参考）/ `cny_jlc_cn`（嘉立创国内 SMT 人民币计价） |
+| `smt_service_type` | — | **`cny_jlc_cn` 必填**：`economic`（经济型）/ `standard`（标准型）；两种产线费率不同，不能自动判断 |
+| `smt_sides` | 1 | 贴装面数（1/2）；经济型只支持 1 面 |
+| `smt_joint_count` | — | 整单焊点总数；不给则按封装估算并标 `joint_count_estimated` |
 | `region` | `global` | 费用口径标签（`cn` 会标注费率假设） |
 
 输出：`summary`（含 USD/CNY 分列、`cost_table`、`dnp/hand` 统计）、`rows`（含 `place`/双价/双库存/`flags`）、`optimize`（净节省与 actions）、`bom_csv`、`skipped`（缺料号行不静默丢弃）。
@@ -176,6 +181,8 @@ node poc/test-improvements.mjs     # 联网验收（BOM v0.6 100 片 + 人民币
 6. 不做下单、不做比价大屏、不抓淘宝/1688；没有 LCSC 编号的料无法计价。
 7. Chrome 进程按空闲/卸载退出；若宿主进程被强杀，可能留下一个 Chrome 残留进程（其 profile 缓存在下次启动前会先清理，不会持续膨胀）。
 8. 中文/口语品类召回已按同义词表 + 关键词回退修复；但 JLC 关键词搜索对个别型号（如 LMA2718 系列 MEMS 麦）不返回，需用型号或 LCSC 编号精确查询（数据源限制，非插件解析问题）。
+9. **SMT CNY 边界**：`cny_jlc_cn` 器件费按立创商城 **1pc 人民币价**估算（嘉立创系统按实际采购数量计价，可能更低）；焊点费在未给 `smt_joint_count` 时按封装估算；经济型/标准型费率来自嘉立创官方「贴片、插件焊接收费模式」表（2026-09），但**插件工程费、AOI、X-RAY、大板费、包装/治具、整盘预订5元/种上料优惠**未计入，最终以嘉立创系统报价为准。
+10. **产线选择**：插件无法判断某块板/某颗料是否符合经济型（单面、片式≥0402、IC pin间距≥0.4mm、BGA球径≥0.5mm 等），必须由用户显式传 `smt_service_type`；传 `economic` 时会给出已知限制提醒，但不会替用户做最终判断。
 
 详细改进记录见仓库 [`docs/改进记录_0.3.0.md`](../../docs/改进记录_0.3.0.md)。
 

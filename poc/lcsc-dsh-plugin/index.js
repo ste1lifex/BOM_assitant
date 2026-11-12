@@ -92,6 +92,135 @@ function money(value) {
 }
 
 /**
+ * 嘉立创国内 SMT 官方收费模式（贴片、插件焊接收费模式表，server_guide_4025，
+ * 2026-09 更新）。经济型与标准型的工程费/钢网/上料费不同，必须显式选择，
+ * 绝不能把经济型价格当标准型输出。
+ */
+const CN_SMT_SERVICE_TYPES = ['economic', 'standard']
+
+/** @param {number} totalJoints @param {'economic'|'standard'} serviceType */
+function cnSmtJointFeeCny(totalJoints, serviceType) {
+  if (!(totalJoints > 0)) return 0
+  if (serviceType !== 'standard') return totalJoints * 0.01
+  if (totalJoints <= 50000) return totalJoints * 0.01
+  if (totalJoints <= 100000) return 50000 * 0.01 + (totalJoints - 50000) * 0.008
+  return 50000 * 0.01 + 50000 * 0.008 + (totalJoints - 100000) * 0.007
+}
+
+/**
+ * Estimate solder pads/joints for one BOM line. The BOM has no pad data, so this
+ * is explicitly an estimate unless the user passes smt_joint_count.
+ * @param {Record<string, unknown>|undefined} item
+ * @returns {{ pads: number, estimated: boolean }}
+ */
+function estimatePadCount(item) {
+  if (item === undefined) return { pads: 2, estimated: true }
+  for (const attribute of attributesOf(item)) {
+    if (/number of (pins|contacts|positions)|pin count|pins|positions|contacts/i.test(attribute.name)) {
+      const count = Number(String(attribute.value).match(/\d+/)?.[0])
+      if (Number.isInteger(count) && count > 0 && count <= 2000) return { pads: count, estimated: false }
+    }
+  }
+  const text = `${asString(item.package) ?? ''} ${asString(item.model) ?? ''} ${asString(item.description) ?? ''}`
+  const packageCount = text.match(/\b(qfn|qfp|tqfp|lqfp|bga|sop|soic|ssop|tssop|msop|sot|dfn|wson|dip|sip|esop)[-_ ]?(\d{1,4})\b/i)
+  if (packageCount !== null) {
+    const count = Number(packageCount[2])
+    if (count >= 2 && count <= 2000) return { pads: count, estimated: false }
+  }
+  const category = `${asString(item.category) ?? ''} ${asString(item.description) ?? ''}`.toLowerCase()
+  if (/transistor|mosfet|三极管|mos/.test(category)) return { pads: 3, estimated: true }
+  return { pads: 2, estimated: true }
+}
+
+/** @param {Record<string, unknown>[]} smtRows @param {Map<string, Record<string, unknown>>} jlcByCode */
+function cnEconomicEligibilityWarnings(smtRows, jlcByCode) {
+  const warnings = []
+  for (const row of smtRows) {
+    const item = jlcByCode.get(row.lcsc)
+    const text = item === undefined
+      ? ''
+      : `${asString(item.package) ?? ''} ${asString(item.description) ?? ''} ${attributesOf(item).map((a) => `${a.name} ${a.value}`).join(' ')}`.toLowerCase()
+    const packageText = `${asString(item?.package) ?? ''}`.toLowerCase()
+    if (/0201|01005|008004/.test(packageText)) {
+      warnings.push(`经济型不支持片式元件 <0402（${row.lcsc} ${packageText || '0201'}），请改用标准型或人工确认`)
+    }
+    const pitch = text.match(/pitch[^0-9]{0,8}(\d+(?:\.\d+)?)\s*mm/i) ?? text.match(/(\d+(?:\.\d+)?)\s*mm\s*(?:间距|pitch)/i)
+    if (pitch !== null && Number(pitch[1]) < 0.4) {
+      warnings.push(`经济型不支持 IC pin 间距 <0.4mm（${row.lcsc}：${pitch[1]}mm），请改用标准型或人工确认`)
+    }
+    if (/bga/.test(packageText) && /pitch[^0-9]{0,8}0?\.(?:[0-4]\d?)\s*mm/i.test(text)) {
+      warnings.push(`经济型不支持 BGA 球径间距 <0.5mm（${row.lcsc}），请改用标准型或人工确认`)
+    }
+  }
+  return [...new Set(warnings)]
+}
+
+/**
+ * 嘉立创国内 SMT 人民币成本（真实 CNY 元件价 + 官方费率）。
+ * @param {{
+ *   smtRows: Record<string, unknown>[],
+ *   boards: number,
+ *   serviceType: 'economic'|'standard',
+ *   sides: number,
+ *   jointCount?: number,
+ *   settings: Record<string, unknown>,
+ *   jlcByCode: Map<string, Record<string, unknown>>,
+ * }} input
+ */
+function computeCnSmtCost(input) {
+  const { smtRows, boards, serviceType, sides, jointCount, settings, jlcByCode } = input
+  const economic = serviceType === 'economic'
+  const engineeringPerSide = asNumber(economic ? settings.cnSmtEconomicEngineeringCny : settings.cnSmtStandardEngineeringCny) ?? (economic ? 50 : 150)
+  const stencilPerSide = asNumber(economic ? settings.cnSmtEconomicStencilCny : settings.cnSmtStandardStencilCny) ?? (economic ? 0 : 50)
+  const extendedPerPart = asNumber(economic ? settings.cnSmtEconomicExtendedCny : settings.cnSmtStandardExtendedCny) ?? (economic ? 20 : 8)
+  const extendedCap = asNumber(settings.cnSmtExtendedCapCny) ?? 800
+  const componentCny = smtRows.reduce((sum, row) => sum + (asNumber(row.subtotal_cny) ?? 0), 0)
+  const estimatedRows = smtRows.filter((row) => row.subtotal_cny === undefined)
+  const componentEstimateCny = estimatedRows.reduce((sum, row) => sum + (asNumber(row.subtotal_cny_estimate) ?? 0), 0)
+  const componentsTotalCny = componentCny + componentEstimateCny
+  const extendedUnique = new Set(smtRows.filter((row) => row.library === 'expand').map((row) => row.lcsc))
+  const extendedRaw = extendedUnique.size * extendedPerPart
+  const extendedFee = Math.min(extendedRaw, extendedCap)
+  const engineeringFee = engineeringPerSide * sides
+  const stencilFee = stencilPerSide * sides
+  const estimatedJoints = smtRows.reduce((sum, row) => {
+    const { pads } = estimatePadCount(jlcByCode.get(row.lcsc))
+    return sum + pads * (asNumber(row.qty) ?? 0) * boards
+  }, 0)
+  const joints = Number.isFinite(jointCount) && jointCount > 0 ? Math.round(jointCount) : estimatedJoints
+  const jointFee = cnSmtJointFeeCny(joints, serviceType)
+  const totalCny = componentsTotalCny + extendedFee + engineeringFee + stencilFee + jointFee
+  const warnings = economic ? cnEconomicEligibilityWarnings(smtRows, jlcByCode) : []
+  return {
+    basis: 'cny_jlc_cn',
+    service_type: serviceType,
+    sides,
+    rules_source: '嘉立创官方「贴片、插件焊接收费模式」表（server_guide_4025，2026-09 更新）',
+    component_price_source: 'lcsc_cn_retail_1pc',
+    component_price_note: '器件费按立创商城国内站 1pc 人民币价估算；嘉立创系统按实际采购数量计价，最终以系统报价为准',
+    components_cny: money(componentsTotalCny),
+    components_actual_cny: money(componentCny),
+    component_estimated_lines: estimatedRows.length,
+    components_estimate_cny: money(componentEstimateCny),
+    extended_parts: extendedUnique.size,
+    extended_fee_per_part_cny: money(extendedPerPart),
+    extended_fee_cny: money(extendedFee),
+    extended_fee_cap_cny: money(extendedCap),
+    extended_fee_cap_applied: extendedRaw > extendedCap,
+    engineering_fee_cny: money(engineeringFee),
+    engineering_fee_per_side_cny: money(engineeringPerSide),
+    stencil_fee_cny: money(stencilFee),
+    stencil_fee_per_side_cny: money(stencilPerSide),
+    joint_count: joints,
+    joint_count_estimated: !(Number.isFinite(jointCount) && jointCount > 0),
+    joint_fee_cny: money(jointFee),
+    total_cny: money(totalCny),
+    per_board_cny: money(totalCny / Math.max(1, boards)),
+    warnings,
+  }
+}
+
+/**
  * DSH validates tool results for lossless JSON: plain `undefined` properties,
  * NaN and Infinity are rejected. Normalise any result before returning it.
  * @param {unknown} value
@@ -1059,7 +1188,9 @@ export async function findParts(service, args, options = {}) {
   const sort = ['cost', 'stock'].includes(args.sort) ? args.sort : 'balanced'
   const baseOnly = args.base_only === true
   const requireStock = ['lcsc', 'smt'].includes(args.require_stock) ? args.require_stock : 'any'
+  const includeUsd = args.include_usd !== false
   const includeCny = args.include_cny === true || (args.include_cny === undefined && assembly === 'hand') || requireStock === 'lcsc'
+  if (!includeUsd && !includeCny) throw new Error('find_lcsc_parts: include_usd=false 且 include_cny=false 时没有可输出的价格；至少保留一种币种')
   const exclude = new Set(
     (Array.isArray(args.exclude_lcsc) ? args.exclude_lcsc : [])
       .map((code) => normalizeCode(code))
@@ -1224,7 +1355,9 @@ export async function findParts(service, args, options = {}) {
     }
     const covered = [...cnyByCode.values()].filter((result) => result?.ok === true).length
     if (covered > 0) {
-      notes.push(`人民币价来自立创商城国内站（Chrome 渲染，${covered}/${targets.length} 个候选取到 CNY，24h 缓存）。USD 与 CNY 并列，不混算。`)
+      notes.push(includeUsd
+        ? `人民币价来自立创商城国内站（Chrome 渲染，${covered}/${targets.length} 个候选取到 CNY，24h 缓存）。USD 与 CNY 分列，不混算。`
+        : `人民币价来自立创商城国内站（Chrome 渲染，${covered}/${targets.length} 个候选取到 CNY，24h 缓存）。include_usd=false：只输出 CNY。`)
     }
     const cnyFailure = cnFailureHint(results, service.cn)
     if (cnyFailure !== undefined) hints.push(cnyFailure)
@@ -1360,6 +1493,11 @@ export async function findParts(service, args, options = {}) {
     notes.push(`assembly=smt：扩展库按每料号 $${feeUsd}/单上料费摊销；基础库优先度体现在排序里。`)
   }
 
+  if (!includeUsd) {
+    for (const candidate of candidates) {
+      for (const key of ['price', 'price_usd', 'used_tier', 'effective_unit_usd', 'fee_per_board_usd']) delete candidate[key]
+    }
+  }
   const allWarnings = [...new Set(candidates.flatMap((candidate) => candidate.data_warnings ?? []))]
   if (allWarnings.includes('retail_out_of_stock_smt_ok')) {
     notes.push('注意：部分候选「立创零售仓缺货、嘉立创 SMT 仓有货」——不是停产；DIY 配单需看 stock_retail，PCBA 可看 stock_smt。')
@@ -1372,10 +1510,16 @@ export async function findParts(service, args, options = {}) {
     boards,
     order_qty: orderQty,
     require_stock: requireStock,
+    include_usd: includeUsd,
+    include_cny: includeCny,
     stock_scope_note: assembly === 'smt'
       ? '默认按嘉立创 SMT 库存；DIY 配单请传 require_stock="lcsc"'
       : '默认按立创商城零售库存；PCBA 请传 require_stock="smt"',
-    currency: includeCny ? 'USD + CNY（并列，不混算）' : 'USD（CNY 为参考估算）',
+    currency: [includeUsd ? 'USD' : undefined, includeCny ? 'CNY(retail)' : undefined].filter(Boolean).join(' + '),
+    currency_info: {
+      price_columns: [...(includeUsd ? ['usd'] : []), ...(includeCny ? ['cny'] : [])],
+      note: 'USD 与 CNY 不互相换算；CNY 为立创商城零售 1pc 价。',
+    },
     relaxed,
     relax_stage: relaxStage,
     candidates,
@@ -1752,7 +1896,13 @@ export async function auditBom(service, args, options = {}) {
   }
   const assembly = args.assembly === 'smt' ? 'smt' : 'hand'
   const boards = clampInteger(args.boards, 1, 100000, 1)
-  let includeCny = args.include_cny === true
+  const includeUsd = args.include_usd !== false
+  const smtCostBasis = ['usd_jlc_global', 'cny_retail', 'cny_jlc_cn'].includes(args.smt_cost_basis)
+    ? args.smt_cost_basis
+    : 'usd_jlc_global'
+  const smtServiceType = CN_SMT_SERVICE_TYPES.includes(args.smt_service_type) ? args.smt_service_type : undefined
+  const smtSides = clampInteger(args.smt_sides, 1, 2, 1)
+  let includeCny = args.include_cny === true || smtCostBasis === 'cny_jlc_cn'
   const requireStock = ['lcsc', 'smt', 'any'].includes(args.require_stock) ? args.require_stock : 'any'
   const stockScope = requireStock === 'any' ? (assembly === 'smt' ? 'smt' : 'lcsc') : requireStock
   const suggestAlternatives = args.suggest_alternatives !== false
@@ -1957,6 +2107,50 @@ export async function auditBom(service, args, options = {}) {
     }
   })
 
+  // ---- Domestic JLC SMT CNY cost (economic vs standard; explicit) ----------
+  /** @type {Record<string, unknown>|undefined} */
+  let cnSmt
+  const currencyErrors = []
+  if (!includeUsd && !includeCny) {
+    currencyErrors.push('include_usd=false 且 include_cny=false：至少保留一种币种。')
+  }
+  if (smtCostBasis === 'cny_jlc_cn' && assembly === 'smt') {
+    if (smtServiceType === undefined) {
+      currencyErrors.push('smt_cost_basis=cny_jlc_cn 必须显式给 smt_service_type="economic" 或 "standard"：两种产线工程费/钢网费/上料费不同，不能自动判断。')
+    } else if (smtServiceType === 'economic' && smtSides > 1) {
+      currencyErrors.push('经济型（economic）只支持单面焊接；smt_sides=2 请改用 standard。')
+    } else {
+      cnSmt = computeCnSmtCost({
+        smtRows,
+        boards,
+        serviceType: smtServiceType,
+        sides: smtSides,
+        jointCount: args.smt_joint_count === undefined ? undefined : asNumber(args.smt_joint_count),
+        settings,
+        jlcByCode,
+      })
+      if (smtServiceType === 'economic') {
+        notes.push('CNY SMT 按【经济型】计价：仅单面焊接，片式元件 ≥0402、IC pin 间距 ≥0.4mm；插件/特殊工艺需人工确认。')
+        cnSmt.warnings = cnSmt.warnings ?? []
+        if (cnSmt.warnings.length === 0) cnSmt.warnings.push('经济型仅支持单面焊接，BOM 未包含贴装面信息，请人工确认；精密器件可能需改用标准型。')
+      } else {
+        notes.push('CNY SMT 按【标准型】计价：可双面、工艺限制少；工程费/钢网费按面数计。')
+      }
+      notes.push('CNY SMT 器件费按立创商城 1pc 人民币价估算 + 嘉立创官方收费表（server_guide_4025，2026-09）；焊点数为估算时，最终以嘉立创系统报价为准。')
+    }
+    if (currencyErrors.length > 0) {
+      cnSmt = undefined
+    }
+  } else if (smtCostBasis === 'cny_retail' && assembly === 'smt') {
+    cnSmt = {
+      basis: 'cny_retail',
+      service_type: undefined,
+      note: '仅立创商城零售人民币参考价（元件费），不含嘉立创 SMT 加工费/上料费；如需组装报价请用 smt_cost_basis=cny_jlc_cn + smt_service_type。',
+      components_cny: money(componentCny + componentCnyEstimate),
+      total_cny: money(componentCny + componentCnyEstimate),
+      per_board_cny: money((componentCny + componentCnyEstimate) / Math.max(1, boards)),
+    }
+  }
   // ---- Alternatives & net-saving optimisation ------------------------------
   const optimize = {
     require_stock: requireStock,
@@ -2061,17 +2255,26 @@ export async function auditBom(service, args, options = {}) {
   }
 
   // ---- Notes ---------------------------------------------------------------
-  notes.push(
-    assembly === 'smt'
-      ? 'assembly=smt：价格与库存取嘉立创 SMT 元件库（USD 阶梯价按采购数量取档）；上料费只计 smt 且为扩展库的唯一料号。'
-      : 'assembly=hand：不计嘉立创上料费；价格优先取立创商城国内站人民币价（Chrome 渲染），未取到的行给 estimated 估算。',
-  )
-  notes.push('USD 与 CNY 并列展示、不互相换算；每行带 price_source / fetched_at / estimated。')
-  notes.push(
-    assembly === 'smt'
-      ? `上料费按每唯一扩展库料号 $${feeUsd}/单估算；工程费 $${setupFeeUsd}、钢网费 $${stencilFeeUsd} 已单列（默认 0，可在插件 config 配置）。`
-      : `上料费 0；工程费 $${setupFeeUsd}、钢网费 $${stencilFeeUsd} 可配置。`,
-  )
+  if (includeUsd) {
+    notes.push(
+      assembly === 'smt'
+        ? 'assembly=smt：价格与库存取嘉立创 SMT 元件库（USD 阶梯价按采购数量取档）；上料费只计 smt 且为扩展库的唯一料号。'
+        : 'assembly=hand：不计嘉立创上料费；价格优先取立创商城国内站人民币价（Chrome 渲染），未取到的行给 estimated 估算。',
+    )
+    notes.push('USD 与 CNY 分列展示、不互相换算；每行带 price_source / fetched_at / estimated。')
+    notes.push(
+      assembly === 'smt'
+        ? `USD 上料费按每唯一扩展库料号 $${feeUsd}/单估算；工程费 $${setupFeeUsd}、钢网费 $${stencilFeeUsd} 已单列（默认 0，可在插件 config 配置）。`
+        : `上料费 0；工程费 $${setupFeeUsd}、钢网费 $${stencilFeeUsd} 可配置。`,
+    )
+  } else {
+    notes.push('include_usd=false：USD 列与 USD 合计已隐藏，只输出 CNY。')
+    if (cnSmt?.basis === 'cny_jlc_cn') {
+      notes.push(`CNY SMT 采用嘉立创国内【${smtServiceType === 'economic' ? '经济型' : '标准型'}】费率：工程费/钢网费/上料费/焊点费均以人民币单列，最终以嘉立创系统报价为准。`)
+    } else {
+      notes.push('assembly=hand：只输出立创商城零售人民币价；SMT 加工费未计入。')
+    }
+  }
   if (region === 'cn') {
     notes.push('region=cn：国内嘉立创 SMT 的费用规则以官方计价页为准；本工具仍按 USD 上料费估算并显式标注。')
   }
@@ -2088,7 +2291,7 @@ export async function auditBom(service, args, options = {}) {
     notes.push(`BOM 中有 ${skipped.length} 行没有可识别的 LCSC 编号，未计入成本：${list}${skipped.length > 30 ? ' 等' : ''}`)
     hints.push('以上行需先选型（补上 LCSC 编号）再重新审计，否则单板成本会偏低。')
   }
-  if (costTable.length > 0) {
+  if (includeUsd && costTable.length > 0) {
     const scenario = costTable.find((row) => row.boards === 100) ?? costTable[costTable.length - 1]
     notes.push(`批量摊销参考：${scenario.boards} 片时约 $${scenario.per_board_usd}/片（含上料费 $${scenario.extended_fee_per_board_usd}/片 + 工程/钢网 $${money(setupFees / scenario.boards)}/片）。`)
   }
@@ -2131,6 +2334,110 @@ export async function auditBom(service, args, options = {}) {
     stock_scope: stockScope,
   }
 
+  const cnSmtTable = []
+  if (cnSmt?.basis === 'cny_jlc_cn') {
+    for (const scenario of scenarioBoards) {
+      const scaledComponents = (asNumber(cnSmt.components_cny) ?? 0) * scenario / Math.max(1, boards)
+      const scaledJoints = (asNumber(cnSmt.joint_count) ?? 0) * scenario / Math.max(1, boards)
+      const jointFee = cnSmtJointFeeCny(Math.round(scaledJoints), smtServiceType)
+      const total = scaledComponents + (asNumber(cnSmt.extended_fee_cny) ?? 0) +
+        (asNumber(cnSmt.engineering_fee_cny) ?? 0) + (asNumber(cnSmt.stencil_fee_cny) ?? 0) + jointFee
+      cnSmtTable.push({
+        boards: scenario,
+        components_cny: money(scaledComponents),
+        extended_fee_cny: money(cnSmt.extended_fee_cny),
+        engineering_fee_cny: money(cnSmt.engineering_fee_cny),
+        stencil_fee_cny: money(cnSmt.stencil_fee_cny),
+        joint_fee_cny: money(jointFee),
+        total_cny: money(total),
+        per_board_cny: money(total / scenario),
+      })
+    }
+    summary.cn_smt_table = cnSmtTable
+    const scenario = cnSmtTable.find((row) => row.boards === 100) ?? cnSmtTable[cnSmtTable.length - 1]
+    if (scenario !== undefined) {
+      notes.push(`CNY SMT 批量摊销：${scenario.boards} 片时约 ¥${scenario.per_board_cny}/片（含工程/钢网/上料/焊点；最终以嘉立创系统报价为准）。`)
+    }
+  }
+
+  // ---- Currency separation: remove suppressed price columns ----------------
+  if (!includeUsd) {
+    for (const key of ['components_usd', 'components_per_board_usd', 'total_usd', 'total_per_board_usd',
+      'hand_components_usd_reference', 'dnp_components_usd_excluded', 'extended_fee_per_order_usd',
+      'setup_fee_usd', 'stencil_fee_usd']) {
+      delete summary[key]
+    }
+    delete summary.cost_table
+  }
+  if (!includeCny) {
+    for (const key of ['cny_covered_lines', 'cny_total_basis', 'cny_price_tier', 'components_cny',
+      'components_cny_per_order', 'components_cny_per_board']) {
+      delete summary[key]
+    }
+  }
+  summary.cn_smt = cnSmt
+  summary.cn_smt_service_type = smtServiceType
+  summary.smt_cost_basis = smtCostBasis
+  summary.include_usd = includeUsd
+  summary.include_cny = includeCny
+  for (const row of auditRows) {
+    if (!includeUsd) {
+      for (const key of ['unit_usd', 'price_usd_tier', 'price_usd_ladder', 'subtotal_usd', 'price_source']) delete row[key]
+      if (Array.isArray(row.flags)) {
+        row.flags = row.flags.filter((flag) => !String(flag).includes('$'))
+        if (cnSmt?.basis === 'cny_jlc_cn' && row.library === 'expand' && row.billable_smt) {
+          row.flags.push(`扩展库：嘉立创国内 SMT 上料费（${smtServiceType === 'economic' ? '经济型 ¥20/种' : '标准型 ¥8/种'}）`)
+        }
+      }
+    }
+    if (!includeCny) {
+      for (const key of ['unit_cny', 'subtotal_cny', 'price_cny_source', 'price_cny_estimated']) delete row[key]
+    }
+  }
+  if (currencyErrors.length > 0) {
+    for (const message of currencyErrors) errors.push(message)
+    hints.push('CNY SMT 报价未生成；修正参数后重试。')
+  }
+
+  // ---- Explicit totals block (USD / CNY never mixed) -----------------------
+  /** @type {Record<string, unknown>} */
+  const totals = {}
+  if (includeUsd) {
+    totals.components_usd = money(componentUsd)
+    totals.extended_fee_usd = money(extendedFee)
+    totals.setup_fee_usd = money(setupFeeUsd)
+    totals.stencil_fee_usd = money(stencilFeeUsd)
+    totals.smt_total_usd = money(totalUsd)
+    totals.smt_per_board_usd = money(totalUsd / Math.max(1, boards))
+  }
+  if (includeCny) {
+    totals.retail_total_cny = money(componentCny)
+    totals.retail_per_board_cny = money(componentCny / Math.max(1, boards))
+    totals.retail_backed_lines_cny = cnyCovered
+  }
+  if (cnSmt !== undefined) {
+    totals.smt_total_cny = cnSmt.total_cny
+    totals.smt_per_board_cny = cnSmt.per_board_cny
+    totals.smt_service_type = cnSmt.service_type
+  }
+  if (includeUsd || includeCny) {
+    totals.per_board = {
+      ...(includeUsd ? { usd: money(totalUsd / Math.max(1, boards)) } : {}),
+      ...(includeCny ? { cny_retail: money(componentCny / Math.max(1, boards)) } : {}),
+      ...(cnSmt?.basis === 'cny_jlc_cn' ? { cny_smt: cnSmt.per_board_cny } : {}),
+    }
+  }
+  const currencyInfo = {
+    price_columns: [...(includeUsd ? ['usd'] : []), ...(includeCny ? ['cny'] : [])],
+    smt_cost_basis: smtCostBasis,
+    smt_service_type: smtServiceType ?? null,
+    smt_sides: smtSides,
+    notes: [
+      'USD = 嘉立创/LCSC 国际口径；CNY = 立创商城零售/嘉立创国内 SMT 口径，不互相换算。',
+      'CNY SMT（cny_jlc_cn）必须显式选择 economic / standard，两种产线价格不同。',
+    ],
+  }
+
   const dataWarnings = [...new Set(auditRows.flatMap((row) => row.data_warnings ?? []))]
   if (dataWarnings.includes('retail_out_of_stock_smt_ok')) {
     notes.push('注意：有料号「立创零售仓缺货、嘉立创 SMT 仓有货」——不是停产；DIY 配单看 stock_retail，PCBA 看 stock_smt。')
@@ -2141,7 +2448,17 @@ export async function auditBom(service, args, options = {}) {
     region,
     require_stock: requireStock,
     stock_scope: stockScope,
-    currency: includeCny ? 'USD + CNY（并列，不混算）' : 'USD（CNY 为参考估算）',
+    include_usd: includeUsd,
+    include_cny: includeCny,
+    smt_cost_basis: smtCostBasis,
+    smt_service_type: smtServiceType,
+    currency: [
+      includeUsd ? 'USD' : undefined,
+      includeCny ? (cnSmt?.basis === 'cny_jlc_cn' ? `CNY(${smtServiceType})` : 'CNY(retail)') : undefined,
+    ].filter(Boolean).join(' + ') || 'none',
+    currency_info: currencyInfo,
+    totals,
+    cn_smt: cnSmt,
     summary,
     rows: auditRows,
     optimize,
@@ -2163,20 +2480,23 @@ export async function auditBom(service, args, options = {}) {
 export function renderFindText(value) {
   const candidates = Array.isArray(value.candidates) ? value.candidates : []
   const header =
-    `Find "${value.need}" [${value.assembly}${value.require_stock && value.require_stock !== 'any' ? `/stock=${value.require_stock}` : ''}] qty ${value.quantity}/board x ${value.boards} board(s)` +
+    `Find "${value.need}" [${value.assembly}${value.require_stock && value.require_stock !== 'any' ? `/stock=${value.require_stock}` : ''}] qty ${value.quantity}/board x ${value.boards} board(s) [${value.currency ?? 'USD + CNY'}]` +
     (value.exact === true ? ' (exact part query)' : '') +
     (value.relaxed === true ? ` (relaxed stage ${value.relax_stage})` : '') +
     ` => ${candidates.length} candidate(s)`
   const lines = [header]
   for (const candidate of candidates) {
     if (!isRecord(candidate)) continue
-    const priceUsd = isRecord(candidate.price_usd) ? `USD ${candidate.price_usd.unit} @${candidate.price_usd.tier}` : 'USD n/a'
-    const priceCny = isRecord(candidate.price_cny)
+    const suppressedUsd = value.include_usd === false
+    const suppressedCny = value.include_cny === false
+    const priceUsd = !suppressedUsd && isRecord(candidate.price_usd) ? `USD ${candidate.price_usd.unit} @${candidate.price_usd.tier}` : ''
+    const priceCny = !suppressedCny && isRecord(candidate.price_cny)
       ? `CNY ${candidate.price_cny.unit}${candidate.price_cny.estimated === true ? '(est.)' : ''}`
-      : 'CNY n/a'
+      : ''
     lines.push(
       `- ${candidate.lcsc} | ${candidate.model ?? '?'} | ${candidate.package ?? '?'} | lib ${candidate.library} | ` +
-      `stock smt ${candidate.stock_smt ?? '?'} / retail ${candidate.stock_retail ?? '?'} | ${priceUsd} | ${priceCny} | score ${candidate.score}`,
+      `stock smt ${candidate.stock_smt ?? '?'} / retail ${candidate.stock_retail ?? '?'} | ` +
+      [priceUsd, priceCny].filter(Boolean).join(' | ') + ` | score ${candidate.score}`,
     )
     if (Array.isArray(candidate.data_warnings) && candidate.data_warnings.length > 0) {
       lines.push(`  ⚠ ${candidate.data_warnings.join(', ')}`)
@@ -2196,37 +2516,65 @@ export function renderAuditText(value) {
   const summary = isRecord(value.summary) ? value.summary : {}
   const rows = Array.isArray(value.rows) ? value.rows : []
   const optimize = isRecord(value.optimize) ? value.optimize : {}
+  const includeUsd = summary.include_usd !== false
+  const includeCny = summary.include_cny !== false
   const lines = [
-    `BOM audit [${value.assembly}] region=${value.region ?? 'global'} boards=${value.boards}: ` +
+    `BOM audit [${value.assembly}] region=${value.region ?? 'global'} boards=${value.boards} currency=${value.currency ?? '?'}: ` +
       `${summary.lines ?? 0} lines (${summary.smt_lines ?? 0} smt / ${summary.hand_lines ?? 0} hand / ${summary.dnp_lines ?? 0} dnp), ` +
       `${summary.unique_parts ?? 0} unique | base ${summary.base_parts ?? 0} / expand ${summary.expand_parts ?? 0}`,
-    `components USD ${summary.components_usd ?? 0} + extended fee USD ${summary.extended_fee_per_order_usd ?? 0}` +
-      ` + setup USD ${money((summary.setup_fee_usd ?? 0) + (summary.stencil_fee_usd ?? 0))} = USD ${summary.total_usd ?? 0}` +
-      ` (USD ${summary.total_per_board_usd ?? 0}/board)` +
-      (summary.cny_covered_lines > 0
-        ? ` | CNY retail: ¥${summary.components_cny_per_order ?? summary.components_cny ?? 0}/order = ¥${summary.components_cny_per_board ?? '?'}/board (${summary.cny_covered_lines} lines)`
-        : '') +
-      (summary.components_cny_estimate > 0 ? ` | CNY est. ≈ ${summary.components_cny_estimate}` : ''),
   ]
+  if (includeUsd) {
+    lines.push(
+      `components USD ${summary.components_usd ?? 0} + extended fee USD ${summary.extended_fee_per_order_usd ?? 0}` +
+        ` + setup USD ${money((summary.setup_fee_usd ?? 0) + (summary.stencil_fee_usd ?? 0))} = USD ${summary.total_usd ?? 0}` +
+        ` (USD ${summary.total_per_board_usd ?? 0}/board)`,
+    )
+  }
+  if (includeCny) {
+    lines.push(
+      `CNY retail: ¥${summary.components_cny_per_order ?? summary.components_cny ?? 0}/order = ¥${summary.components_cny_per_board ?? '?'}/board` +
+        ` (${summary.cny_covered_lines ?? 0} lines)` +
+        (summary.components_cny_estimate > 0 ? ` | CNY est. ≈ ${summary.components_cny_estimate}` : ''),
+    )
+  }
+  const cnSmt = isRecord(value.cn_smt) ? value.cn_smt : undefined
+  if (cnSmt !== undefined && cnSmt.basis === 'cny_jlc_cn') {
+    lines.push(
+      `CNY SMT [${cnSmt.service_type}] 元件 ¥${cnSmt.components_cny} + 上料 ¥${cnSmt.extended_fee_cny}` +
+        ` + 工程 ¥${cnSmt.engineering_fee_cny} + 钢网 ¥${cnSmt.stencil_fee_cny} + 焊点 ¥${cnSmt.joint_fee_cny}` +
+        ` = ¥${cnSmt.total_cny}/单 = ¥${cnSmt.per_board_cny}/片` +
+        ` (焊点 ${cnSmt.joint_count}${cnSmt.joint_count_estimated === true ? ', 估算' : ''})`,
+    )
+    if (Array.isArray(cnSmt.warnings)) for (const warning of cnSmt.warnings) lines.push(`⚠ ${warning}`)
+  } else if (cnSmt !== undefined && cnSmt.basis === 'cny_retail') {
+    lines.push(`CNY retail SMT reference: ¥${cnSmt.total_cny}/单 = ¥${cnSmt.per_board_cny}/片（不含加工费/上料费）`)
+  }
   for (const row of rows) {
     if (!isRecord(row)) continue
-    const flags = Array.isArray(row.flags) && row.flags.length > 0 ? ` [${row.flags.join('; ')}]` : ''
+    const flags = Array.isArray(row.flags) && row.flags.length > 0
+      ? ` [${(includeUsd ? row.flags : row.flags.filter((flag) => !String(flag).includes('$'))).join('; ')}]`
+      : ''
     const designators = Array.isArray(row.designators) && row.designators.length > 0 ? ` {${row.designators.join(',')}}` : ''
-    const priceUsd = row.unit_usd === undefined ? 'USD -' : `USD ${row.unit_usd}@${row.price_usd_tier ?? '?'}`
+    const priceUsd = row.unit_usd === undefined ? '' : `USD ${row.unit_usd}@${row.price_usd_tier ?? '?'}`
     const priceCny = row.unit_cny !== undefined
       ? `CNY ${row.unit_cny}`
-      : row.unit_cny_estimate !== undefined ? `CNY≈${row.unit_cny_estimate}(est.)` : 'CNY -'
-    const alternative = isRecord(row.alternative) && typeof row.alternative.lcsc === 'string'
+      : row.unit_cny_estimate !== undefined ? `CNY≈${row.unit_cny_estimate}(est.)` : ''
+    const alternative = includeUsd && isRecord(row.alternative) && typeof row.alternative.lcsc === 'string'
       ? ` -> base alt: ${row.alternative.lcsc} (${row.alternative.model ?? '?'}, net $${row.alternative.net_saving_usd ?? '?'})`
       : ''
     lines.push(
       `${row.lcsc} x${row.qty}${designators} | ${row.place ?? '?'} | ${row.status} | lib ${row.library ?? '?'} | ` +
-      `stock smt ${row.stock_smt ?? '?'} / retail ${row.stock_retail ?? '?'} | ${priceUsd} | ${priceCny}${flags}${alternative}`,
+      `stock smt ${row.stock_smt ?? '?'} / retail ${row.stock_retail ?? '?'} | ` +
+      [priceUsd, priceCny].filter(Boolean).join(' | ') + `${flags}${alternative}`,
     )
   }
   const costTable = Array.isArray(summary.cost_table) ? summary.cost_table : []
-  if (costTable.length > 0) {
-    lines.push('批量摊销: ' + costTable.map((row) => `${row.boards}片≈$${row.per_board_usd}/片`).join(' | '))
+  if (includeUsd && costTable.length > 0) {
+    lines.push('批量摊销(USD): ' + costTable.map((row) => `${row.boards}片≈$${row.per_board_usd}/片`).join(' | '))
+  }
+  const cnSmtTable = Array.isArray(summary.cn_smt_table) ? summary.cn_smt_table : []
+  if (cnSmtTable.length > 0) {
+    lines.push('批量摊销(CNY SMT): ' + cnSmtTable.map((row) => `${row.boards}片≈¥${row.per_board_cny}/片`).join(' | '))
   }
   if (Array.isArray(value.data_warnings) && value.data_warnings.length > 0) {
     lines.push(`⚠ data_warnings: ${value.data_warnings.join(', ')}`)
@@ -2234,7 +2582,7 @@ export function renderAuditText(value) {
   if (isRecord(optimize) && (optimize.require_stock !== undefined || optimize.stock_scope !== undefined)) {
     lines.push(`优化建议库存口径: require_stock=${optimize.require_stock ?? 'any'} / scope=${optimize.stock_scope ?? '?'}`)
   }
-  if (Array.isArray(optimize.actions) && optimize.actions.length > 0) {
+  if (includeUsd && Array.isArray(optimize.actions) && optimize.actions.length > 0) {
     lines.push(`优化建议（净省 $${optimize.saving_usd_per_order ?? 0}/单，扩展库 ${optimize.extended_parts_before}→${optimize.extended_parts_after}）:`)
     for (const action of optimize.actions) lines.push(`  * ${action}`)
   }
@@ -2269,7 +2617,7 @@ const AUDIT_DESCRIPTION =
   'Default assembly="hand" (no feeder fees); set assembly="smt" for JLCPCB assembly cost planning. ' +
   'Outputs a batch amortisation table (20/100/300/1000 boards), an optimisation summary of net savings, and optionally a JLCPCB BOM CSV for ordering (export_bom=true). ' +
   'Real CNY retail prices are fetched via headless Chrome (24h cache) when include_cny=true; otherwise a reference estimate from bulk-tier USD × the configurable factor is reported and marked estimated=true. ' +
-  'USD and CNY are never mixed into one total.'
+  'USD and CNY are never mixed into one total; set include_usd=false for CNY-only output.'
 
 /** Build the two DSH tool definitions bound to a service instance. */
 export function createToolDefinitions(service) {
@@ -2295,7 +2643,8 @@ export function createToolDefinitions(service) {
           boards: { type: 'integer', minimum: 1, maximum: 100000, description: 'Number of boards to build (default 1; used for price tiers and SMT fee amortization).' },
           sort: { type: 'string', enum: ['balanced', 'cost', 'stock'], description: 'Ranking preference (default balanced).' },
           limit: { type: 'integer', minimum: 1, maximum: 8, description: 'Candidates to return (default 5, max 8).' },
-          include_cny: { type: 'boolean', description: 'Fetch real LCSC domestic CNY retail prices for the top candidates via headless Chrome (default true in hand mode, false in smt mode; 24h cache). When unavailable, a marked reference estimate is shown.' },
+          include_usd: { type: 'boolean', description: 'Include USD price columns (default true). Set false for CNY-only output; USD is then suppressed entirely (no $ columns).' },
+          include_cny: { type: 'boolean', description: 'Fetch real LCSC domestic CNY retail prices for the top candidates via headless Chrome (default true in hand mode, false in smt mode; 24h cache). When unavailable, a marked reference estimate is shown. Set false for USD-only output.' },
           exclude_lcsc: { type: 'array', items: { type: 'string' }, description: 'LCSC codes to exclude, e.g. when looking for an alternative to a part you already have.' },
           base_only: { type: 'boolean', description: 'Only return JLCPCB basic-library parts (no feeder fee). If none exist the tool says so instead of silently returning extended parts.' },
           require_stock: { type: 'string', enum: ['any', 'lcsc', 'smt'], description: 'Stock scope filter. any = no filter (default); lcsc = 立创商城零售仓有货 (DIY 配单); smt = 嘉立创 SMT 仓有货 (PCBA). lcsc forces a real CNY/stock lookup.' },
@@ -2312,7 +2661,10 @@ export function createToolDefinitions(service) {
             quantity: { type: 'integer' },
             boards: { type: 'integer' },
             order_qty: { type: 'integer' },
+            include_usd: { type: 'boolean' },
+            include_cny: { type: 'boolean' },
             currency: { type: 'string' },
+            currency_info: { type: 'object' },
             candidates: { type: 'array', items: { type: 'object' } },
             hints: { type: 'array', items: { type: 'string' } },
             notes: { type: 'array', items: { type: 'string' } },
@@ -2350,7 +2702,12 @@ export function createToolDefinitions(service) {
             description: 'hand = no JLCPCB feeder fees (default); smt = include USD 3 per extended part number per order.',
           },
           boards: { type: 'integer', minimum: 1, maximum: 100000, description: 'Number of boards the BOM is for (default 1).' },
+          include_usd: { type: 'boolean', description: 'Include USD columns/totals (default true). Set false for CNY-only output (no $ in rows/totals).' },
           include_cny: { type: 'boolean', description: 'Fetch real LCSC domestic CNY prices via headless Chrome (24h cache, capped; default true in hand mode for small BOMs, false for large BOMs — pass true to force).' },
+          smt_cost_basis: { type: 'string', enum: ['usd_jlc_global', 'cny_retail', 'cny_jlc_cn'], description: 'SMT cost basis: usd_jlc_global (default, JLCPCB international USD); cny_retail (立创商城零售人民币元件参考价，不含加工费); cny_jlc_cn (嘉立创国内 SMT 实际人民币计价，需同时给 smt_service_type).' },
+          smt_service_type: { type: 'string', enum: ['economic', 'standard'], description: '嘉立创国内 SMT 产线：economic=经济型（单面，工程费50元/钢网免费/上料20元每种）；standard=标准型（可双面，工程费150元/面/钢网50元/面/上料8元每种）。两种价格差距大，smt_cost_basis=cny_jlc_cn 时必须显式选择，不能自动判断。' },
+          smt_sides: { type: 'integer', minimum: 1, maximum: 2, description: 'SMT 贴装面数（默认 1）。standard 可按面数计工程费/钢网费；economic 仅支持 1 面。' },
+          smt_joint_count: { type: 'integer', minimum: 1, maximum: 100000000, description: '整单焊点总数（可选）。给定则 CNY SMT 焊点费按实际/指定焊点数计算；不给定则按元件封装估算并标 estimated。' },
           require_stock: { type: 'string', enum: ['any', 'lcsc', 'smt'], description: 'Stock scope for basic-library substitution suggestions. any = no filter (default); lcsc = only suggest parts with 立创零售仓库存 (DIY 配单); smt = only suggest parts with 嘉立创 SMT 仓库存 (PCBA). Each suggestion always reports stock_retail and stock_smt.' },
           suggest_alternatives: { type: 'boolean', description: 'For extended-library parts, suggest a basic-library substitute with net saving (default true; only in smt mode).' },
           export_bom: { type: 'boolean', description: 'Also return a JLCPCB BOM CSV (Comment/Designator/Footprint/LCSC Part) for the smt-placed lines (default false).' },
@@ -2368,7 +2725,14 @@ export function createToolDefinitions(service) {
             region: { type: 'string' },
             require_stock: { type: 'string' },
             stock_scope: { type: 'string' },
+            include_usd: { type: 'boolean' },
+            include_cny: { type: 'boolean' },
+            smt_cost_basis: { type: 'string' },
+            smt_service_type: { type: 'string' },
             currency: { type: 'string' },
+            currency_info: { type: 'object' },
+            totals: { type: 'object' },
+            cn_smt: { type: 'object' },
             summary: { type: 'object' },
             data_warnings: { type: 'array', items: { type: 'string' } },
             optimize: { type: 'object' },

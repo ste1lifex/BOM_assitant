@@ -94,6 +94,15 @@ export const DEFAULT_CONFIG = Object.freeze({
   extendedPartFeeUsd: 3.0,
   setupFeeUsd: 0.0,
   stencilFeeUsd: 0.0,
+  // 嘉立创国内 SMT（jlc-smt.com）人民币费率，来源：官方「贴片、插件焊接收费模式」表
+  // （server_guide_4025.html，2026-09 更新）。两种产线价格差异大，必须显式选择。
+  cnSmtEconomicEngineeringCny: 50.0,
+  cnSmtEconomicStencilCny: 0.0,
+  cnSmtEconomicExtendedCny: 20.0,
+  cnSmtStandardEngineeringCny: 150.0,
+  cnSmtStandardStencilCny: 50.0,
+  cnSmtStandardExtendedCny: 8.0,
+  cnSmtExtendedCapCny: 800.0,
 })
 
 // LCSC codes are normally C + 4–7 digits, but the catalogue also carries
@@ -1651,6 +1660,13 @@ export function normalizeConfig(raw, options = {}) {
     extendedPartFeeUsd: float('extendedPartFeeUsd', DEFAULT_CONFIG.extendedPartFeeUsd, 0, 100),
     setupFeeUsd: float('setupFeeUsd', DEFAULT_CONFIG.setupFeeUsd, 0, 10000),
     stencilFeeUsd: float('stencilFeeUsd', DEFAULT_CONFIG.stencilFeeUsd, 0, 10000),
+    cnSmtEconomicEngineeringCny: float('cnSmtEconomicEngineeringCny', DEFAULT_CONFIG.cnSmtEconomicEngineeringCny, 0, 100000),
+    cnSmtEconomicStencilCny: float('cnSmtEconomicStencilCny', DEFAULT_CONFIG.cnSmtEconomicStencilCny, 0, 100000),
+    cnSmtEconomicExtendedCny: float('cnSmtEconomicExtendedCny', DEFAULT_CONFIG.cnSmtEconomicExtendedCny, 0, 100000),
+    cnSmtStandardEngineeringCny: float('cnSmtStandardEngineeringCny', DEFAULT_CONFIG.cnSmtStandardEngineeringCny, 0, 100000),
+    cnSmtStandardStencilCny: float('cnSmtStandardStencilCny', DEFAULT_CONFIG.cnSmtStandardStencilCny, 0, 100000),
+    cnSmtStandardExtendedCny: float('cnSmtStandardExtendedCny', DEFAULT_CONFIG.cnSmtStandardExtendedCny, 0, 100000),
+    cnSmtExtendedCapCny: float('cnSmtExtendedCapCny', DEFAULT_CONFIG.cnSmtExtendedCapCny, 0, 1000000),
   }
 }
 
