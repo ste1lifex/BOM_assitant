@@ -320,6 +320,8 @@ export function createCnAdapter(options = {}) {
   const concurrency = Math.max(1, Math.min(8, Math.floor(options.concurrency ?? 2)))
   const browserIdleTtlMs = Number.isFinite(options.browserIdleTtlMs) ? options.browserIdleTtlMs : 120000
   const cacheMaxEntries = Number.isFinite(options.cacheMaxEntries) ? Math.max(1, Math.floor(options.cacheMaxEntries)) : 800
+  const negativeCacheTtlMs = Number.isFinite(options.negativeCacheTtlMs) ? Math.max(1000, options.negativeCacheTtlMs) : 30 * 60 * 1000
+  const resolveTimeoutMs = Math.min(timeoutMs, 8000)
   const legacyProfileDir = path.join(cacheDir, 'legacy-profile')
   let lastJsonPruneAt = 0
   let queryCount = 0
@@ -345,10 +347,10 @@ export function createCnAdapter(options = {}) {
   }
 
   /** HTTP GET JSON using the global fetch (host Node >= 20). */
-  async function getJson(url) {
+  async function getJson(url, overrideTimeoutMs) {
     const response = await fetch(url, {
       headers: { 'User-Agent': DEFAULT_USER_AGENT, Accept: 'application/json' },
-      signal: AbortSignal.timeout(timeoutMs),
+      signal: AbortSignal.timeout(overrideTimeoutMs ?? timeoutMs),
     })
     if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
     return response.json()
@@ -647,15 +649,17 @@ export function createCnAdapter(options = {}) {
    * @returns {Promise<string | undefined>}
    */
   async function resolvePid(code) {
-    for (const base of [EASYEDA_URL, LCEDA_URL]) {
-      try {
-        const payload = await getJson(`${base}${encodeURIComponent(code)}/components`)
-        const result = payload?.result ?? {}
-        const pid = result?.szlcsc?.id ?? result?.lcsc?.id
-        if (pid !== undefined && pid !== null && String(pid) !== '') return String(pid)
-      } catch {
-        // try the next API
-      }
+    // Parallel + short timeout: a long/internal LCSC code with no domestic
+    // product page must not burn 2 x 30s on serial EasyEDA API attempts.
+    const attempts = [EASYEDA_URL, LCEDA_URL].map(async (base) => {
+      const payload = await getJson(`${base}${encodeURIComponent(code)}/components`, resolveTimeoutMs)
+      const result = payload?.result ?? {}
+      const pid = result?.szlcsc?.id ?? result?.lcsc?.id
+      return pid === undefined || pid === null || String(pid) === '' ? undefined : String(pid)
+    })
+    const settled = await Promise.allSettled(attempts)
+    for (const item of settled) {
+      if (item.status === 'fulfilled' && item.value !== undefined) return item.value
     }
     return undefined
   }
@@ -667,14 +671,15 @@ export function createCnAdapter(options = {}) {
 
   /** @param {string} code */
   function readCache(code) {
+    const ttlFor = (record) => (record?.ok === false ? negativeCacheTtlMs : cacheTtlMs)
     const inMemory = memory.get(code)
-    if (inMemory !== undefined && Date.now() - inMemory.ts < cacheTtlMs) {
+    if (inMemory !== undefined && Date.now() - inMemory.ts < ttlFor(inMemory.value)) {
       return { ...inMemory.value, cached: true, cache_age_s: Math.round((Date.now() - inMemory.ts) / 1000) }
     }
     try {
       const record = JSON.parse(fs.readFileSync(cachePath(code), 'utf8'))
       const fetchedAt = Date.parse(record.fetched_at)
-      if (Number.isFinite(fetchedAt) && Date.now() - fetchedAt < cacheTtlMs) {
+      if (Number.isFinite(fetchedAt) && Date.now() - fetchedAt < ttlFor(record)) {
         return { ...record, cached: true, cache_age_s: Math.round((Date.now() - fetchedAt) / 1000) }
       }
     } catch {
@@ -712,7 +717,7 @@ export function createCnAdapter(options = {}) {
       pruneJsonCache(cacheDir, { ttlMs: cacheTtlMs, maxEntries: cacheMaxEntries })
     }
     const cached = callOptions.refresh === true ? undefined : readCache(normalized)
-    if (cached !== undefined && cached.ok !== false) {
+    if (cached !== undefined) {
       touchIdle()
       return cached
     }
@@ -724,7 +729,10 @@ export function createCnAdapter(options = {}) {
         try {
           const pid = await resolvePid(normalized)
           if (pid === undefined) return { ok: false, reason: 'product-id-not-found', attempts: attempt }
-          const html = await renderHtml(`${ITEM_URL}${pid}.html`)
+          // C + 10-digit codes are often JLC-internal / not listed on the domestic
+          // store; cap their render budget so one bad code cannot stall an audit.
+          const renderTimeout = normalized.replace(/^C/, '').length >= 9 ? Math.min(timeoutMs, 12000) : timeoutMs
+          const html = await renderHtml(`${ITEM_URL}${pid}.html`, renderTimeout)
           if (html === '') {
             failure = { ok: false, reason: 'chrome-render-empty', attempts: attempt }
             continue
@@ -736,7 +744,7 @@ export function createCnAdapter(options = {}) {
           const parsed = parseItemHtml(html)
           if (parsed === undefined || parsed.price === undefined) {
             failure = { ok: false, reason: 'page-parse-failed', attempts: attempt }
-            continue
+            break
           }
           const record = {
             ok: true,
@@ -766,7 +774,11 @@ export function createCnAdapter(options = {}) {
           if (!RETRYABLE_FAILURES.has(reason)) return failure
         }
       }
-      return failure ?? { ok: false, reason: 'cn-query-failed', attempts: 2 }
+      const result = failure ?? { ok: false, reason: 'cn-query-failed', attempts: 2 }
+      // Negative-cache failures so one bad/unknown code cannot add ~60s to every
+      // later BOM audit. Refresh forces a retry; TTL is short (default 30 min).
+      writeCache(normalized, { ok: false, lcsc: normalized, reason: result.reason, attempts: result.attempts, fetched_at: new Date().toISOString(), negative: true })
+      return result
     })
   }
 

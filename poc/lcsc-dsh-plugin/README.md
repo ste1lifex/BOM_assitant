@@ -13,6 +13,7 @@
 - **真实国内价 + 国内库存**：Chrome 渲染立创官方商品页取 `price`/`stockNumber`，不是估算；无 Chrome/WAF/超时才降级为标注估算。
 - **性价比排序**：单价（按采购量取档）+ 库存覆盖 + 参数匹配 + 基础库/扩展库权重；`assembly=smt` 时把 $3/料号上料费摊销进成本。
 - **BOM 体检**：逐行 `smt/hand/dnp`、重复料号合并、双库存/双价格并列、批量摊销表（20/100/300/1000 片）、基础库替代的**净节省**、直接导出嘉立创 BOM CSV。
+- **坏料号不拖慢整单**：CNY 查询失败做 30min 负缓存；product-id 解析并行 + 8s 上限，C+10 位长料号 12s 渲染上限，重跑直接 0s。
 - **快且不留垃圾**：常驻 Chrome + CDP 多标签，28 料完整手焊 BOM 首次约 26.5s，缓存命中 **0.0s/次**；Chrome 缓存/JSON 缓存都有清理策略（见「边界」中的缓存行）。
 
 ## 先说边界（重要）
@@ -101,6 +102,7 @@ Host-only bundle，无 UI 面板；`engines.dsh >= 0.2.2-rc.1 < 0.3.0`。装完�
     cnQueryBudgetMs: 90000     # 单次 BOM 取 CNY 时间预算；超时先返回，缓存续跑
     cnCacheTtlMs: 86400000     # JSON 缓存 24h TTL
     cnCacheMaxEntries: 800     # JSON 缓存条数上限（超量删最旧）
+    cnNegativeCacheTtlMs: 1800000  # 失败负缓存 30min（避免坏料号反复拖慢）
     usdToCnyFactor: 6.0        # 仅用于估算，不是汇率
     extendedPartFeeUsd: 3.0    # 扩展库上料费
     setupFeeUsd: 0.0           # 工程费（可选）

@@ -8,3 +8,13 @@ node_modules/
 # 本地缓存
 .cache/
 tmp/
+
+# 本地测试 BOM（原始文档不入库/不上传）
+/BOM_*.xlsx
+/BOM_*.csv
+
+# 读取本地 BOM 的临时脚本/输出（不提交）
+/poc/test-round2.mjs
+/poc/test-round3.mjs
+/poc/test-output/round2.json
+/poc/test-output/round3.json

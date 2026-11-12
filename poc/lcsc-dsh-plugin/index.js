@@ -1388,6 +1388,19 @@ export async function findParts(service, args, options = {}) {
     ranked = kept
   }
 
+  // Hand/DIY ranking: among equally-relevant parts, prefer LCSC retail stock.
+  if (assembly === 'hand' && includeCny && ranked.length > 1) {
+    const stocked = []
+    const rest = []
+    for (const candidate of ranked) {
+      const cn = cnyByCode.get(String(candidate.item.code))
+      const retailStock = cn?.ok === true ? asInteger(cn.stock) : undefined
+      if (retailStock !== undefined && retailStock > 0) stocked.push(candidate)
+      else rest.push(candidate)
+    }
+    ranked = [...stocked, ...rest]
+  }
+
   // ---- Phase 4: build output ----------------------------------------------
   const candidates = ranked.slice(0, limit).map((candidate) => {
     const code = String(candidate.item.code)
@@ -1496,6 +1509,11 @@ export async function findParts(service, args, options = {}) {
   if (!includeUsd) {
     for (const candidate of candidates) {
       for (const key of ['price', 'price_usd', 'used_tier', 'effective_unit_usd', 'fee_per_board_usd']) delete candidate[key]
+    }
+  }
+  if (!includeCny) {
+    for (const candidate of candidates) {
+      for (const key of ['price_cny', 'cny_estimate', 'cny_price']) delete candidate[key]
     }
   }
   const allWarnings = [...new Set(candidates.flatMap((candidate) => candidate.data_warnings ?? []))]
@@ -1840,8 +1858,8 @@ export async function findAlternative(service, item, originalNeed, options = {})
   }
   /** @type {{ lcsc: string, reason: string }[]} */
   const skipped = []
-  /** @type {ReturnType<typeof scoreCandidate> | undefined} */
-  let best
+  /** @type {{ score: ReturnType<typeof scoreCandidate>, net: number, componentDelta: number } | undefined} */
+  let bestEntry
   for (const entry of evaluated.slice(0, requireStock === 'lcsc' ? 4 : 1)) {
     const code = String(entry.score.item.code)
     if (requireStock === 'lcsc') {
@@ -1852,12 +1870,13 @@ export async function findAlternative(service, item, originalNeed, options = {})
         continue
       }
     }
-    best = entry.score
+    bestEntry = entry
     break
   }
-  if (best === undefined) {
+  if (bestEntry === undefined) {
     return { blocked: true, require_stock: requireStock, skipped }
   }
+  const best = bestEntry.score
   const retail = includeCny ? await queryRetail(String(best.item.code)) : undefined
   return {
     lcsc: best.item.code,
@@ -1875,10 +1894,74 @@ export async function findAlternative(service, item, originalNeed, options = {})
     skipped,
     unit_usd: best.unitUsd === undefined ? undefined : money(best.unitUsd),
     fee_saved_usd: money(feeUsd),
-    component_delta_usd: money(best.componentDelta),
-    net_saving_usd: money(best.net),
+    component_delta_usd: money(bestEntry.componentDelta),
+    net_saving_usd: money(bestEntry.net),
     footprint_compatible: footprintCompatible(packageName, asString(best.item.package)),
   }
+}
+
+/**
+ * Retail-stock-driven substitute for hand/DIY lines whose LCSC retail stock is 0
+ * (e.g. C25744 零售 0 → C25804/C60490). Feeder-fee/net-saving does not apply in
+ * hand mode, so this only reports retail stock + CNY price.
+ * @param {ReturnType<typeof createLcscService>} service
+ * @param {Record<string, unknown>} item
+ * @param {ReturnType<typeof parseNeed>} originalNeed
+ * @param {{ signal?: AbortSignal }} [options]
+ */
+export async function findRetailAlternative(service, item, originalNeed, options = {}) {
+  if (!isRecord(item)) return undefined
+  const category = asString(item.category)?.toLowerCase()
+  const packageName = asString(item.package)
+  const need = needFromItem(item, originalNeed)
+  const queryRetail = async (code) => {
+    try {
+      if (typeof service.cn?.query === 'function') {
+        const cn = await service.cn.query(code)
+        if (cn !== undefined && cn !== null) return cn
+      }
+      if (typeof service.cny === 'function') return await service.cny(code, options.signal)
+    } catch {
+      // ignore
+    }
+    return undefined
+  }
+  let result
+  try {
+    result = await service.searchRaw(need.searchKeyword, { pageSize: 50, signal: options.signal })
+  } catch {
+    return undefined
+  }
+  const candidates = result.items
+    .filter((candidate) => String(candidate.code) !== String(item.code))
+    .filter((candidate) => (asInteger(candidate.stock) ?? 0) > 0)
+    .filter((candidate) => {
+      if (category === undefined) return true
+      const candidateCategory = asString(candidate.category)?.toLowerCase()
+      return candidateCategory === category
+    })
+    .filter((candidate) => candidateMatches(candidate, need).ok)
+  candidates.sort((left, right) => {
+    const tierLeft = pickTier(left.priceUsdTiers, 1)?.unit ?? Number.POSITIVE_INFINITY
+    const tierRight = pickTier(right.priceUsdTiers, 1)?.unit ?? Number.POSITIVE_INFINITY
+    return tierLeft - tierRight
+  })
+  for (const candidate of candidates.slice(0, 5)) {
+    const cn = await queryRetail(String(candidate.code))
+    if (cn?.ok !== true || (asInteger(cn.stock) ?? 0) <= 0) continue
+    return {
+      lcsc: candidate.code,
+      model: candidate.model,
+      package: candidate.package,
+      library: String(candidate.libraryType ?? '').toLowerCase() === 'base' ? 'base' : 'expand',
+      stock_retail: asInteger(cn.stock) ?? 0,
+      stock_smt: asInteger(candidate.stock) ?? 0,
+      unit_cny: cn.unit === undefined ? undefined : money(cn.unit),
+      fetched_at: cn.fetched_at,
+      footprint_compatible: footprintCompatible(packageName, asString(candidate.package)),
+    }
+  }
+  return undefined
 }
 
 /**
@@ -2240,6 +2323,34 @@ export async function auditBom(service, args, options = {}) {
     }
   }
 
+  // ---- Hand/DIY: retail-stock-driven substitutions (B2) ---------------------
+  if (suggestAlternatives && assembly === 'hand') {
+    optimize.retail_alternatives = []
+    const retailZeroRows = handRows.filter((row) => row.stock_retail === 0 && row.status !== 'NOT-FOUND').slice(0, 5)
+    if (retailZeroRows.length > 0) {
+      const pairs = await mapLimit(retailZeroRows, 2, async (row) => {
+        const item = jlcByCode.get(row.lcsc)
+        if (item === undefined) return [row.lcsc, undefined]
+        try {
+          return [row.lcsc, await findRetailAlternative(service, item, parseNeed(''), { signal: options.signal })]
+        } catch {
+          return [row.lcsc, undefined]
+        }
+      })
+      for (const [code, alternative] of pairs) {
+        if (alternative === undefined) continue
+        optimize.retail_alternatives.push({ from: code, ...alternative })
+        optimize.actions.push(
+          `${code} 立创零售缺货（SMT 库存 ${jlcByCode.get(code)?.stock ?? '?'}）→ 替代 ${alternative.lcsc}（${alternative.model ?? '?'}，立创零售 ¥${alternative.unit_cny ?? '?'} / 库存 ${alternative.stock_retail}）` +
+            (alternative.footprint_compatible === false ? ` ⚠封装不同（需改 PCB）` : ''),
+        )
+      }
+      if (optimize.retail_alternatives.length === 0) {
+        notes.push(`hand 模式：${retailZeroRows.length} 个料号立创零售缺货，但未找到同品类且有零售库存的替代。`)
+      }
+    }
+  }
+
   // ---- Optional JLCPCB BOM CSV export ---------------------------------------
   let bomCsv
   if (exportBom) {
@@ -2275,8 +2386,8 @@ export async function auditBom(service, args, options = {}) {
       notes.push('assembly=hand：只输出立创商城零售人民币价；SMT 加工费未计入。')
     }
   }
-  if (region === 'cn') {
-    notes.push('region=cn：国内嘉立创 SMT 的费用规则以官方计价页为准；本工具仍按 USD 上料费估算并显式标注。')
+  if (region === 'cn' && smtCostBasis !== 'cny_jlc_cn') {
+    notes.push('region=cn：当前未启用 cny_jlc_cn，USD 上料费仅作参考；如需国内人民币 SMT 报价请设 smt_cost_basis="cny_jlc_cn" + smt_service_type。')
   }
   notes.push('优选扩展库（Preferred Extended）分类未在公开接口暴露，若需免上料费请到嘉立创 SMT 下单页确认。')
   if (skipped.length > 0) {
@@ -2371,7 +2482,8 @@ export async function auditBom(service, args, options = {}) {
   }
   if (!includeCny) {
     for (const key of ['cny_covered_lines', 'cny_total_basis', 'cny_price_tier', 'components_cny',
-      'components_cny_per_order', 'components_cny_per_board']) {
+      'components_cny_per_order', 'components_cny_per_board', 'components_cny_estimate',
+      'cny_estimated_lines']) {
       delete summary[key]
     }
   }
@@ -2391,7 +2503,8 @@ export async function auditBom(service, args, options = {}) {
       }
     }
     if (!includeCny) {
-      for (const key of ['unit_cny', 'subtotal_cny', 'price_cny_source', 'price_cny_estimated']) delete row[key]
+      for (const key of ['unit_cny', 'subtotal_cny', 'price_cny_source', 'price_cny_estimated',
+        'unit_cny_estimate', 'subtotal_cny_estimate']) delete row[key]
     }
   }
   if (currencyErrors.length > 0) {
@@ -2562,10 +2675,17 @@ export function renderAuditText(value) {
     const alternative = includeUsd && isRecord(row.alternative) && typeof row.alternative.lcsc === 'string'
       ? ` -> base alt: ${row.alternative.lcsc} (${row.alternative.model ?? '?'}, net $${row.alternative.net_saving_usd ?? '?'})`
       : ''
+    const structured = [
+      row.price_source ? `src=${row.price_source}` : '',
+      row.price_cny_source ? `cny_src=${row.price_cny_source}` : '',
+      row.stock_asof ? `asof=${String(row.stock_asof).slice(0, 19)}` : '',
+      row.coverage === undefined ? '' : `cover=${row.coverage}`,
+    ].filter(Boolean).join(' ')
     lines.push(
       `${row.lcsc} x${row.qty}${designators} | ${row.place ?? '?'} | ${row.status} | lib ${row.library ?? '?'} | ` +
       `stock smt ${row.stock_smt ?? '?'} / retail ${row.stock_retail ?? '?'} | ` +
-      [priceUsd, priceCny].filter(Boolean).join(' | ') + `${flags}${alternative}`,
+      [priceUsd, priceCny].filter(Boolean).join(' | ') +
+      (structured === '' ? '' : ` {${structured}}`) + `${flags}${alternative}`,
     )
   }
   const costTable = Array.isArray(summary.cost_table) ? summary.cost_table : []
@@ -2582,9 +2702,14 @@ export function renderAuditText(value) {
   if (isRecord(optimize) && (optimize.require_stock !== undefined || optimize.stock_scope !== undefined)) {
     lines.push(`优化建议库存口径: require_stock=${optimize.require_stock ?? 'any'} / scope=${optimize.stock_scope ?? '?'}`)
   }
-  if (includeUsd && Array.isArray(optimize.actions) && optimize.actions.length > 0) {
-    lines.push(`优化建议（净省 $${optimize.saving_usd_per_order ?? 0}/单，扩展库 ${optimize.extended_parts_before}→${optimize.extended_parts_after}）:`)
-    for (const action of optimize.actions) lines.push(`  * ${action}`)
+  const visibleActions = (Array.isArray(optimize.actions) ? optimize.actions : [])
+    .filter((action) => includeUsd || !String(action).includes('$'))
+  if (visibleActions.length > 0) {
+    const optimizeTitle = includeUsd
+      ? `优化建议（净省 $${optimize.saving_usd_per_order ?? 0}/单，扩展库 ${optimize.extended_parts_before}→${optimize.extended_parts_after}）:`
+      : '优化建议（CNY 口径）:'
+    lines.push(optimizeTitle)
+    for (const action of visibleActions) lines.push(`  * ${action}`)
   }
   for (const error of Array.isArray(value.errors) ? value.errors : []) lines.push(`error: ${error}`)
   for (const hint of Array.isArray(value.hints) ? value.hints : []) lines.push(`hint: ${hint}`)
@@ -2783,6 +2908,7 @@ export function apply(ctx, config) {
         concurrency: settings.cnConcurrency,
         browserIdleTtlMs: settings.cnBrowserIdleTtlMs,
         cacheMaxEntries: settings.cnCacheMaxEntries,
+        negativeCacheTtlMs: settings.cnNegativeCacheTtlMs,
         verbose: settings.verbose,
         logger,
       })

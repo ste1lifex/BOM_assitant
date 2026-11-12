@@ -344,7 +344,7 @@ const estimateFind = await findParts(
     },
     cny: async () => ({ ok: false, reason: 'offline-fixture' }),
   },
-  { need: '0402 100nF 50V X7R ±10% capacitor', assembly: 'hand', quantity: 5, boards: 5, limit: 2, include_cny: false },
+  { need: '0402 100nF 50V X7R ±10% capacitor', assembly: 'hand', quantity: 5, boards: 5, limit: 2, include_cny: true },
 )
 check(
   'find reports a CNY estimate when only USD is available',
@@ -895,6 +895,35 @@ check('economic + 2 sides is refused', econ3TwoSides.cn_smt === undefined && eco
 const manualJoints3 = await auditBom(cnyStub3, { bom: 'C307331,2\n', assembly: 'smt', boards: 10, include_cny: true, smt_cost_basis: 'cny_jlc_cn', smt_service_type: 'standard', smt_joint_count: 100000 })
 check('explicit smt_joint_count used', manualJoints3.cn_smt.joint_count === 100000 && manualJoints3.cn_smt.joint_count_estimated === false, manualJoints3.cn_smt.joint_count)
 check('standard joint tiers applied', Math.abs(manualJoints3.cn_smt.joint_fee_cny - (50000 * 0.01 + 50000 * 0.008)) < 0.01, manualJoints3.cn_smt.joint_fee_cny)
+
+section('round-3: B7/B11 regression')
+const duplicateAudit = await auditBom(
+  {
+    settings: { extendedPartFeeUsd: 3 },
+    searchRaw: async (code) => ({ total: 1, items: [capBase3].filter((item) => item.code === String(code).toUpperCase()) }),
+    cny: async () => ({ ok: false }),
+  },
+  { bom: 'C307331,1\nC307331,2\n', assembly: 'smt', boards: 10, include_cny: false, suggest_alternatives: false },
+)
+check('B7 duplicate LCSC rows merge', duplicateAudit.rows.length === 1 && duplicateAudit.rows[0].qty === 3, duplicateAudit.rows.map((row) => [row.lcsc, row.qty]))
+check('B7 feeder fee charged once', duplicateAudit.summary.expanded_fee_parts === 0 && duplicateAudit.summary.extended_fee_per_order_usd === 0, duplicateAudit.summary.extended_fee_per_order_usd)
+check('B11 long model is exact, not parsed as values', parseNeed('RC0402FR-0710KL').exact === true && parseNeed('RC0402FR-0710KL').requirements.length === 0, parseNeed('RC0402FR-0710KL'))
+check('B11 model keeps original text', parseNeed('RC0402FR-0710KL').searchKeyword === 'RC0402FR-0710KL', parseNeed('RC0402FR-0710KL').searchKeyword)
+
+section('round-3: B5 hand ranking prefers retail stock')
+const retailZero = fixture({ code: 'C25744', model: '0402WGF1002TCE', package: '0402', category: 'Chip Resistor - Surface Mount', description: '10kΩ ±1% 0402', libraryType: 'base', stock: 20000000, priceUsdTiers: [{ qty: 1, unit: 0.001 }] })
+const retailStocked = fixture({ code: 'C25804', model: '0402WGF1002TCE2', package: '0402', category: 'Chip Resistor - Surface Mount', description: '10kΩ ±1% 0402', libraryType: 'base', stock: 40000000, priceUsdTiers: [{ qty: 1, unit: 0.0022 }] })
+const rankService = {
+  settings: {},
+  async searchRaw() { return { total: 2, items: [retailZero, retailStocked] } },
+  async cny(code) {
+    if (String(code) === 'C25744') return { ok: true, unit: 0.003, stock: 0, source: 'lcsc_cn_render', fetched_at: '2026-11-12T00:00:00Z' }
+    if (String(code) === 'C25804') return { ok: true, unit: 0.005, stock: 3850000, source: 'lcsc_cn_render', fetched_at: '2026-11-12T00:00:00Z' }
+    return { ok: false }
+  },
+}
+const rankResult = await findParts(rankService, { need: '10k ohm 0402 resistor 1%', assembly: 'hand', boards: 100, limit: 5, include_cny: true })
+check('B5 retail-stocked candidate ranks first', rankResult.candidates[0]?.lcsc === 'C25804', rankResult.candidates.map((candidate) => [candidate.lcsc, candidate.stock_retail]))
 
 /* -------------------------------------------------------------------------- */
 /* Result                                                                     */
