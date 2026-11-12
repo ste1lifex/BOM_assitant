@@ -199,18 +199,14 @@ const CATEGORY_TERMS = [
   ['贴片电容', ['capacitor']],
   ['贴片电阻', ['resistor']],
   ['发光二极管', ['led']],
-  ['锂电池充电', ['battery charger']],
-  ['单节锂电池', ['battery charger']],
-  ['充电ic', ['battery charger']],
-  ['充电 ic', ['battery charger']],
-  ['充电芯片', ['battery charger']],
+  ['锂电池充电', ['battery management', 'battery charger']],
+  ['单节锂电池', ['battery management', 'battery charger']],
+  ['充电ic', ['battery management', 'battery charger']],
+  ['充电 ic', ['battery management', 'battery charger']],
+  ['充电芯片', ['battery management', 'battery charger']],
   ['静态保护', ['esd']],
   ['静电保护', ['esd']],
   ['硅麦', ['microphone']],
-  ['mems硅麦', ['microphone']],
-  ['mems 硅麦', ['microphone']],
-  ['mems麦克风', ['microphone']],
-  ['mems 麦克风', ['microphone']],
   ['type-c母座', ['usb type-c receptacle']],
   ['type-c 母座', ['usb type-c receptacle']],
   ['type c母座', ['usb type-c receptacle']],
@@ -256,6 +252,80 @@ const CATEGORY_TERMS = [
   ['microsd', ['microsd']],
   ['usb', ['usb']],
 ]
+
+/** Extra search keywords per category (JLCPCB keyword search is literal). */
+const CATEGORY_SEARCH_VARIANTS = {
+  microphone: ['MEMS', 'MEMS microphone', 'microphone'],
+  'ptc resettable fuse': ['PTC', 'resettable fuse', 'fuse'],
+  fuse: ['PTC', 'resettable fuse'],
+  'usb type-c receptacle': ['USB Type-C', 'Type-C receptacle', 'Type-C'],
+  'type-c': ['USB Type-C', 'Type-C'],
+  usb: ['USB Type-C', 'USB'],
+  'battery management': ['battery management', 'charging IC', 'battery charger'],
+  'battery charger': ['battery management', 'charging IC', 'battery charger'],
+  tvs: ['TVS', 'ESD'],
+  esd: ['ESD', 'TVS'],
+  ldo: ['LDO', 'voltage regulator'],
+  'voltage regulator': ['LDO', 'voltage regulator'],
+  'ferrite bead': ['ferrite bead', 'ferrite'],
+  connector: ['connector'],
+  'pin header': ['pin header', 'header'],
+  'tactile switch': ['tactile switch', 'tact switch'],
+  crystal: ['crystal', 'oscillator'],
+  'battery holder': ['battery holder', 'battery connector'],
+  'battery connector': ['battery connector', 'battery holder'],
+  optocoupler: ['optocoupler'],
+  'operational amplifier': ['operational amplifier', 'op amp'],
+  microcontroller: ['microcontroller', 'MCU'],
+  memory: ['memory', 'flash'],
+  'level shifter': ['level shifter'],
+}
+
+/** ASCII-only remainder of the requirement, useful for `USB Type-C 16P` / `MEMS`. */
+function asciiRequirement(text) {
+  return String(text ?? '')
+    .replace(/[\u4e00-\u9fff]+/g, ' ')
+    .replace(/[，。；、,;:：!！?？]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** Tokens in the ASCII remainder that are meaningful (not a bare value/unit/package). */
+function asciiSearchTokens(text) {
+  return asciiRequirement(text)
+    .split(/\s+/)
+    .map((token) => token.replace(/^[\(（"']+|["'）)]+$/g, ''))
+    .filter((token) => token.length >= 3)
+    .filter((token) => /[A-Za-z]/.test(token))
+    .filter((token) => !VALUE_UNIT_TOKEN_RE.test(token))
+    .filter((token) => extractPackage(token) !== token.toUpperCase())
+}
+
+/**
+ * Recall keyword variants, in order, for the staged degradation chain.
+ * @param {ReturnType<typeof parseNeed>} need
+ * @returns {string[]}
+ */
+function recallFallbackKeywords(need) {
+  const keywords = []
+  const push = (value) => {
+    const text = String(value ?? '').trim()
+    if (text !== '' && !keywords.includes(text) && text !== need.searchKeyword) keywords.push(text)
+  }
+  // 1) Simplified category phrases (e.g. "PTC", "USB Type-C", "MEMS")
+  for (const category of need.categories ?? []) {
+    for (const variant of CATEGORY_SEARCH_VARIANTS[category] ?? []) push(variant)
+  }
+  // 2) English tokens that survived the Chinese text (e.g. "MEMS", "USB Type-C 16P")
+  const ascii = asciiRequirement(need.raw)
+  if (ascii !== '') push(ascii)
+  const tokens = asciiSearchTokens(need.raw)
+  if (tokens.length > 0) push(tokens.join(' '))
+  // 3) Package + category, then the untouched raw text
+  push([need.package, ...(need.categories ?? [])].filter(Boolean).join(' '))
+  push(need.raw)
+  return keywords
+}
 
 /** A single token that is a value+unit (e.g. "100nF", "3.3V", "10kΩ") is not a part number. */
 const VALUE_UNIT_TOKEN_RE =
@@ -459,7 +529,7 @@ export function parseNeed(raw) {
     'microphone', 'buzzer', 'battery holder', 'battery connector', 'optocoupler',
     'operational amplifier', 'comparator', 'microcontroller', 'memory', 'level shifter',
     'tvs', 'esd', 'type-c', 'microsd', 'usb', 'relay', 'sensor', 'motor driver',
-    'adc', 'dac', 'interface', 'antenna', 'receptacle', 'battery charger', 'pin header',
+    'adc', 'dac', 'interface', 'antenna', 'receptacle', 'battery charger', 'battery management', 'pin header',
   ]
   for (const word of ENGLISH_CATEGORIES) {
     const re = new RegExp(`(^|[^a-z0-9])${word.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}([^a-z0-9]|$)`, 'i')
@@ -480,8 +550,25 @@ export function parseNeed(raw) {
     .replace(/[\u4e00-\u9fff]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+  // If the user already wrote English/ASCII terms, prefer them: translating
+  // 母座 -> receptacle or 麦克风 -> microphone can otherwise dilute a literal
+  // keyword search (e.g. "USB Type-C 16P receptacle" vs "USB Type-C 16P").
+  const ascii = asciiRequirement(text)
+  const meaningfulAscii = asciiSearchTokens(text)
+  if (meaningfulAscii.length > 0 && ascii !== '') keyword = ascii
   if (keyword === '') keyword = [packageName, dielectric, ...categories].filter(Boolean).join(' ')
   if (keyword === '') keyword = text
+  // Collapse repeated tokens produced by overlapping Chinese synonyms.
+  const seenTokens = new Set()
+  keyword = keyword
+    .split(/\s+/)
+    .filter((token) => {
+      const key = token.toLowerCase()
+      if (seenTokens.has(key)) return false
+      seenTokens.add(key)
+      return true
+    })
+    .join(' ')
 
   const requirements = extractRequirements(text)
   // Category-aware comparator defaults.
@@ -971,7 +1058,8 @@ export async function findParts(service, args, options = {}) {
   const limit = clampInteger(args.limit, 1, MAX_CANDIDATES, DEFAULT_LIMIT)
   const sort = ['cost', 'stock'].includes(args.sort) ? args.sort : 'balanced'
   const baseOnly = args.base_only === true
-  const includeCny = args.include_cny === true || (args.include_cny === undefined && assembly === 'hand')
+  const requireStock = ['lcsc', 'smt'].includes(args.require_stock) ? args.require_stock : 'any'
+  const includeCny = args.include_cny === true || (args.include_cny === undefined && assembly === 'hand') || requireStock === 'lcsc'
   const exclude = new Set(
     (Array.isArray(args.exclude_lcsc) ? args.exclude_lcsc : [])
       .map((code) => normalizeCode(code))
@@ -1022,15 +1110,14 @@ export async function findParts(service, args, options = {}) {
     })
     absorb(result)
   }
-  // Degradation chain for recall: category+package, then the untouched raw text.
+  // Degradation chain for recall: simplified category terms -> English tokens
+  // in the raw text -> package+category -> raw text. This keeps Chinese
+  // colloquial requirements ("MEMS 麦克风", "USB Type-C 16P 母座") searchable.
   if (pool.size === 0 && !need.exact) {
-    const fallbackKeyword = [need.package, ...need.categories].filter(Boolean).join(' ')
-    if (fallbackKeyword !== '' && fallbackKeyword !== need.searchKeyword) {
-      notes.push(`关键词「${need.searchKeyword}」无结果，已回退到品类/封装关键词「${fallbackKeyword}」。`)
+    for (const fallbackKeyword of recallFallbackKeywords(need)) {
+      if (pool.size > 0) break
+      notes.push(`关键词「${need.searchKeyword}」无结果，回退到「${fallbackKeyword}」。`)
       absorb(await service.searchRaw(fallbackKeyword, { pageSize: SEARCH_PAGE_SIZE, signal: options.signal }))
-    }
-    if (pool.size === 0 && need.searchKeyword !== need.raw) {
-      absorb(await service.searchRaw(need.raw, { pageSize: SEARCH_PAGE_SIZE, signal: options.signal }))
     }
   }
   if (pool.size === 0 && need.exact) {
@@ -1115,7 +1202,8 @@ export async function findParts(service, args, options = {}) {
   /** @type {Map<string, Record<string, unknown>>} */
   const cnyByCode = new Map()
   if (includeCny && ranked.length > 0) {
-    const targets = ranked.slice(0, Math.min(MAX_CNY_LOOKUPS, ranked.length))
+    const cnyLookupCount = requireStock === 'lcsc' ? Math.min(10, ranked.length) : Math.min(MAX_CNY_LOOKUPS, ranked.length)
+    const targets = ranked.slice(0, cnyLookupCount)
     const results = await mapLimit(targets, 2, async (candidate) => {
       const code = String(candidate.item.code)
       try {
@@ -1142,6 +1230,31 @@ export async function findParts(service, args, options = {}) {
     if (cnyFailure !== undefined) hints.push(cnyFailure)
   }
 
+  // require_stock: DIY defaults to the retail warehouse; PCBA can ask for SMT.
+  if (requireStock !== 'any' && ranked.length > 0) {
+    const kept = []
+    const dropped = []
+    for (const candidate of ranked) {
+      const code = String(candidate.item.code)
+      const smtStock = asInteger(candidate.item.stock) ?? 0
+      const cn = cnyByCode.get(code)
+      const retailStock = cn?.ok === true ? asInteger(cn.stock) : undefined
+      if (requireStock === 'smt') {
+        if (smtStock > 0) kept.push(candidate)
+        else dropped.push(code)
+      } else if (retailStock !== undefined && retailStock > 0) {
+        kept.push(candidate)
+      } else {
+        dropped.push(code)
+      }
+    }
+    if (kept.length < ranked.length) {
+      notes.push(`require_stock=${requireStock}：${dropped.length} 个候选因库存口径不满足被跳过${dropped.length > 0 ? `（如 ${dropped.slice(0, 4).join(', ')}）` : ''}。`)
+    }
+    if (kept.length === 0) hints.push(`require_stock=${requireStock} 时没有库存满足的候选；可改用 require_stock="any" 查看全部。`)
+    ranked = kept
+  }
+
   // ---- Phase 4: build output ----------------------------------------------
   const candidates = ranked.slice(0, limit).map((candidate) => {
     const code = String(candidate.item.code)
@@ -1154,6 +1267,10 @@ export async function findParts(service, args, options = {}) {
     const stockSmt = asInteger(candidate.item.stock) ?? 0
     const stockLcsc = cnyStock ?? null
     const stock = assembly === 'smt' ? stockSmt : (stockLcsc ?? stockSmt)
+    const stockAsOf = cny?.ok === true ? (cny.fetched_at ?? new Date().toISOString()) : new Date().toISOString()
+    const dataWarnings = []
+    if (stockLcsc === 0 && stockSmt > 0) dataWarnings.push('retail_out_of_stock_smt_ok')
+    if (stockLcsc !== null && stockLcsc > 0 && stockSmt === 0) dataWarnings.push('smt_out_of_stock_retail_ok')
     const priceUsd = tier === undefined
       ? null
       : {
@@ -1198,8 +1315,16 @@ export async function findParts(service, args, options = {}) {
       library: candidate.expand ? 'expand' : 'base',
       preferred: candidate.item.preferred === true ? true : null,
       stock,
+      stock_retail: stockLcsc,
       stock_smt: stockSmt,
+      stock_global: null,
       stock_lcsc: stockLcsc,
+      stock_asof: stockAsOf,
+      stock_scope: assembly,
+      stock_scope_note: assembly === 'smt'
+        ? 'SMT 库存（嘉立创 PCBA 备料仓），与立创商城零售库存独立'
+        : '立创商城零售库存（DIY 配单）；SMT 库存另列',
+      data_warnings: dataWarnings.length === 0 ? undefined : dataWarnings,
       coverage: orderQty > 0 ? Math.min(1, Math.round((stock / orderQty) * 100) / 100) : undefined,
       price: primaryPrice === null ? undefined : { currency: primaryPrice.currency, unit: primaryPrice.unit, source: primaryPrice.source },
       price_usd: priceUsd,
@@ -1235,6 +1360,10 @@ export async function findParts(service, args, options = {}) {
     notes.push(`assembly=smt：扩展库按每料号 $${feeUsd}/单上料费摊销；基础库优先度体现在排序里。`)
   }
 
+  const allWarnings = [...new Set(candidates.flatMap((candidate) => candidate.data_warnings ?? []))]
+  if (allWarnings.includes('retail_out_of_stock_smt_ok')) {
+    notes.push('注意：部分候选「立创零售仓缺货、嘉立创 SMT 仓有货」——不是停产；DIY 配单需看 stock_retail，PCBA 可看 stock_smt。')
+  }
   return {
     need: needText,
     exact: need.exact,
@@ -1242,10 +1371,15 @@ export async function findParts(service, args, options = {}) {
     quantity,
     boards,
     order_qty: orderQty,
+    require_stock: requireStock,
+    stock_scope_note: assembly === 'smt'
+      ? '默认按嘉立创 SMT 库存；DIY 配单请传 require_stock="lcsc"'
+      : '默认按立创商城零售库存；PCBA 请传 require_stock="smt"',
     currency: includeCny ? 'USD + CNY（并列，不混算）' : 'USD（CNY 为参考估算）',
     relaxed,
     relax_stage: relaxStage,
     candidates,
+    data_warnings: allWarnings,
     hints,
     notes,
     fetched_at: new Date().toISOString(),
@@ -1545,18 +1679,61 @@ export async function findAlternative(service, item, originalNeed, options = {})
     evaluated.push({ score: candidate, net, componentDelta })
   }
   evaluated.sort((left, right) => right.net - left.net)
-  const best = evaluated[0]
+  const requireStock = ['lcsc', 'smt'].includes(options.requireStock) ? options.requireStock : 'any'
+  const includeCny = options.includeCny === true || requireStock === 'lcsc'
+  /** @param {string} code */
+  const queryRetail = async (code) => {
+    try {
+      if (typeof service.cn?.query === 'function') {
+        const cn = await service.cn.query(code)
+        if (cn !== undefined && cn !== null) return cn
+      }
+      if (typeof service.cny === 'function') return await service.cny(code, options.signal)
+    } catch {
+      // ignore
+    }
+    return undefined
+  }
+  /** @type {{ lcsc: string, reason: string }[]} */
+  const skipped = []
+  /** @type {ReturnType<typeof scoreCandidate> | undefined} */
+  let best
+  for (const entry of evaluated.slice(0, requireStock === 'lcsc' ? 4 : 1)) {
+    const code = String(entry.score.item.code)
+    if (requireStock === 'lcsc') {
+      const cn = await queryRetail(code)
+      const retail = cn?.ok === true ? asInteger(cn.stock) : undefined
+      if (retail === undefined || retail <= 0) {
+        skipped.push({ lcsc: code, reason: retail === 0 ? 'lcsc-stock-0' : 'lcsc-stock-unknown' })
+        continue
+      }
+    }
+    best = entry.score
+    break
+  }
+  if (best === undefined) {
+    return { blocked: true, require_stock: requireStock, skipped }
+  }
+  const retail = includeCny ? await queryRetail(String(best.item.code)) : undefined
   return {
-    lcsc: best.score.item.code,
-    model: best.score.item.model,
-    package: best.score.item.package,
+    lcsc: best.item.code,
+    model: best.item.model,
+    package: best.item.package,
     library: 'base',
-    stock: asInteger(best.score.item.stock) ?? 0,
-    unit_usd: best.score.unitUsd === undefined ? undefined : money(best.score.unitUsd),
+    stock: asInteger(best.item.stock) ?? 0,
+    stock_smt: asInteger(best.item.stock) ?? 0,
+    stock_retail: retail?.ok === true ? asInteger(retail.stock) : null,
+    stock_asof: retail?.ok === true ? retail.fetched_at : new Date().toISOString(),
+    stock_scope_note: requireStock === 'lcsc'
+      ? '按立创零售库存筛选（DIY 配单）'
+      : 'SMT 库存；立创零售库存见 stock_retail',
+    require_stock: requireStock,
+    skipped,
+    unit_usd: best.unitUsd === undefined ? undefined : money(best.unitUsd),
     fee_saved_usd: money(feeUsd),
     component_delta_usd: money(best.componentDelta),
     net_saving_usd: money(best.net),
-    footprint_compatible: footprintCompatible(packageName, asString(best.score.item.package)),
+    footprint_compatible: footprintCompatible(packageName, asString(best.item.package)),
   }
 }
 
@@ -1576,6 +1753,8 @@ export async function auditBom(service, args, options = {}) {
   const assembly = args.assembly === 'smt' ? 'smt' : 'hand'
   const boards = clampInteger(args.boards, 1, 100000, 1)
   let includeCny = args.include_cny === true
+  const requireStock = ['lcsc', 'smt', 'any'].includes(args.require_stock) ? args.require_stock : 'any'
+  const stockScope = requireStock === 'any' ? (assembly === 'smt' ? 'smt' : 'lcsc') : requireStock
   const suggestAlternatives = args.suggest_alternatives !== false
   const exportBom = args.export_bom === true
   const region = args.region === 'cn' ? 'cn' : 'global'
@@ -1705,8 +1884,21 @@ export async function auditBom(service, args, options = {}) {
       billable_smt: billableSmt,
       billable: countsForUsd,
       stock: stockForMode,
+      stock_retail: stockLcsc,
       stock_smt: stockSmt,
+      stock_global: null,
       stock_lcsc: stockLcsc,
+      stock_asof: cnOk ? (cn.fetched_at ?? new Date().toISOString()) : new Date().toISOString(),
+      stock_scope: assembly,
+      stock_scope_note: assembly === 'smt'
+        ? (requireStock === 'lcsc' ? '按立创零售库存约束；SMT 库存另列' : 'SMT 库存（嘉立创 PCBA 备料仓）')
+        : '立创商城零售库存（DIY 配单）；SMT 库存另列',
+      data_warnings: (() => {
+        const warnings = []
+        if (stockLcsc === 0 && stockSmt !== undefined && stockSmt > 0) warnings.push('retail_out_of_stock_smt_ok')
+        if (stockLcsc !== undefined && stockLcsc > 0 && stockSmt === 0) warnings.push('smt_out_of_stock_retail_ok')
+        return warnings.length === 0 ? undefined : warnings
+      })(),
       stock_source: assembly === 'smt' ? 'jlcpcb-smt' : (stockLcsc !== undefined ? 'lcsc_cn_render' : 'jlcpcb-smt'),
       coverage: orderQty > 0 && stockForMode !== undefined ? Math.min(1, Math.round((stockForMode / orderQty) * 100) / 100) : undefined,
       price_source: jlc === undefined ? (cnOk ? 'lcsc_cn_render' : undefined) : 'jlcpcb-smt',
@@ -1767,6 +1959,11 @@ export async function auditBom(service, args, options = {}) {
 
   // ---- Alternatives & net-saving optimisation ------------------------------
   const optimize = {
+    require_stock: requireStock,
+    stock_scope: stockScope,
+    stock_scope_note: requireStock === 'any'
+      ? `未限制库存口径；建议按 assembly=${assembly} 看 ${assembly === 'smt' ? 'stock_smt' : 'stock_retail'}。DIY 配单请传 require_stock="lcsc"。`
+      : `建议已按 ${stockScope === 'lcsc' ? '立创零售库存' : '嘉立创 SMT 库存'}（require_stock=${requireStock}）筛选。`,
     extended_parts_before: extendedUnique.size,
     extended_parts_after: extendedUnique.size,
     fee_before_usd: money(assembly === 'smt' ? extendedUnique.size * feeUsd : 0),
@@ -1774,6 +1971,7 @@ export async function auditBom(service, args, options = {}) {
     saving_usd_per_order: 0,
     actions: [],
     alternatives: [],
+    blocked: [],
   }
   if (suggestAlternatives && assembly === 'smt') {
     const originalNeed = parseNeed('')
@@ -1784,7 +1982,13 @@ export async function auditBom(service, args, options = {}) {
       if (item === undefined || entry === undefined) return [code, undefined]
       const orderQty = entry.qty * boards
       try {
-        return [code, await findAlternative(service, item, originalNeed, { signal: options.signal, orderQty, feeUsd })]
+        return [code, await findAlternative(service, item, originalNeed, {
+          signal: options.signal,
+          orderQty,
+          feeUsd,
+          requireStock,
+          includeCny,
+        })]
       } catch {
         return [code, undefined]
       }
@@ -1794,6 +1998,13 @@ export async function auditBom(service, args, options = {}) {
     const alternativesByCode = new Map()
     for (const [code, alternative] of pairs) {
       if (alternative === undefined) continue
+      if (alternative.blocked === true) {
+        optimize.blocked.push({ from: code, ...alternative })
+        optimize.actions.push(
+          `${code}：按 require_stock=${requireStock} 未找到有库存的基础库替代（跳过 ${(alternative.skipped ?? []).map((item) => `${item.lcsc}:${item.reason}`).join(', ')}）`,
+        )
+        continue
+      }
       alternativesByCode.set(code, alternative)
       optimize.alternatives.push({ from: code, ...alternative })
       if (alternative.net_saving_usd > 0) {
@@ -1802,8 +2013,14 @@ export async function auditBom(service, args, options = {}) {
         const packageNote = alternative.footprint_compatible === false
           ? `封装不同（${jlcByCode.get(code)?.package ?? '?'}→${alternative.package ?? '?'}，需改 PCB）`
           : '封装兼容'
+        const stockNote = stockScope === 'lcsc'
+          ? `立创零售 ${alternative.stock_retail ?? '?'}`
+          : `SMT 库存 ${alternative.stock_smt ?? '?'}${alternative.stock_retail === 0 ? '；⚠ 立创零售 0' : ''}`
+        const skippedNote = Array.isArray(alternative.skipped) && alternative.skipped.length > 0
+          ? `（已跳过 ${alternative.skipped.map((item) => `${item.lcsc}:${item.reason}`).join(', ')}）`
+          : ''
         optimize.actions.push(
-          `${code}→${alternative.lcsc}：${packageNote}，上料费省 $${feeUsd}，元件成本变化 $${alternative.component_delta_usd}，净省 $${alternative.net_saving_usd}`,
+          `${code}→${alternative.lcsc}：${packageNote}，${stockNote}，上料费省 $${feeUsd}，元件成本变化 $${alternative.component_delta_usd}，净省 $${alternative.net_saving_usd}${skippedNote}`,
         )
       }
     }
@@ -1815,6 +2032,9 @@ export async function auditBom(service, args, options = {}) {
       if (row.place === 'hand' && assembly === 'smt') optimize.actions.push(`${row.lcsc} place=hand：不占上料费（已从 SMT 费用中剔除）`)
     }
     for (const row of dnpRows) optimize.actions.push(`${row.lcsc} DNP：不贴片、不计元件与上料费`)
+    if (optimize.blocked.length > 0) {
+      notes.push(`${optimize.blocked.length} 个扩展库料号在 require_stock=${requireStock} 下没有有库存的替代；可用 require_stock="any" 查看候选并按 stock_retail/stock_smt 人工判断。`)
+    }
     if (expandCodes.length < extendedUnique.size) {
       notes.push(`替代料建议仅检查了 ${expandCodes.length}/${extendedUnique.size} 个扩展库料号（每次最多 ${MAX_ALTERNATIVE_LOOKUPS} 个）。`)
     }
@@ -1899,16 +2119,28 @@ export async function auditBom(service, args, options = {}) {
     hand_components_cny: money(handCny),
     dnp_components_usd_excluded: money(dnpUsd),
     cny_covered_lines: cnyCovered,
+    cny_total_basis: 'per_order',
+    cny_price_tier: 'retail_1pc',
     components_cny: money(componentCny),
+    components_cny_per_order: money(componentCny),
+    components_cny_per_board: money(componentCny / Math.max(1, boards)),
     cny_estimated_lines: auditRows.filter((row) => row.unit_cny_estimate !== undefined).length,
     components_cny_estimate: money(componentCnyEstimate),
     cost_table: costTable,
+    require_stock: requireStock,
+    stock_scope: stockScope,
   }
 
+  const dataWarnings = [...new Set(auditRows.flatMap((row) => row.data_warnings ?? []))]
+  if (dataWarnings.includes('retail_out_of_stock_smt_ok')) {
+    notes.push('注意：有料号「立创零售仓缺货、嘉立创 SMT 仓有货」——不是停产；DIY 配单看 stock_retail，PCBA 看 stock_smt。')
+  }
   return {
     assembly,
     boards,
     region,
+    require_stock: requireStock,
+    stock_scope: stockScope,
     currency: includeCny ? 'USD + CNY（并列，不混算）' : 'USD（CNY 为参考估算）',
     summary,
     rows: auditRows,
@@ -1918,6 +2150,7 @@ export async function auditBom(service, args, options = {}) {
     errors,
     hints,
     notes,
+    data_warnings: dataWarnings,
     fetched_at: new Date().toISOString(),
   }
 }
@@ -1930,7 +2163,7 @@ export async function auditBom(service, args, options = {}) {
 export function renderFindText(value) {
   const candidates = Array.isArray(value.candidates) ? value.candidates : []
   const header =
-    `Find "${value.need}" [${value.assembly}] qty ${value.quantity}/board x ${value.boards} board(s)` +
+    `Find "${value.need}" [${value.assembly}${value.require_stock && value.require_stock !== 'any' ? `/stock=${value.require_stock}` : ''}] qty ${value.quantity}/board x ${value.boards} board(s)` +
     (value.exact === true ? ' (exact part query)' : '') +
     (value.relaxed === true ? ` (relaxed stage ${value.relax_stage})` : '') +
     ` => ${candidates.length} candidate(s)`
@@ -1943,8 +2176,11 @@ export function renderFindText(value) {
       : 'CNY n/a'
     lines.push(
       `- ${candidate.lcsc} | ${candidate.model ?? '?'} | ${candidate.package ?? '?'} | lib ${candidate.library} | ` +
-      `stock smt ${candidate.stock_smt ?? '?'} / lcsc ${candidate.stock_lcsc ?? '?'} | ${priceUsd} | ${priceCny} | score ${candidate.score}`,
+      `stock smt ${candidate.stock_smt ?? '?'} / retail ${candidate.stock_retail ?? '?'} | ${priceUsd} | ${priceCny} | score ${candidate.score}`,
     )
+    if (Array.isArray(candidate.data_warnings) && candidate.data_warnings.length > 0) {
+      lines.push(`  ⚠ ${candidate.data_warnings.join(', ')}`)
+    }
     if (Array.isArray(candidate.reasons) && candidate.reasons.length > 0) lines.push(`  ${candidate.reasons.join('; ')}`)
     if (Array.isArray(candidate.mismatch_reasons) && candidate.mismatch_reasons.length > 0) {
       lines.push(`  不匹配原因: ${candidate.mismatch_reasons.join('; ')}`)
@@ -1967,7 +2203,9 @@ export function renderAuditText(value) {
     `components USD ${summary.components_usd ?? 0} + extended fee USD ${summary.extended_fee_per_order_usd ?? 0}` +
       ` + setup USD ${money((summary.setup_fee_usd ?? 0) + (summary.stencil_fee_usd ?? 0))} = USD ${summary.total_usd ?? 0}` +
       ` (USD ${summary.total_per_board_usd ?? 0}/board)` +
-      (summary.cny_covered_lines > 0 ? ` | CNY ${summary.components_cny ?? 0} (${summary.cny_covered_lines} lines)` : '') +
+      (summary.cny_covered_lines > 0
+        ? ` | CNY retail: ¥${summary.components_cny_per_order ?? summary.components_cny ?? 0}/order = ¥${summary.components_cny_per_board ?? '?'}/board (${summary.cny_covered_lines} lines)`
+        : '') +
       (summary.components_cny_estimate > 0 ? ` | CNY est. ≈ ${summary.components_cny_estimate}` : ''),
   ]
   for (const row of rows) {
@@ -1983,12 +2221,18 @@ export function renderAuditText(value) {
       : ''
     lines.push(
       `${row.lcsc} x${row.qty}${designators} | ${row.place ?? '?'} | ${row.status} | lib ${row.library ?? '?'} | ` +
-      `stock smt ${row.stock_smt ?? '?'} / lcsc ${row.stock_lcsc ?? '?'} | ${priceUsd} | ${priceCny}${flags}${alternative}`,
+      `stock smt ${row.stock_smt ?? '?'} / retail ${row.stock_retail ?? '?'} | ${priceUsd} | ${priceCny}${flags}${alternative}`,
     )
   }
   const costTable = Array.isArray(summary.cost_table) ? summary.cost_table : []
   if (costTable.length > 0) {
     lines.push('批量摊销: ' + costTable.map((row) => `${row.boards}片≈$${row.per_board_usd}/片`).join(' | '))
+  }
+  if (Array.isArray(value.data_warnings) && value.data_warnings.length > 0) {
+    lines.push(`⚠ data_warnings: ${value.data_warnings.join(', ')}`)
+  }
+  if (isRecord(optimize) && (optimize.require_stock !== undefined || optimize.stock_scope !== undefined)) {
+    lines.push(`优化建议库存口径: require_stock=${optimize.require_stock ?? 'any'} / scope=${optimize.stock_scope ?? '?'}`)
   }
   if (Array.isArray(optimize.actions) && optimize.actions.length > 0) {
     lines.push(`优化建议（净省 $${optimize.saving_usd_per_order ?? 0}/单，扩展库 ${optimize.extended_parts_before}→${optimize.extended_parts_after}）:`)
@@ -2054,6 +2298,7 @@ export function createToolDefinitions(service) {
           include_cny: { type: 'boolean', description: 'Fetch real LCSC domestic CNY retail prices for the top candidates via headless Chrome (default true in hand mode, false in smt mode; 24h cache). When unavailable, a marked reference estimate is shown.' },
           exclude_lcsc: { type: 'array', items: { type: 'string' }, description: 'LCSC codes to exclude, e.g. when looking for an alternative to a part you already have.' },
           base_only: { type: 'boolean', description: 'Only return JLCPCB basic-library parts (no feeder fee). If none exist the tool says so instead of silently returning extended parts.' },
+          require_stock: { type: 'string', enum: ['any', 'lcsc', 'smt'], description: 'Stock scope filter. any = no filter (default); lcsc = 立创商城零售仓有货 (DIY 配单); smt = 嘉立创 SMT 仓有货 (PCBA). lcsc forces a real CNY/stock lookup.' },
         },
       },
       output: {
@@ -2074,6 +2319,9 @@ export function createToolDefinitions(service) {
             relaxed: { type: 'boolean' },
             relax_stage: { type: 'integer' },
             exact: { type: 'boolean' },
+            require_stock: { type: 'string' },
+            stock_scope_note: { type: 'string' },
+            data_warnings: { type: 'array', items: { type: 'string' } },
             fetched_at: { type: 'string' },
           },
         },
@@ -2103,6 +2351,7 @@ export function createToolDefinitions(service) {
           },
           boards: { type: 'integer', minimum: 1, maximum: 100000, description: 'Number of boards the BOM is for (default 1).' },
           include_cny: { type: 'boolean', description: 'Fetch real LCSC domestic CNY prices via headless Chrome (24h cache, capped; default true in hand mode for small BOMs, false for large BOMs — pass true to force).' },
+          require_stock: { type: 'string', enum: ['any', 'lcsc', 'smt'], description: 'Stock scope for basic-library substitution suggestions. any = no filter (default); lcsc = only suggest parts with 立创零售仓库存 (DIY 配单); smt = only suggest parts with 嘉立创 SMT 仓库存 (PCBA). Each suggestion always reports stock_retail and stock_smt.' },
           suggest_alternatives: { type: 'boolean', description: 'For extended-library parts, suggest a basic-library substitute with net saving (default true; only in smt mode).' },
           export_bom: { type: 'boolean', description: 'Also return a JLCPCB BOM CSV (Comment/Designator/Footprint/LCSC Part) for the smt-placed lines (default false).' },
           region: { type: 'string', enum: ['global', 'cn'], description: 'Fee/currency context label. global = JLCPCB international (USD); cn = 嘉立创国内 (fee rules shown as assumptions, always labelled). Default global.' },
@@ -2117,8 +2366,11 @@ export function createToolDefinitions(service) {
             assembly: { type: 'string' },
             boards: { type: 'integer' },
             region: { type: 'string' },
+            require_stock: { type: 'string' },
+            stock_scope: { type: 'string' },
             currency: { type: 'string' },
             summary: { type: 'object' },
+            data_warnings: { type: 'array', items: { type: 'string' } },
             optimize: { type: 'object' },
             bom_csv: { type: 'string' },
             rows: { type: 'array', items: { type: 'object' } },

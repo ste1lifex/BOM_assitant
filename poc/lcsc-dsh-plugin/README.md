@@ -48,9 +48,10 @@
 | `limit` | 5 | 1–8 条 |
 | `include_cny` | hand 时 true | 取真实国内人民币价（Chrome，24h 缓存） |
 | `base_only` | false | 只保留基础库；没有时明确提示 |
+| `require_stock` | `any` | 库存口径：`any` 不过滤 / `lcsc` 立创零售仓有货（DIY 配单）/ `smt` 嘉立创 SMT 仓有货（PCBA） |
 | `exclude_lcsc` | — | 排除料号，用于找替代 |
 
-每个候选同时给：`price_usd`（含 `tier`/阶梯）、`price_cny`（`estimated` 标记）、`stock_smt`、`stock_lcsc`、`library`、`package`、`pin_count`、`score`、`reasons`；放宽匹配时给 `mismatch_reasons`。
+每个候选同时给：`price_usd`（含 `tier`/阶梯）、`price_cny`（`estimated` 标记）、**`stock_retail` / `stock_smt`**（+ `stock_asof`、`stock_scope_note`、`data_warnings`）、`library`、`package`、`pin_count`、`score`、`reasons`；放宽匹配时给 `mismatch_reasons`。
 
 ### `audit_lcsc_bom` — BOM 体检
 
@@ -64,7 +65,8 @@
 | `assembly` | `hand` | `smt` 时计 $3/唯一扩展库料号/单 |
 | `boards` | 1 | 打板数量 |
 | `include_cny` | hand 且 ≤8 行时 true | 取真实 CNY（最多 32 料号、24h 缓存；大 BOM 默认跳过以免慢，可显式 true） |
-| `suggest_alternatives` | true | 基础库替代 + 净节省（省上料费 − 元件价差；封装不同标注） |
+| `suggest_alternatives` | true | 基础库替代 + 净节省（省上料费 − 元件价差；封装不同标注；替代带双库存） |
+| `require_stock` | `any` | 替代建议的库存口径：`any` / `lcsc`（立创零售，DIY 配单）/ `smt`（嘉立创 SMT，PCBA）；库存不满足的候选会列为 skipped |
 | `export_bom` | false | 输出嘉立创 BOM CSV |
 | `region` | `global` | 费用口径标签（`cn` 会标注费率假设） |
 
@@ -173,6 +175,7 @@ node poc/test-improvements.mjs     # 联网验收（BOM v0.6 100 片 + 人民币
 5. 替代料不验证电气/热/寿命/认证等效，封装变化需改 PCB。
 6. 不做下单、不做比价大屏、不抓淘宝/1688；没有 LCSC 编号的料无法计价。
 7. Chrome 进程按空闲/卸载退出；若宿主进程被强杀，可能留下一个 Chrome 残留进程（其 profile 缓存在下次启动前会先清理，不会持续膨胀）。
+8. 中文/口语品类召回已按同义词表 + 关键词回退修复；但 JLC 关键词搜索对个别型号（如 LMA2718 系列 MEMS 麦）不返回，需用型号或 LCSC 编号精确查询（数据源限制，非插件解析问题）。
 
 详细改进记录见仓库 [`docs/改进记录_0.3.0.md`](../../docs/改进记录_0.3.0.md)。
 

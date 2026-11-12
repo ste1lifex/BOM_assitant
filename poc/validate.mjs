@@ -723,6 +723,114 @@ check(
 )
 
 /* -------------------------------------------------------------------------- */
+/* 8. Round-2 review: stock scopes, require_stock, recall fallback, CNY basis */
+/* -------------------------------------------------------------------------- */
+
+section('round-2: recall keyword building')
+const memsNeedR2 = parseNeed('MEMS 麦克风 模拟输出')
+check('MEMS kept in keyword (not swallowed)', memsNeedR2.searchKeyword.toLowerCase().includes('mems'), memsNeedR2.searchKeyword)
+check('microphone category still parsed', memsNeedR2.categories.includes('microphone'), memsNeedR2.categories)
+const typeC16NeedR2 = parseNeed('USB Type-C 16P 母座')
+check('USB Type-C 16P kept as keyword', /usb type-c 16p/i.test(typeC16NeedR2.searchKeyword), typeC16NeedR2.searchKeyword)
+check('pins=16 requirement still parsed', typeC16NeedR2.requirements.some((r) => r.kind === 'pins' && r.value === 16))
+const chargerNeedR2 = parseNeed('单节锂电池线性充电 IC')
+check('charger maps to battery management keyword', /battery management/i.test(chargerNeedR2.searchKeyword), chargerNeedR2.searchKeyword)
+check('no duplicated keyword tokens', chargerNeedR2.searchKeyword.split(/\s+/).length === new Set(chargerNeedR2.searchKeyword.split(/\s+/).map((t) => t.toLowerCase())).size, chargerNeedR2.searchKeyword)
+
+section('round-2: stock scope fields and warnings')
+const memsItem = fixture({
+  code: 'C5373222', model: 'LMA2718B381-OA7', package: 'SMD', category: 'MEMS Microphones',
+  description: 'analog MEMS microphone', libraryType: 'expand', stock: 13298,
+  priceUsdTiers: [{ qty: 1, unit: 0.128 }],
+})
+const recalledQueries = []
+const recallService = {
+  settings: {},
+  async searchRaw(keyword) {
+    recalledQueries.push(String(keyword))
+    if (String(keyword).toLowerCase() === 'mems') return { total: 1, items: [memsItem] }
+    return { total: 0, items: [] }
+  },
+  async cny() { return { ok: false } },
+}
+const memsResult = await findParts(recallService, { need: 'MEMS 麦克风 模拟输出', assembly: 'smt', boards: 1, limit: 5, include_cny: false })
+check('recall fallback tries MEMS', recalledQueries.some((q) => q.toLowerCase() === 'mems'), recalledQueries)
+check('recall fallback returns a MEMS candidate', memsResult.candidates.length > 0, memsResult.candidates.map((c) => c.lcsc))
+check('MEMS candidate has dual stock fields', 'stock_retail' in (memsResult.candidates[0] ?? {}) && 'stock_smt' in (memsResult.candidates[0] ?? {}))
+
+const retailZeroItem = fixture({ code: 'C25092', model: '0402WGF220JTCE', package: '0402', category: 'Chip Resistor - Surface Mount', description: '22Ω ±1% 0402', libraryType: 'base', stock: 3118963, priceUsdTiers: [{ qty: 1, unit: 0.0042 }] })
+const stockService = {
+  settings: {},
+  async searchRaw() { return { total: 1, items: [retailZeroItem] } },
+  async cny() { return { ok: true, unit: 0.0042, stock: 0, source: 'lcsc_cn_render', fetched_at: '2026-11-12T00:00:00Z' } },
+}
+const retailWarning = await findParts(stockService, { need: '22 ohm 0402 resistor 1%', assembly: 'hand', boards: 10, limit: 3, include_cny: true })
+check('retail stock 0 is reported', retailWarning.candidates[0]?.stock_retail === 0, retailWarning.candidates[0]?.stock_retail)
+check('SMT stock is still reported', retailWarning.candidates[0]?.stock_smt > 0, retailWarning.candidates[0]?.stock_smt)
+check('retail_out_of_stock_smt_ok warning emitted', (retailWarning.data_warnings ?? []).includes('retail_out_of_stock_smt_ok'), retailWarning.data_warnings)
+check('find rows carry stock_asof', typeof retailWarning.candidates[0]?.stock_asof === 'string')
+const strictRetail = await findParts(stockService, { need: '22 ohm 0402 resistor 1%', assembly: 'hand', boards: 10, limit: 3, include_cny: true, require_stock: 'lcsc' })
+check('require_stock=lcsc drops retail-0 candidate', strictRetail.candidates.length === 0, strictRetail.candidates.map((c) => [c.lcsc, c.stock_retail]))
+check('require_stock=lcsc explains why', (strictRetail.hints ?? []).some((hint) => /require_stock=lcsc/.test(hint)), strictRetail.hints)
+const strictSmt = await findParts(stockService, { need: '22 ohm 0402 resistor 1%', assembly: 'smt', boards: 10, limit: 3, include_cny: false, require_stock: 'smt' })
+check('require_stock=smt keeps the SMT-stocked candidate', strictSmt.candidates.length === 1, strictSmt.candidates.length)
+
+section('round-2: stock-aware alternatives')
+const expandResistor = fixture({
+  code: 'C114765', model: 'RC0402FR-0722RL', package: '0402', category: 'Chip Resistor - Surface Mount',
+  description: '22Ω ±1% 0402', libraryType: 'expand', stock: 5591584,
+  priceUsdTiers: [{ qty: 1, unit: 0.0018 }],
+  attributes: [{ name: 'Resistance', value: '22Ω' }, { name: 'Tolerance', value: '±1%' }],
+})
+const baseZero = fixture({
+  code: 'C25092', model: '0402WGF220JTCE', package: '0402', category: 'Chip Resistor - Surface Mount',
+  description: '22Ω ±1% 0402', libraryType: 'base', stock: 3118963,
+  priceUsdTiers: [{ qty: 1, unit: 0.0042 }],
+  attributes: [{ name: 'Resistance', value: '22Ω' }, { name: 'Tolerance', value: '±1%' }],
+})
+const baseStocked = fixture({
+  code: 'C25804', model: 'RC0402FR-0722RL2', package: '0402', category: 'Chip Resistor - Surface Mount',
+  description: '22Ω ±1% 0402', libraryType: 'base', stock: 3850000,
+  priceUsdTiers: [{ qty: 1, unit: 0.005 }],
+  attributes: [{ name: 'Resistance', value: '22Ω' }, { name: 'Tolerance', value: '±1%' }],
+})
+const altService = {
+  settings: { extendedPartFeeUsd: 3 },
+  async searchRaw(keyword) {
+    const text = String(keyword)
+    if (/^C114765$/.test(text)) return { total: 1, items: [expandResistor] }
+    return { total: 2, items: [baseZero, baseStocked] }
+  },
+  async cny(code) {
+    if (String(code) === 'C25092') return { ok: true, unit: 0.0042, stock: 0, source: 'lcsc_cn_render', fetched_at: '2026-11-12T00:00:00Z' }
+    if (String(code) === 'C25804') return { ok: true, unit: 0.005, stock: 3850000, source: 'lcsc_cn_render', fetched_at: '2026-11-12T00:00:00Z' }
+    return { ok: false }
+  },
+}
+const altAudit = await auditBom(altService, {
+  bom: 'C114765,5,smt\n', assembly: 'smt', boards: 100, include_cny: false,
+  suggest_alternatives: true, require_stock: 'lcsc',
+})
+const alt = altAudit.optimize.alternatives[0]
+check('stock-aware alternative avoids retail-0 part', alt?.lcsc === 'C25804', alt?.lcsc)
+check('alternative reports retail stock', alt?.stock_retail === 3850000, alt?.stock_retail)
+check('alternative reports skipped retail-0 candidate', (alt?.skipped ?? []).some((item) => item.lcsc === 'C25092'), alt?.skipped)
+check('optimize exposes stock scope', altAudit.optimize.require_stock === 'lcsc' && altAudit.optimize.stock_scope === 'lcsc')
+
+section('round-2: CNY total basis')
+const cnyBasisAudit = await auditBom(
+  {
+    settings: {},
+    searchRaw: async (code) => ({ total: 1, items: [capBase].filter((item) => item.code === String(code).toUpperCase()) }),
+    cny: async () => ({ ok: true, unit: 0.0251, stock: 1000, source: 'lcsc_cn_render', fetched_at: '2026-11-12T00:00:00Z' }),
+  },
+  { bom: 'C307331,2\n', assembly: 'hand', boards: 10, include_cny: true, suggest_alternatives: false },
+)
+check('CNY basis is per_order', cnyBasisAudit.summary.cny_total_basis === 'per_order', cnyBasisAudit.summary.cny_total_basis)
+check('CNY per board and per order reported', cnyBasisAudit.summary.components_cny_per_board > 0 && cnyBasisAudit.summary.components_cny_per_order > 0, { perBoard: cnyBasisAudit.summary.components_cny_per_board, perOrder: cnyBasisAudit.summary.components_cny_per_order })
+check('CNY price tier labelled', cnyBasisAudit.summary.cny_price_tier === 'retail_1pc', cnyBasisAudit.summary.cny_price_tier)
+
+/* -------------------------------------------------------------------------- */
 /* Result                                                                     */
 /* -------------------------------------------------------------------------- */
 
