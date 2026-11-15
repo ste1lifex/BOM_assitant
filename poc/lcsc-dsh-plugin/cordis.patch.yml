@@ -23,6 +23,11 @@
         cnQueryBudgetMs: 90000
         cnCacheMaxEntries: 800
         cnNegativeCacheTtlMs: 1800000
+        # 数据手册下载（download_lcsc_datasheet）：单请求超时 + PDF 大小上限。
+        # 国内站 atta.szlcsc.com 兜底默认开启；无 Chrome 时仍可走普通 HTTP，失败就跳过。
+        datasheetTimeoutMs: 60000
+        datasheetMaxBytes: 67108864
+        datasheetChromeFallback: true
         # 嘉立创费用（USD）；工程费/钢网费默认 0，需要时填实际报价
         extendedPartFeeUsd: 3.0
         setupFeeUsd: 0.0

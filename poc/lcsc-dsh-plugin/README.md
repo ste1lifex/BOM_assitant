@@ -1,15 +1,17 @@
 # dsh-plugin-lcsc
 
-> 立创商城 / 嘉立创选料与 BOM 体检，为 DeepSeek Harness 提供 **2 个工具**。
-> 默认面向**国内手焊 DIY**：给真实人民币价 + 国内库存；也支持嘉立创 SMT 的 $3/扩展库上料费核算。
+> 立创商城 / 嘉立创选料、BOM 体检与数据手册下载，为 DeepSeek Harness 提供 **3 个工具**。
+> 默认面向**国内手焊 DIY**：给真实人民币价 + 国内库存；也支持嘉立创 SMT 的 $3/扩展库上料费核算；
+> 还能按 LCSC 编号把官方数据手册 PDF 下载到你指定的目录。
 
-当前版本 **0.3.2**（npm 上最新发布版本以 npm 页面为准）。
+当前版本 **0.4.0**（npm 上最新发布版本以 npm 页面为准）。
 
-只暴露 2 个工具，不挤占模型上下文。
+只暴露 3 个工具，不挤占模型上下文。
 
 ## 卖点
 
 - **需求直接变料**：封装/容值/耐压/电流/精度/尺寸 → 参数过滤 + 分级降级；型号和 LCSC 编号优先精确匹配（`SMF5.0A`/`AO3401A`/`TP4054` 不会被误读成数值）。
+- **数据手册一键落盘**：给一个 LCSC 编号 + 目标目录，自动跟完 `lcsc.com` 查看器 / `wmsc` 跳转 / `jlcpcb` 链接，最终存成 `C1581_0402F104M500NT.pdf`，校验 `%PDF-` 并返回路径/大小/SHA-256；国际站没有时用国内站 `atta.szlcsc.com` 兜底。
 - **真实国内价 + 国内库存**：Chrome 渲染立创官方商品页取 `price`/`stockNumber`，不是估算；无 Chrome/WAF/超时才降级为标注估算。
 - **性价比排序**：单价（按采购量取档）+ 库存覆盖 + 参数匹配 + 基础库/扩展库权重；`assembly=smt` 时把 $3/料号上料费摊销进成本。
 - **BOM 体检**：逐行 `smt/hand/dnp`、重复料号合并、双库存/双价格并列、批量摊销表（20/100/300/1000 片）、基础库替代的**净节省**、直接导出嘉立创 BOM CSV。
@@ -29,10 +31,12 @@
 | 本地 Chrome | `--headless=new` + CDP pipe | **没有 Chrome 就没有真实人民币价**（自动降级估算）；首次渲染需过 WAF 挑战（约 5s） |
 | 替代料 | 同类别 + 基础库 + 参数匹配 | 只做保守同类替换，不做电气/热/寿命/认证等效；封装不同会标「需改 PCB」 |
 | 选型范围 | — | 必须有 LCSC 编号或可搜到的型号/描述；插件不做“猜你要什么” |
+| `datasheet`（数据手册 PDF） | LCSC 数据手册查看器 / `datasheet.lcsc.com` / `atta.szlcsc.com` | 只下载公开可达的官方 PDF；部分料号**没有公开手册**，返回 `not-found` 并给出商品页，不会伪造链接；`jlcpcb.com/api/file/...` 链接可能失效（返回 `code:203`），会自动回退到商品页 `pdfUrl` |
+| 手册落盘 | 调用方指定的 `out_dir` | 同名文件默认不覆盖（`overwrite=true` 才重下）；默认文件名 `<LCSC编号>_<型号>.pdf`；单文件上限默认 64MB；只返回路径/大小/SHA-256，不把 PDF 内容塞进模型上下文 |
 | 价格/库存时效 | 公开页面/接口 | 都是抓取时刻快照；24h 缓存只用于性能，不代表历史价 |
 | **本地缓存**（`~/.cache/dsh-plugin-lcsc`） | JSON 结果 + Chrome profile | JSON：24h TTL、最多 800 条，过期/超量自动删；Chrome：只保留 WAF cookie，HTTP/Code/GPU/Crashpad 缓存**每次关闭即清**，磁盘缓存硬上限 50MB；空闲 120s 关 Chrome、卸载 `dispose()`；`rm -rf ~/.cache/dsh-plugin-lcsc` 可整体清理 |
 
-## 两个工具
+## 三个工具
 
 ### `find_lcsc_parts` — 按需求找料
 
@@ -78,6 +82,31 @@
 
 输出：`summary`（含 USD/CNY 分列、`cost_table`、`dnp/hand` 统计）、`rows`（含 `place`/双价/双库存/`flags`）、`optimize`（净节省与 actions）、`bom_csv`、`skipped`（缺料号行不静默丢弃）。
 
+### `download_lcsc_datasheet` — 按编号下载数据手册
+
+```jsonc
+{"lcsc":"C1581","out_dir":"F:/datasheets"}
+{"lcsc":"C7434398","out_dir":"F:/datasheets","filename":"AD142A4.pdf","overwrite":true}
+```
+
+| 参数 | 默认 | 说明 |
+|---|---|---|
+| `lcsc` | 必填 | LCSC 编号，如 `C1581`（大小写不敏感；纯数字 `1581` 也按 `C1581` 处理） |
+| `out_dir` | 必填 | 目标目录；不存在会自动创建。建议绝对路径；`~` 会展开，相对路径按会话工作目录解析 |
+| `filename` | `<编号>_<型号>.pdf` | 只接受文件名（不能带目录分隔符）；缺 `.pdf` 自动补 |
+| `overwrite` | false | 目标文件已存在时默认返回 `already-exists`；true 才重新下载并覆盖 |
+| `domestic_fallback` | true | 国际站/JLCPCB 都失败时，回退到立创国内站 `item.szlcsc.com` → `atta.szlcsc.com`（可能用无头 Chrome）；false 可跳过、更快 |
+
+解析顺序（逐个尝试，直到拿到真正的 PDF 字节）：
+
+1. 嘉立创 SMT 元件记录的 `dataManualUrl`（可能是 `www.lcsc.com/datasheet/...` 查看器页、`wmsc.lcsc.com/...` 跳转、或 `datasheet.lcsc.com/...` 直链）
+2. 立创国际站商品页 `pageProps.webData.pdfUrl`（通常是 `datasheet.lcsc.com` 直链）
+3. 立创国内站商品页嵌入的 `atta.szlcsc.com` PDF（国际站没有该料时兜底）
+
+包装页会被继续跟（查看器 `previewPdfUrl`、JS `location.href`、PDF.js `viewer.html?file=`、meta refresh），最多 3 跳；拿到字节后校验 `%PDF-`，写临时文件再原子改名。
+
+输出：`status`（`downloaded` / `already-exists` / `not-found` / `failed`）、`file_path`、`file_name`、`bytes`、`sha256`、`source`、`pdf_url`、`resolved_via`、`attempts`（每个候选的失败原因）、`notes`、`hints`。PDF 内容**不会**进入模型上下文。
+
 ## 安装
 
 ```bash
@@ -104,6 +133,10 @@ Host-only bundle，无 UI 面板；`engines.dsh >= 0.2.2-rc.1 < 0.3.0`。装完�
     cnCacheMaxEntries: 800     # JSON 缓存条数上限（超量删最旧）
     cnNegativeCacheTtlMs: 1800000  # 失败负缓存 30min（避免坏料号反复拖慢）
     usdToCnyFactor: 6.0        # 仅用于估算，不是汇率
+    # 数据手册下载（download_lcsc_datasheet）
+    datasheetTimeoutMs: 60000  # 单请求超时（5s–10min）
+    datasheetMaxBytes: 67108864 # 单个 PDF 上限 64MB
+    datasheetChromeFallback: true # 国内站兜底是否允许用无头 Chrome
     extendedPartFeeUsd: 3.0    # 扩展库上料费
     setupFeeUsd: 0.0           # 工程费（可选）
     stencilFeeUsd: 0.0         # 钢网费（可选）
@@ -135,11 +168,14 @@ chromePath: 'D:\Apps\Chrome\Application\chrome.exe'
 ## 测试
 
 ```bash
-node poc/validate.mjs              # 103 项离线单测（无网络/无 Chrome）
+node poc/validate.mjs              # 212 项离线单测（无网络/无 Chrome）
 node poc/test-improvements.mjs     # 联网验收（BOM v0.6 100 片 + 人民币 golden 数据）
+node poc/test-datasheet.mjs        # 联网验收：4 种手册解析路径 + 国内站兜底 + 非法编号
 ```
 
 准确性参考（2026-11-11 实测）：28 个料的 BOM 数据 28/28 取到真实 CNY，手焊总价 **¥4.0791**（Recording_card 官方口径 ¥4.0793）；单料如 C1581 ¥0.0239、C7434398 ¥1.097。
+
+数据手册实测（2026-11-15）：C1581（查看器页 → `datasheet.lcsc.com`，3,187,974 B，5.1s）、C7434398（`wmsc` 跳转，996,299 B，3.0s）、C2765186（JLCPCB 链接失效 → 商品页 `pdfUrl`，1,584,275 B，1.6s）、C1581 国内站 `atta.szlcsc.com` 兜底 3,187,974 B。下载文件均校验 `%PDF-` 通过。
 
 ## 已知问题（Known Issues）
 
@@ -172,6 +208,19 @@ node poc/test-improvements.mjs     # 联网验收（BOM v0.6 100 片 + 人民币
 0.3.3 的 `index.js` 漏了 `createCnAdapter` 的 import，导致 `apply()` 里创建适配器时抛
 `createCnAdapter is not defined` 并被吞掉，**人民币链路整条不生效**（静默回退到旧路径）。
 0.3.4 修复，并在 `validate.mjs` 增加了接线回归断言。
+
+### 6. 数据手册：不是每个 LCSC 编号都有公开 PDF
+
+`download_lcsc_datasheet` 只下载**公开可达**的官方 PDF，找不到就返回 `not-found`（附商品页链接），
+不会拼一个假 URL 去撞。常见原因：
+
+- 该料号本身没有公开数据手册（部分连接器、结构件、定制料）
+- `jlcpcb.com/api/file/downloadByFileSystemAccessId/...` 链接失效（返回 `{"code":203}`）——
+  插件会自动回退到商品页 `pdfUrl`，但商品页也没了就无能为力
+- 国内专属料在 `lcsc.com` 国际站没有页面：会走 `item.szlcsc.com` → `atta.szlcsc.com` 兜底；
+  WAF 挡住时普通 HTTP 失败，才需要无头 Chrome
+
+`attempts` 字段会逐条列出失败原因，`hints` 会指出下一步（打开商品页 / 关掉 `domestic_fallback` 重试 / 该料确实没有公开手册）。
 
 ## 局限（无法消除，只会缓解）
 

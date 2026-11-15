@@ -1,16 +1,19 @@
 /**
- * dsh-plugin-lcsc — requirement-driven LCSC part finder and BOM cost auditor
- * for the DeepSeek Harness (DSH) Host.
+ * dsh-plugin-lcsc — requirement-driven LCSC part finder, BOM cost auditor and
+ * datasheet downloader for the DeepSeek Harness (DSH) Host.
  *
- * Two LLM-callable tools, deliberately kept small so the plugin does not crowd
- * the model's context when several plugins are installed:
+ * Three LLM-callable tools, deliberately kept small so the plugin does not
+ * crowd the model's context when several plugins are installed:
  *
- *   - find_lcsc_parts  requirement -> ranked candidates (price / stock /
- *                      basic-vs-extended library / parameter match)
- *   - audit_lcsc_bom   existing BOM -> cost, stock, library-type and
- *                      JLCPCB extended-part feeder-fee audit
+ *   - find_lcsc_parts           requirement -> ranked candidates (price /
+ *                               stock / basic-vs-extended library / match)
+ *   - audit_lcsc_bom            existing BOM -> cost, stock, library-type and
+ *                               JLCPCB extended-part feeder-fee audit
+ *   - download_lcsc_datasheet   LCSC code -> official datasheet PDF saved to a
+ *                               caller-chosen directory (path + size + hash)
  *
- * The HTTP/cache/normalisation layer lives in `data.js`.
+ * The HTTP/cache/normalisation layer lives in `data.js`; the datasheet
+ * resolver/downloader lives in `datasheet.js`.
  *
  * Design rules:
  *   - hand-soldering is the default (`assembly: "hand"`): most DIY users buy
@@ -30,11 +33,12 @@ import {
   pickTierPrice,
 } from './data.js'
 import { createCnAdapter } from './cn.js'
+import { downloadLcscDatasheet, formatBytes } from './datasheet.js'
 
 /** Plugin id used by the DSH loader. */
 export const name = 'lcsc-parts'
-/** Required services. */
-export const inject = ['tools']
+/** Required services. `workingDirectory` resolves relative `out_dir` paths for datasheets. */
+export const inject = ['tools', 'workingDirectory']
 
 /** Default JLCPCB extended-part feeder loading fee, USD per unique part per order. */
 export const EXTENDED_PART_FEE_USD = 3
@@ -2718,6 +2722,39 @@ export function renderAuditText(value) {
   return lines.join('\n')
 }
 
+/** @param {Record<string, unknown>} value */
+export function renderDatasheetText(value) {
+  const code = typeof value.lcsc === 'string' ? value.lcsc : '?'
+  const model = typeof value.model === 'string' ? ` ${value.model}` : ''
+  const lines = []
+  if (value.status === 'downloaded') {
+    lines.push(`已下载 ${code}${model} 数据手册 → ${value.file_path}`)
+    lines.push(
+      `${formatBytes(asInteger(value.bytes) ?? 0)} · sha256 ${String(value.sha256 ?? '').slice(0, 16)}… · 来源 ${value.source ?? '?'}` +
+        (typeof value.resolved_via === 'string' && value.resolved_via !== 'direct' ? ` (${value.resolved_via})` : ''),
+    )
+    if (typeof value.pdf_url === 'string') lines.push(`PDF: ${value.pdf_url}`)
+  } else if (value.status === 'already-exists') {
+    lines.push(`${code} 数据手册已存在：${value.file_path}`)
+    lines.push(`${formatBytes(asInteger(value.bytes) ?? 0)} · overwrite=true 可重新下载`)
+  } else if (value.status === 'not-found') {
+    lines.push(`未找到 ${code} 的公开数据手册`)
+    if (typeof value.datasheet_page === 'string') lines.push(`商品页: ${value.datasheet_page}`)
+  } else {
+    lines.push(`${code} 数据手册下载失败`)
+  }
+  const failed = (Array.isArray(value.attempts) ? value.attempts : []).filter((entry) => isRecord(entry) && entry.ok !== true)
+  if (failed.length > 0) {
+    lines.push('尝试: ' + failed.map((entry) => {
+      const where = typeof entry.url === 'string' ? ` ${entry.url}` : ''
+      return `${entry.step}${where} -> ${entry.error ?? 'failed'}`
+    }).join(' | '))
+  }
+  for (const note of Array.isArray(value.notes) ? value.notes : []) lines.push(`note: ${note}`)
+  for (const hint of Array.isArray(value.hints) ? value.hints : []) lines.push(`hint: ${hint}`)
+  return lines.join('\n')
+}
+
 /* -------------------------------------------------------------------------- */
 /* Tool definitions                                                           */
 /* -------------------------------------------------------------------------- */
@@ -2744,8 +2781,17 @@ const AUDIT_DESCRIPTION =
   'Real CNY retail prices are fetched via headless Chrome (24h cache) when include_cny=true; otherwise a reference estimate from bulk-tier USD × the configurable factor is reported and marked estimated=true. ' +
   'USD and CNY are never mixed into one total; set include_usd=false for CNY-only output.'
 
-/** Build the two DSH tool definitions bound to a service instance. */
-export function createToolDefinitions(service) {
+const DATASHEET_DESCRIPTION =
+  'Download the official datasheet PDF (数据手册) of ONE LCSC part number into a directory you choose — use it to read a component datasheet, archive BOM documentation, ' +
+  'or compare several parts. Example: {"lcsc":"C1581","out_dir":"F:/datasheets"}. ' +
+  'The resolver tries, in order: (1) the JLCPCB SMT part record datasheet URL, (2) the LCSC international product page `webData.pdfUrl`, ' +
+  '(3) the 立创商城 domestic page (atta.szlcsc.com) as a last resort. Wrapper URLs are followed (lcsc.com datasheet viewer, wmsc redirects, PDF.js viewer) until real PDF bytes are found; ' +
+  'the file is saved atomically as `<code>_<model>.pdf` (or your `filename`), verified by the %PDF- signature, and reported by absolute path, byte size and SHA-256 — never pasted into the reply. ' +
+  'A part that exists without a public datasheet returns status="not-found" with the product-page hint instead of inventing a URL. ' +
+  'Set overwrite=true to replace an existing file; set domestic_fallback=false to skip the slower 立创商城/Chrome fallback.'
+
+/** Build the three DSH tool definitions bound to a service instance. */
+export function createToolDefinitions(service, options = {}) {
   return [
     {
       name: 'find_lcsc_parts',
@@ -2877,7 +2923,115 @@ export function createToolDefinitions(service) {
         return toLossless(await auditBom(service, args, { signal: exec?.signal }))
       },
     },
+    {
+      name: 'download_lcsc_datasheet',
+      description: DATASHEET_DESCRIPTION,
+      // A cold domestic fallback (Chrome render + a large PDF) can legitimately
+      // take a minute; the tool forwards exec.signal, so the deadline is safe.
+      timeoutMs: 180000,
+      parameters: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['lcsc', 'out_dir'],
+        properties: {
+          lcsc: {
+            type: 'string',
+            description: 'LCSC part number to fetch the datasheet for, e.g. "C1581" (case-insensitive; bare digits like "1581" are accepted as C1581).',
+          },
+          out_dir: {
+            type: 'string',
+            description: 'Directory that receives the PDF (created if missing). Absolute path recommended, e.g. "F:/datasheets"; "~" is expanded and a relative path resolves against the session working directory.',
+          },
+          filename: {
+            type: 'string',
+            description: 'Optional bare file name (no directories). Default "<code>_<model>.pdf", e.g. "C1581_0402F104M500NT.pdf"; ".pdf" is appended when missing.',
+          },
+          overwrite: {
+            type: 'boolean',
+            description: 'Replace an existing PDF at the target path (default false: return already-exists without downloading again).',
+          },
+          domestic_fallback: {
+            type: 'boolean',
+            description: 'Fall back to the 立创商城 domestic page (item.szlcsc.com → atta.szlcsc.com, may use headless Chrome) when the international/JLCPCB paths fail (default true). Set false to keep the call fast/offline.',
+          },
+        },
+      },
+      output: {
+        schema: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['status', 'lcsc', 'out_dir', 'attempts', 'notes', 'hints'],
+          properties: {
+            status: { type: 'string', description: 'downloaded | already-exists | not-found | failed' },
+            lcsc: { type: 'string' },
+            model: { type: 'string' },
+            brand: { type: 'string' },
+            package: { type: 'string' },
+            out_dir: { type: 'string' },
+            file_path: { type: 'string' },
+            file_name: { type: 'string' },
+            bytes: { type: 'integer' },
+            sha256: { type: 'string' },
+            content_type: { type: 'string' },
+            source: { type: 'string' },
+            pdf_url: { type: 'string' },
+            datasheet_url: { type: 'string' },
+            datasheet_page: { type: 'string' },
+            resolved_via: { type: 'string' },
+            attempts: { type: 'array', items: { type: 'object' } },
+            notes: { type: 'array', items: { type: 'string' } },
+            hints: { type: 'array', items: { type: 'string' } },
+            fetched_at: { type: 'string' },
+          },
+        },
+        render: (_args, value) => [{ type: 'text', text: renderDatasheetText(value) }],
+      },
+      presentCall: (args) => {
+        const code = isRecord(args) && typeof args.lcsc === 'string' ? args.lcsc : '?'
+        const dir = isRecord(args) && typeof args.out_dir === 'string' ? args.out_dir : '?'
+        return { card: 'generic', title: `Download datasheet ${code} → ${dir}`, kind: 'fetch', rawInput: args }
+      },
+      async execute(args, exec) {
+        const datasheetOptions = isRecord(options.datasheet) ? options.datasheet : {}
+        let sessionCwd
+        try {
+          sessionCwd = typeof options.resolveSessionCwd === 'function'
+            ? await options.resolveSessionCwd(exec)
+            : sessionCwdOf(exec)
+        } catch {
+          sessionCwd = undefined
+        }
+        return toLossless(await downloadLcscDatasheet(args, {
+          service,
+          cnAdapter: options.cnAdapter ?? (isRecord(service) ? service.cn : undefined),
+          fetchImpl: datasheetOptions.fetchImpl,
+          timeoutMs: datasheetOptions.timeoutMs,
+          maxBytes: datasheetOptions.maxBytes,
+          htmlMaxBytes: datasheetOptions.htmlMaxBytes,
+          domesticFallback: datasheetOptions.domesticFallback,
+          sessionCwd,
+          signal: exec?.signal,
+        }))
+      },
+    },
   ]
+}
+
+/**
+ * Best-effort session working directory for resolving a relative `out_dir`.
+ * The Host may not expose it; `resolveOutDir` then falls back to process.cwd().
+ * @param {unknown} exec
+ * @returns {string | undefined}
+ */
+function sessionCwdOf(exec) {
+  try {
+    const cwd = isRecord(exec) && isRecord(exec.agent) && isRecord(exec.agent.session) && isRecord(exec.agent.session.meta)
+      ? exec.agent.session.meta.cwd
+      : undefined
+    return typeof cwd === 'string' && cwd !== '' ? cwd : undefined
+  } catch {
+    return undefined
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -2929,10 +3083,29 @@ export function apply(ctx, config) {
     cnAdapter?.dispose?.()
     cnAdapter?.clearMemory?.()
   })
-  for (const definition of createToolDefinitions(service)) {
+  for (const definition of createToolDefinitions(service, {
+    cnAdapter,
+    datasheet: {
+      timeoutMs: settings.datasheetTimeoutMs,
+      maxBytes: settings.datasheetMaxBytes,
+      domesticFallback: settings.datasheetChromeFallback,
+    },
+    // Relative `out_dir` values follow the DSH session's working directory.
+    async resolveSessionCwd(exec) {
+      const workingDirectory = isRecord(ctx) ? ctx.workingDirectory : undefined
+      const agent = isRecord(exec) ? exec.agent : undefined
+      if (isRecord(workingDirectory) && typeof workingDirectory.ensure === 'function' && agent !== undefined && agent !== null) {
+        const cwd = await workingDirectory.ensure(agent, isRecord(exec) ? exec.signal : undefined)
+        return typeof cwd === 'string' && cwd !== '' ? cwd : undefined
+      }
+      return undefined
+    },
+  })) {
     context.tools?.register(definition)
   }
-  if (settings.verbose) logger?.info?.('[lcsc] tools registered: find_lcsc_parts, audit_lcsc_bom')
+  if (settings.verbose) {
+    logger?.info?.('[lcsc] tools registered: find_lcsc_parts, audit_lcsc_bom, download_lcsc_datasheet')
+  }
 }
 
 /** @param {unknown} ctx */

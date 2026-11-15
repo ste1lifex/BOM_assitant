@@ -18,3 +18,6 @@ tmp/
 /poc/test-round3.mjs
 /poc/test-output/round2.json
 /poc/test-output/round3.json
+
+# 联网验收下载的数据手册 PDF（体积大，不入库）
+poc/test-output/datasheets/

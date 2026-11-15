@@ -13,6 +13,16 @@ import path from 'node:path'
 import { normalizeConfig, parseBomCsvDetailed } from './lcsc-dsh-plugin/data.js'
 import { looksLikeWafChallenge, parseItemHtml, pruneChromeProfile, pruneJsonCache } from './lcsc-dsh-plugin/cn.js'
 import {
+  datasheetFilename,
+  downloadLcscDatasheet,
+  extractPdfLink,
+  formatBytes,
+  isPdfBuffer,
+  normalizePdfFilename,
+  resolveOutDir,
+  sanitizeFilename,
+} from './lcsc-dsh-plugin/datasheet.js'
+import {
   EXTENDED_PART_FEE_USD,
   apply,
   auditBom,
@@ -32,6 +42,7 @@ import {
   pickTier,
   rankCandidates,
   renderAuditText,
+  renderDatasheetText,
   renderFindText,
   scoreCandidate,
 } from './lcsc-dsh-plugin/index.js'
@@ -376,9 +387,10 @@ section('tool definitions')
 
 const stubService = { searchRaw: async () => ({ total: 0, items: [] }), cny: async () => ({ ok: false }) }
 const definitions = createToolDefinitions(stubService)
-check('exactly two tools', definitions.length === 2, definitions.map((d) => d.name))
+check('exactly three tools', definitions.length === 3, definitions.map((d) => d.name))
 check('find tool present', definitions.some((d) => d.name === 'find_lcsc_parts'))
 check('audit tool present', definitions.some((d) => d.name === 'audit_lcsc_bom'))
+check('datasheet tool present', definitions.some((d) => d.name === 'download_lcsc_datasheet'))
 const findDef = definitions.find((d) => d.name === 'find_lcsc_parts')
 check('find requires need', findDef.parameters.required.includes('need'))
 check('find defaults documented (hand first)', findDef.parameters.properties.assembly.enum[0] === 'hand')
@@ -494,7 +506,7 @@ check('raw audit output would fail lossless JSON (documents why the tool normali
 check('tool execute output is lossless JSON', (() => {
   // The tools normalise their result; simulate it by checking a rendered/defined field set instead.
   const definitions = createToolDefinitions({ searchRaw: async () => ({ total: 0, items: [] }), cny: async () => ({ ok: false }) })
-  return definitions.length === 2
+  return definitions.length === 3
 })())
 
 /* -------------------------------------------------------------------------- */
@@ -924,6 +936,178 @@ const rankService = {
 }
 const rankResult = await findParts(rankService, { need: '10k ohm 0402 resistor 1%', assembly: 'hand', boards: 100, limit: 5, include_cny: true })
 check('B5 retail-stocked candidate ranks first', rankResult.candidates[0]?.lcsc === 'C25804', rankResult.candidates.map((candidate) => [candidate.lcsc, candidate.stock_retail]))
+
+/* -------------------------------------------------------------------------- */
+/* 12. Datasheet download (offline, fake fetch)                               */
+/* -------------------------------------------------------------------------- */
+
+section('datasheet download')
+
+check('PDF magic detected', isPdfBuffer(Buffer.from('%PDF-1.7\nrest')) === true)
+check('HTML is not a PDF', isPdfBuffer(Buffer.from('<html>hi</html>')) === false)
+check('formatBytes sizes', formatBytes(3187974) === '3.04 MB', formatBytes(3187974))
+check('sanitize strips Windows-forbidden chars', sanitizeFilename('a<b>c:d/e.pdf') === 'a_b_c_d_e.pdf', sanitizeFilename('a<b>c:d/e.pdf'))
+check('sanitize avoids reserved device names', sanitizeFilename('CON') === '_CON', sanitizeFilename('CON'))
+check('datasheet filename from model', datasheetFilename('C1581', '0402F104M500NT') === 'C1581_0402F104M500NT.pdf')
+check('datasheet filename without model', datasheetFilename('C1581', undefined) === 'C1581.pdf')
+const pdfName = normalizePdfFilename('my-datasheet')
+check('filename gets .pdf appended', pdfName.ok === true && pdfName.name === 'my-datasheet.pdf', pdfName)
+check('filename rejects path separators', normalizePdfFilename('a/b.pdf').ok === false)
+check('filename rejects parent traversal', normalizePdfFilename('../x.pdf').ok === false)
+
+const viewerHtml = '<script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{"previewPdfUrl":"https://datasheet.lcsc.com/datasheet/pdf/09fe.pdf?productCode=C1581"}}}</script>'
+check(
+  'viewer previewPdfUrl extracted',
+  extractPdfLink(viewerHtml)?.url === 'https://datasheet.lcsc.com/datasheet/pdf/09fe.pdf?productCode=C1581',
+  extractPdfLink(viewerHtml),
+)
+const wmscRedirect = "<script>window.top.location.href='https://datasheet.lcsc.com/datasheet/pdf/2169.pdf?productCode=C7434398'</script>"
+check('wmsc JS redirect extracted', extractPdfLink(wmscRedirect)?.url.includes('2169.pdf') === true, extractPdfLink(wmscRedirect))
+const attaHtml = '<a href="https://atta.szlcsc.com/upload/public/pdf/source/20260730/02F3.pdf">数据手册</a>'
+check('atta domestic PDF link extracted', extractPdfLink(attaHtml)?.url.endsWith('02F3.pdf') === true, extractPdfLink(attaHtml))
+check('plain HTML has no PDF link', extractPdfLink('<html>nothing here</html>') === undefined)
+
+const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'lcsc-ds-'))
+const nested = resolveOutDir('manual/pdf', { sessionCwd: tmpRoot })
+check('relative out_dir resolves against session cwd', nested === path.join(tmpRoot, 'manual', 'pdf') && fs.statSync(nested).isDirectory(), nested)
+
+/** Minimal `fetch` Response stand-in: one body chunk, headers, ok/status/url. */
+function fakeResponse(url, body, options = {}) {
+  const buffer = Buffer.isBuffer(body) ? body : Buffer.from(String(body))
+  const status = options.status ?? 200
+  const contentType = options.contentType ?? 'text/html'
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: '',
+    url,
+    headers: {
+      get(name) {
+        const lower = String(name).toLowerCase()
+        if (lower === 'content-type') return contentType
+        if (lower === 'content-length') return String(buffer.length)
+        return null
+      },
+    },
+    body: {
+      getReader() {
+        let sent = false
+        return {
+          async read() {
+            if (sent) return { done: true, value: undefined }
+            sent = true
+            return { done: false, value: new Uint8Array(buffer) }
+          },
+          async cancel() {},
+        }
+      },
+    },
+  }
+}
+
+const fakePdf = Buffer.concat([Buffer.from('%PDF-1.7\n'), Buffer.from('x'.repeat(2048))])
+const viewerUrl = 'https://www.lcsc.com/datasheet/lcsc_datasheet_test_C9999.pdf'
+const directUrl = 'https://datasheet.lcsc.com/datasheet/pdf/hash9999.pdf?productCode=C9999'
+const datasheetFetch = async (url) => {
+  if (url === viewerUrl) return fakeResponse(url, `<script>{"previewPdfUrl":"${directUrl}"}</script>`)
+  if (url === directUrl) return fakeResponse(url, fakePdf, { contentType: 'application/pdf' })
+  return fakeResponse(url, 'not found', { status: 404 })
+}
+const datasheetService = {
+  async part(code) {
+    return {
+      code,
+      status: 'OK',
+      identity: { model: 'TEST-MODEL', brand: 'TEST' },
+      datasheetUrl: viewerUrl,
+      urls: { lcsc: `https://www.lcsc.com/product-detail/${code}.html` },
+    }
+  },
+  async productPage() {
+    return { dataIsNull: false, webData: { pdfUrl: directUrl } }
+  },
+}
+const dsOut = fs.mkdtempSync(path.join(os.tmpdir(), 'lcsc-ds-out-'))
+const dsDownloaded = await downloadLcscDatasheet(
+  { lcsc: 'C9999', out_dir: dsOut },
+  { service: datasheetService, fetchImpl: datasheetFetch, domesticFallback: false },
+)
+check('viewer wrapper resolved and downloaded', dsDownloaded.status === 'downloaded', dsDownloaded)
+check(
+  'downloaded file is a real PDF on disk',
+  typeof dsDownloaded.file_path === 'string' && fs.existsSync(dsDownloaded.file_path) && isPdfBuffer(fs.readFileSync(dsDownloaded.file_path)),
+  dsDownloaded.file_path,
+)
+check('default filename is code + model', dsDownloaded.file_name === 'C9999_TEST-MODEL.pdf', dsDownloaded.file_name)
+check('sha256 present', typeof dsDownloaded.sha256 === 'string' && dsDownloaded.sha256.length === 64)
+check('source labelled lcsc.com', dsDownloaded.source === 'lcsc.com', dsDownloaded.source)
+check('resolved_via records the wrapper', dsDownloaded.resolved_via === 'viewer-preview', dsDownloaded.resolved_via)
+
+const dsExisting = await downloadLcscDatasheet(
+  { lcsc: 'C9999', out_dir: dsOut },
+  { service: datasheetService, fetchImpl: datasheetFetch, domesticFallback: false },
+)
+check('existing file reports already-exists (no re-download)', dsExisting.status === 'already-exists', dsExisting.status)
+
+const dsOverwrite = await downloadLcscDatasheet(
+  { lcsc: 'C9999', out_dir: dsOut, overwrite: true },
+  { service: datasheetService, fetchImpl: datasheetFetch, domesticFallback: false },
+)
+check('overwrite=true downloads again', dsOverwrite.status === 'downloaded', dsOverwrite.status)
+
+const dsMissing = await downloadLcscDatasheet(
+  { lcsc: 'C9999', out_dir: dsOut },
+  {
+    service: { async part() { return { status: 'NOT-FOUND' } }, async productPage() { return { webData: {} } } },
+    fetchImpl: async (url) => fakeResponse(url, 'nope', { status: 404 }),
+    domesticFallback: false,
+  },
+)
+check('no candidate reports not-found with hints', dsMissing.status === 'not-found' && dsMissing.hints.length > 0, dsMissing)
+
+const dsInvalid = await downloadLcscDatasheet({ lcsc: 'hello', out_dir: dsOut }, {})
+check(
+  'invalid code reports not-found',
+  dsInvalid.status === 'not-found' && dsInvalid.notes.some((note) => note.includes('invalid LCSC code')),
+  dsInvalid,
+)
+
+const attaUrl = 'https://atta.szlcsc.com/upload/public/pdf/source/20260101/AAAA.pdf'
+const domesticFetch = async (url) => {
+  if (url === 'https://item.szlcsc.com/999.html') return fakeResponse(url, `<a href="${attaUrl}">数据手册</a>`)
+  if (url === attaUrl) return fakeResponse(url, fakePdf, { contentType: 'application/pdf' })
+  return fakeResponse(url, 'no', { status: 404 })
+}
+const dsDomestic = await downloadLcscDatasheet(
+  { lcsc: 'C9999', out_dir: fs.mkdtempSync(path.join(os.tmpdir(), 'lcsc-ds-cn-')), filename: 'domestic.pdf' },
+  {
+    service: { async part() { return { status: 'OK', identity: { model: 'DOM' }, urls: {} } }, async productPage() { return { webData: {} } } },
+    cnAdapter: { async resolvePid() { return '999' } },
+    fetchImpl: domesticFetch,
+  },
+)
+check('domestic fallback downloads atta PDF', dsDomestic.status === 'downloaded' && dsDomestic.source === 'szlcsc.com', dsDomestic)
+
+const datasheetDef = definitions.find((definition) => definition.name === 'download_lcsc_datasheet')
+check(
+  'datasheet tool requires lcsc + out_dir',
+  datasheetDef.parameters.required.includes('lcsc') && datasheetDef.parameters.required.includes('out_dir'),
+  datasheetDef.parameters.required,
+)
+check('datasheet tool declares a timeout budget', datasheetDef.timeoutMs === 180000, datasheetDef.timeoutMs)
+const datasheetText = renderDatasheetText({
+  status: 'downloaded',
+  lcsc: 'C1581',
+  model: 'X',
+  file_path: 'F:/x.pdf',
+  bytes: 1024,
+  sha256: 'a'.repeat(64),
+  source: 'lcsc.com',
+})
+check('datasheet renderer shows path + size', datasheetText.includes('F:/x.pdf') && datasheetText.includes('1.0 KB'), datasheetText)
+
+fs.rmSync(tmpRoot, { recursive: true, force: true })
+fs.rmSync(dsOut, { recursive: true, force: true })
 
 /* -------------------------------------------------------------------------- */
 /* Result                                                                     */

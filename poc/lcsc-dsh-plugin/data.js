@@ -91,6 +91,10 @@ export const DEFAULT_CONFIG = Object.freeze({
   cnQueryBudgetMs: 90000,
   cnCacheMaxEntries: 800,
   cnNegativeCacheTtlMs: 1800000,
+  // Datasheet download tool: per-request budget and a hard PDF size cap.
+  datasheetTimeoutMs: 60000,
+  datasheetMaxBytes: 64 * 1024 * 1024,
+  datasheetChromeFallback: true,
   // JLCPCB extended-part feeder fee and optional engineering fees (USD).
   extendedPartFeeUsd: 3.0,
   setupFeeUsd: 0.0,
@@ -1558,10 +1562,25 @@ export function createLcscService(options = {}) {
     })
   }
 
+  /**
+   * Expose the raw LCSC international product page payload (`webData`) for
+   * callers that need fields the normalized `part()` output drops — currently
+   * the datasheet downloader, which wants `webData.pdfUrl`.
+   * @param {unknown} code
+   * @param {{ signal?: AbortSignal }} [callOptions]
+   * @returns {Promise<{ dataIsNull: boolean, webData: Record<string, unknown> | undefined } | undefined>}
+   */
+  async function productPage(code, callOptions = {}) {
+    const normalized = normalizeCode(code)
+    if (normalized === undefined) return undefined
+    return lcscProductPage(normalized, callOptions.signal)
+  }
+
   return {
     search,
     searchRaw,
     part,
+    productPage,
     cny: cnyQuote,
     checkBom,
     clearCache() {
@@ -1659,6 +1678,9 @@ export function normalizeConfig(raw, options = {}) {
     cnQueryBudgetMs: number('cnQueryBudgetMs', DEFAULT_CONFIG.cnQueryBudgetMs, 0, 10 * 60 * 1000),
     cnCacheMaxEntries: number('cnCacheMaxEntries', DEFAULT_CONFIG.cnCacheMaxEntries, 1, 100000),
     cnNegativeCacheTtlMs: number('cnNegativeCacheTtlMs', DEFAULT_CONFIG.cnNegativeCacheTtlMs, 1000, 24 * 60 * 60 * 1000),
+    datasheetTimeoutMs: number('datasheetTimeoutMs', DEFAULT_CONFIG.datasheetTimeoutMs, 5000, 10 * 60 * 1000),
+    datasheetMaxBytes: number('datasheetMaxBytes', DEFAULT_CONFIG.datasheetMaxBytes, 1024 * 1024, 512 * 1024 * 1024),
+    datasheetChromeFallback: boolean('datasheetChromeFallback', DEFAULT_CONFIG.datasheetChromeFallback),
     extendedPartFeeUsd: float('extendedPartFeeUsd', DEFAULT_CONFIG.extendedPartFeeUsd, 0, 100),
     setupFeeUsd: float('setupFeeUsd', DEFAULT_CONFIG.setupFeeUsd, 0, 10000),
     stencilFeeUsd: float('stencilFeeUsd', DEFAULT_CONFIG.stencilFeeUsd, 0, 10000),
