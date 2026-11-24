@@ -4,13 +4,16 @@
 > 默认面向**国内手焊 DIY**：给真实人民币价 + 国内库存；也支持嘉立创 SMT 的 $3/扩展库上料费核算；
 > 还能按 LCSC 编号把官方数据手册 PDF 下载到你指定的目录。
 
-当前版本 **0.4.0**（npm 上最新发布版本以 npm 页面为准）。
+当前版本 **0.5.0**（npm 上最新发布版本以 npm 页面为准）。
 
 只暴露 3 个工具，不挤占模型上下文。
 
 ## 卖点
 
 - **需求直接变料**：封装/容值/耐压/电流/精度/尺寸 → 参数过滤 + 分级降级；型号和 LCSC 编号优先精确匹配（`SMF5.0A`/`AO3401A`/`TP4054` 不会被误读成数值）。
+- **精确编号状态化**：一个或最多 20 个 LCSC 编号一次查完，每行明确 `ok / out_of_stock / not_in_smt_library / unknown_stock / unknown_code`；缺货不会消失，编号错和缺货不再混为一谈。
+- **品类浏览**：`category="buzzer" + filters + sort="size"`，一次调用完成“某品类里最小/最便宜/最响”的查询；扫描 4605 条蜂鸣器只需 5 次 1000 条分页，返回 `scanned/total/truncated` 和 `filter_report`（不匹配时直接告诉你可用属性值）。
+- **结果自带属性/链接**：每条候选回吐完整 `attributes`、解析后的 `size`（L×W×H 或 Ø、面积）、`datasheet_url`、`product_url`，不用先下 PDF 才能判断尺寸/声压/频率。
 - **数据手册一键落盘**：给一个 LCSC 编号 + 目标目录，自动跟完 `lcsc.com` 查看器 / `wmsc` 跳转 / `jlcpcb` 链接，最终存成 `C1581_0402F104M500NT.pdf`，校验 `%PDF-` 并返回路径/大小/SHA-256；国际站没有时用国内站 `atta.szlcsc.com` 兜底。
 - **真实国内价 + 国内库存**：Chrome 渲染立创官方商品页取 `price`/`stockNumber`，不是估算；无 Chrome/WAF/超时才降级为标注估算。
 - **性价比排序**：单价（按采购量取档）+ 库存覆盖 + 参数匹配 + 基础库/扩展库权重；`assembly=smt` 时把 $3/料号上料费摊销进成本。
@@ -22,6 +25,7 @@
 
 | 数据/能力 | 来源 | 边界与注意 |
 |---|---|---|
+| **检索数据源** | JLCPCB SMT 元件库（`componentLibraryType: base/expand`） | **不是立创全部零售 SKU**；阻容/常用 IC 覆盖好，电声/机电件（蜂鸣器、扬声器、连接器）较薄。英文品类词召回最好（`buzzer` 4605 条、中文“蜂鸣器”仅 56 条噪声且多为误命中）。零售专属料只能用已知 LCSC 编号查。 |
 | `price_cny`（人民币价） | 立创商城官方商品页 `pageProps.price` | 是 **1pc 零售价**，不是批量阶梯价/整盘价，也不是含税发票价；抓取时刻快照，会变 |
 | `stock_lcsc`（国内库存） | 同一页 `productRecord.stockNumber` | **实时快照**（实测同一天 177000→22、89430→88000 都出现过）；不承诺有货，下单前复核 |
 | `price_usd` / `stock_smt` | 嘉立创 SMT 元件接口 | USD 口径、SMT 备料仓；与国内人民币价是两套体系，**从不互相换算** |
@@ -38,25 +42,39 @@
 
 ## 三个工具
 
-### `find_lcsc_parts` — 按需求找料
+### `find_lcsc_parts` — 需求 / 编号 / 品类浏览
+
+三种用法（`need`、`codes`、`category` 三选一，`need` 不再是必填）：
 
 ```jsonc
+// 1) 需求 → 参数匹配
 {"need":"0402 100nF 50V X7R ±10% capacitor","assembly":"hand","boards":5,"quantity":5}
+// 2) 精确编号（单个或多个），缺货也返回
+{"need":"C22359711"}
+{"codes":["C22359711","C20181991","C999999999"]}
+// 3) 品类浏览：找“最小的无源压电贴片蜂鸣器”
+{"category":"buzzer","filters":{"Technology":"Piezoelectric","Driver Circuitry":"Passive","Mounting Type":"SMD"},"sort":"size","limit":10,"max_scan":5000}
 ```
 
 | 参数 | 默认 | 说明 |
 |---|---|---|
-| `need` | 必填 | 中文/英文需求，或型号、LCSC 编号 |
+| `need` | — | 中文/英文需求、型号或单个 LCSC 编号 |
+| `codes` | — | 精确模式：1–20 个 LCSC 编号；每行带 `status`（`ok` / `out_of_stock` / `not_in_smt_library` / `unknown_stock` / `unknown_code`），不会因 `stock=0` 消失 |
+| `category` | — | 品类浏览模式：品类关键词（英文推荐，如 `buzzer` / `resistor` / `LDO`）。触发分页扫描 + 属性筛选，专治“最小/最便宜/最响” |
+| `filters` | — | 品类浏览的属性过滤：上游属性名 → 值（大小写不敏感，等值或包含）；如 `{"Technology":"Piezoelectric","Mounting Type":"SMD"}`。属性为 `-` 时自动回退到封装/描述文本匹配 |
+| `max_scan` | 2000 | 品类浏览最多扫多少条（200–5000）；返回 `scanned/total/truncated`，不够可提到 5000 |
+| `sort` | `balanced`（浏览时 `size`） | `balanced` / `cost` / `stock` / `size`（按解析出的 L×W×H 或 Ø 面积升序，无尺寸排最后） |
 | `assembly` | `hand` | `hand` 手焊（无上料费）/ `smt` 嘉立创贴片（扩展库计上料费） |
 | `quantity` / `boards` | 1 | 每板用量 / 打板数（决定价格档与摊销） |
-| `sort` | `balanced` | `balanced` / `cost` / `stock` |
-| `limit` | 5 | 1–8 条 |
+| `limit` | 5 | 需求/精确模式 1–8 条；品类浏览最多 20 条 |
 | `include_cny` | hand 时 true | 取真实国内人民币价（Chrome，24h 缓存） |
 | `base_only` | false | 只保留基础库；没有时明确提示 |
 | `require_stock` | `any` | 库存口径：`any` 不过滤 / `lcsc` 立创零售仓有货（DIY 配单）/ `smt` 嘉立创 SMT 仓有货（PCBA） |
 | `exclude_lcsc` | — | 排除料号，用于找替代 |
 
-每个候选同时给：`price_usd`（含 `tier`/阶梯）、`price_cny`（`estimated` 标记）、**`stock_retail` / `stock_smt`**（+ `stock_asof`、`stock_scope_note`、`data_warnings`）、`library`、`package`、`pin_count`、`score`、`reasons`；放宽匹配时给 `mismatch_reasons`。
+每个候选同时给：`status`、`price_usd`（含 `tier`/阶梯）、`price_cny`（`estimated` 标记）、`stock_retail` / `stock_smt`（+ `stock_asof`、`stock_scope_note`、`data_warnings`）、`library`、`package`、`pin_count`、**`attributes`（全量）、`size`、`datasheet_url`、`product_url`**、`score`、`reasons`；放宽匹配时给 `mismatch_reasons`。
+
+不会跨品类“凑候选”：某个品类在 SMT 库里没有时，明确返回 0 条 + 数据源边界提示，而不是拿 WiFi 模组冒充蜂鸣器。`filter_report` 会列出 filters 的 `matched_count` 和实际可用值，agent 不需要再探测立创接口。
 
 ### `audit_lcsc_bom` — BOM 体检
 
@@ -168,7 +186,7 @@ chromePath: 'D:\Apps\Chrome\Application\chrome.exe'
 ## 测试
 
 ```bash
-node poc/validate.mjs              # 212 项离线单测（无网络/无 Chrome）
+node poc/validate.mjs              # 245 项离线单测（无网络/无 Chrome）
 node poc/test-improvements.mjs     # 联网验收（BOM v0.6 100 片 + 人民币 golden 数据）
 node poc/test-datasheet.mjs        # 联网验收：4 种手册解析路径 + 国内站兜底 + 非法编号
 ```
@@ -234,6 +252,7 @@ node poc/test-datasheet.mjs        # 联网验收：4 种手册解析路径 + �
 8. 中文/口语品类召回已按同义词表 + 关键词回退修复；但 JLC 关键词搜索对个别型号（如 LMA2718 系列 MEMS 麦）不返回，需用型号或 LCSC 编号精确查询（数据源限制，非插件解析问题）。
 9. **SMT CNY 边界**：`cny_jlc_cn` 器件费按立创商城 **1pc 人民币价**估算（嘉立创系统按实际采购数量计价，可能更低）；焊点费在未给 `smt_joint_count` 时按封装估算；经济型/标准型费率来自嘉立创官方「贴片、插件焊接收费模式」表（2026-09），但**插件工程费、AOI、X-RAY、大板费、包装/治具、整盘预订5元/种上料优惠**未计入，最终以嘉立创系统报价为准。
 10. **产线选择**：插件无法判断某块板/某颗料是否符合经济型（单面、片式≥0402、IC pin间距≥0.4mm、BGA球径≥0.5mm 等），必须由用户显式传 `smt_service_type`；传 `economic` 时会给出已知限制提醒，但不会替用户做最终判断。
+11. **品类浏览（category）**：首次扫描一个 4605 条的大品类约 6–10s（5 次 × 1000 条分页），之后 10min 内走缓存；`max_scan` 默认 2000，目标可能落在截断区外，需要显式提到 5000 并看 `truncated`。`sort="size"` 依赖上游属性里的 Length/Width/Height/Diameter，解析不到的料排最后（标 `has_size=false`）。
 
 详细改进记录见仓库 [`docs/改进记录_0.3.0.md`](../../docs/改进记录_0.3.0.md)。
 

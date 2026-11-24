@@ -96,6 +96,24 @@ function money(value) {
 }
 
 /**
+ * Recursively drop `undefined` members so a helper result is lossless JSON and
+ * matches the declared output schema.
+ * @template T @param {T} value @returns {T}
+ */
+function clean(value) {
+  if (Array.isArray(value)) return value.map((entry) => clean(entry))
+  if (isRecord(value)) {
+    const output = {}
+    for (const [key, entry] of Object.entries(value)) {
+      if (entry === undefined) continue
+      output[key] = clean(entry)
+    }
+    return /** @type {T} */ (output)
+  }
+  return value
+}
+
+/**
  * 嘉立创国内 SMT 官方收费模式（贴片、插件焊接收费模式表，server_guide_4025，
  * 2026-09 更新）。经济型与标准型的工程费/钢网/上料费不同，必须显式选择，
  * 绝不能把经济型价格当标准型输出。
@@ -641,6 +659,7 @@ export function parseNeed(raw) {
       requirements: [],
       exact: true,
       exactValue: exact.value,
+      attributeFilters: [],
       upper: text.toUpperCase(),
     }
   }
@@ -726,8 +745,38 @@ export function parseNeed(raw) {
     requirements,
     exact: false,
     exactValue: undefined,
+    attributeFilters: extractAttributeFilters(text, categories),
     upper: text.toUpperCase(),
   }
+}
+
+/**
+ * Buzzer/speaker requirements often name attributes instead of electrical
+ * values ("无源压电贴片蜂鸣器"). Parse those into attribute predicates so the
+ * tool does not return an active electromagnetic through-hole part as the
+ * "closest" match. Scoped to audio categories to avoid turning "贴片" into a
+ * hard filter for every component.
+ * @param {string} text
+ * @param {string[]} categories
+ * @returns {{ name: string, value: string }[]}
+ */
+function extractAttributeFilters(text, categories) {
+  const lower = String(text ?? '').toLowerCase()
+  const audio = (Array.isArray(categories) ? categories : []).some((category) => /buzzer|speaker|microphone/.test(category)) ||
+    /蜂鸣器|喇叭|扬声器|buzzer|speaker/.test(lower)
+  if (!audio) return []
+  /** @type {{ name: string, value: string }[]} */
+  const filters = []
+  const add = (name, value) => {
+    if (!filters.some((filter) => filter.name === name)) filters.push({ name, value })
+  }
+  if (/压电|piezo/i.test(lower)) add('Technology', 'Piezoelectric')
+  else if (/电磁|electromagnetic/i.test(lower)) add('Technology', 'Electromagnetic')
+  if (/无源|passive/i.test(lower)) add('Driver Circuitry', 'Passive')
+  else if (/有源|active/i.test(lower)) add('Driver Circuitry', 'Active')
+  if (/贴片|smd|surface[- ]?mount/i.test(lower)) add('Mounting Type', 'SMD')
+  else if (/插件|直插|through[- ]?hole|dip/i.test(lower)) add('Mounting Type', 'Through-Hole')
+  return filters
 }
 
 /* -------------------------------------------------------------------------- */
@@ -755,6 +804,231 @@ function candidateText(item) {
   for (const attribute of attributesOf(item)) parts.push(`${attribute.name} ${attribute.value}`)
   return parts.filter(Boolean).join(' ').toLowerCase()
 }
+
+/**
+ * True when the item belongs to one of the parsed need categories. Used to keep
+ * the last-resort relaxation inside the same category.
+ * @param {Record<string, unknown>} item
+ * @param {{ categories?: string[] }} need
+ */
+function candidateMatchesCategory(item, need) {
+  const categories = Array.isArray(need?.categories) ? need.categories : []
+  if (categories.length === 0) return true
+  const text = candidateText(item)
+  return categories.some((category) => text.includes(String(category).toLowerCase()))
+}
+
+/** Attribute predicates parsed from the requirement ("无源压电贴片蜂鸣器"). */
+function attributesMatchNeed(item, need) {
+  const filters = Array.isArray(need?.attributeFilters) ? need.attributeFilters : []
+  if (filters.length === 0) return true
+  return filters.every((filter) => matchFilters(item, { [filter.name]: filter.value }).ok)
+}
+
+/** @param {Record<string, unknown>} item @returns {Map<string, string>} */
+function attributeMapOf(item) {
+  const map = new Map()
+  for (const attribute of attributesOf(item)) {
+    const key = attribute.name.trim().toLowerCase()
+    if (key !== '' && !map.has(key)) map.set(key, attribute.value)
+  }
+  return map
+}
+
+/** Parse "9mm", "9 mm", "9" (mm assumed); undefined when absent/invalid. */
+function millimetres(value) {
+  const text = asString(value)
+  if (text === undefined) return undefined
+  const match = text.match(/(-?\d+(?:\.\d+)?)\s*(mm|cm|mil)?/i)
+  if (match === null) return undefined
+  const number = Number(match[1])
+  if (!Number.isFinite(number) || number <= 0 || number > 10000) return undefined
+  const unit = (match[2] ?? 'mm').toLowerCase()
+  if (unit === 'cm') return number * 10
+  if (unit === 'mil') return number * 0.0254
+  return number
+}
+
+/** @param {number} value @param {number} digits */
+function roundTo(value, digits) {
+  const factor = 10 ** digits
+  return Math.round(value * factor) / factor
+}
+
+/**
+ * Extract a physical size from an item's attributes, falling back to the
+ * package / description text ("SMD,5x5mm"). Used by `sort="size"` and shown in
+ * every candidate so an agent does not need to open the datasheet just to read
+ * L/W/H.
+ * @param {Record<string, unknown>} item
+ * @returns {{ length_mm?: number, width_mm?: number, height_mm?: number, diameter_mm?: number, area_mm2?: number, has_size: boolean, source?: string }}
+ */
+export function itemSize(item) {
+  const record = isRecord(item) ? item : {}
+  const attributes = attributeMapOf(record)
+  const pick = (...names) => {
+    for (const name of names) {
+      const value = millimetres(attributes.get(name.toLowerCase()))
+      if (value !== undefined) return value
+    }
+    return undefined
+  }
+  let length = pick('Length', 'Length(mm)', '长度')
+  let width = pick('Width', 'Width(mm)', '宽度')
+  let height = pick('Height', 'Height(mm)', '高度')
+  let diameter = pick('Diameter(φD)', 'Diameter(φD)', 'Diameter', 'Diameter(mm)', '直径')
+  let source = length !== undefined || width !== undefined || diameter !== undefined ? 'attributes' : undefined
+  if (length === undefined && width === undefined && diameter === undefined) {
+    const text = [asString(record.package), asString(record.description), asString(record.model)]
+      .filter(Boolean)
+      .join(' ')
+    const box = text.match(/(\d+(?:\.\d+)?)\s*[x×*]\s*(\d+(?:\.\d+)?)(?:\s*[x×*]\s*(\d+(?:\.\d+)?))?\s*(?:mm)?/i)
+    if (box !== null) {
+      length = Number(box[1])
+      width = Number(box[2])
+      if (box[3] !== undefined) height = Number(box[3])
+      source = 'package'
+    } else {
+      const circle = text.match(/(?:φ|Φ|ø|dia(?:meter)?\.?)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(?:mm)?/i)
+      if (circle !== null) {
+        diameter = Number(circle[1])
+        source = 'package'
+      }
+    }
+  }
+  const area = diameter !== undefined
+    ? Math.PI * (diameter / 2) ** 2
+    : length !== undefined && width !== undefined
+      ? length * width
+      : undefined
+  const size = {
+    length_mm: length === undefined ? undefined : roundTo(length, 3),
+    width_mm: width === undefined ? undefined : roundTo(width, 3),
+    height_mm: height === undefined ? undefined : roundTo(height, 3),
+    diameter_mm: diameter === undefined ? undefined : roundTo(diameter, 3),
+    area_mm2: area === undefined ? undefined : roundTo(area, 3),
+    has_size: area !== undefined,
+  }
+  if (source !== undefined) size.source = source
+  return clean(size)
+}
+
+/** Compact human/agent-readable size, e.g. "5×5×1.9 mm" or "Ø9 mm". */
+export function formatSize(size) {
+  if (!isRecord(size) || size.has_size !== true) return undefined
+  const n = (value) => (typeof value === 'number' ? String(roundTo(value, 2)) : undefined)
+  const length = n(size.length_mm)
+  const width = n(size.width_mm)
+  const height = n(size.height_mm)
+  const diameter = n(size.diameter_mm)
+  if (diameter !== undefined && length === undefined) {
+    return height === undefined ? `Ø${diameter} mm` : `Ø${diameter}×${height} mm`
+  }
+  if (length !== undefined && width !== undefined) {
+    return height === undefined ? `${length}×${width} mm` : `${length}×${width}×${height} mm`
+  }
+  return undefined
+}
+
+/** @param {unknown} expected @returns {string[]} */
+function expectedTerms(expected) {
+  const list = Array.isArray(expected) ? expected : [expected]
+  return list.map((value) => String(value ?? '').trim().toLowerCase()).filter((value) => value !== '')
+}
+
+/**
+ * Attribute filters for category browsing. Names are the upstream attribute
+ * names (case-insensitive); a value matches when it equals or contains the
+ * expected term. When the attribute itself is "-" / missing (the JLCPCB
+ * library often leaves `Mounting Type` empty), the package/description text is
+ * used as a fallback, so `{"Mounting Type":"SMD"}` still works.
+ * @param {Record<string, unknown>} item
+ * @param {Record<string, unknown>} [filters]
+ * @returns {{ ok: boolean, matched: string[], failed: { name: string, expected: string[], actual: string | null }[] }}
+ */
+export function matchFilters(item, filters) {
+  if (!isRecord(filters)) return { ok: true, matched: [], failed: [] }
+  const attributes = attributeMapOf(item)
+  const fallbackText = [asString(item.package), asString(item.description), asString(item.category), asString(item.model)]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+  const matched = []
+  const failed = []
+  for (const [rawName, rawExpected] of Object.entries(filters)) {
+    const name = rawName.trim()
+    if (name === '') continue
+    const terms = expectedTerms(rawExpected)
+    if (terms.length === 0) continue
+    const actual = attributes.get(name.toLowerCase()) ?? null
+    const ok = terms.some((term) => {
+      if (actual !== null && actual !== '' && actual !== '-') {
+        const value = actual.toLowerCase()
+        if (value === term || value.includes(term)) return true
+        // A real attribute value that does not match must NOT be rescued by the
+        // package text: "Mounting Type=Lead Wire" + package "SMD,9x11mm" is a
+        // wire part, not an SMD part.
+        return false
+      }
+      // Fallback only when the attribute is absent/"-".
+      return fallbackText.includes(term)
+    })
+    if (ok) matched.push(name)
+    else failed.push({ name, expected: terms, actual })
+  }
+  return { ok: failed.length === 0, matched, failed }
+}
+
+/**
+ * Discover the values actually present for requested filter names, so a failed
+ * filter can tell the agent "Technology only has Piezoelectric/Magnetic"
+ * instead of making it guess or scrape the API.
+ * @param {Record<string, unknown>[]} items
+ * @param {Record<string, unknown>} filters
+ * @returns {{ name: string, values: string[], actual: string | null }[]}
+ */
+function filterDiscovery(items, filters) {
+  const report = []
+  for (const rawName of Object.keys(filters)) {
+    const name = rawName.trim()
+    if (name === '') continue
+    const values = new Set()
+    /** @type {string | null} */
+    let firstActual = null
+    for (const item of items) {
+      const actual = attributeMapOf(item).get(name.toLowerCase())
+      if (firstActual === null && actual !== undefined) firstActual = actual
+      if (actual === undefined || actual === '' || actual === '-') continue
+      values.add(actual)
+      if (values.size >= 8) break
+    }
+    report.push({ name, values: [...values], actual: firstActual })
+  }
+  return report
+}
+
+/**
+ * Flatten `part().attributes` ({ en, zh }) into one deduplicated list.
+ * @param {Record<string, unknown> | undefined} part
+ * @returns {{ name: string, value: string }[]}
+ */
+function flattenPartAttributes(part) {
+  const out = []
+  const seen = new Set()
+  const groups = isRecord(part?.attributes) ? [part.attributes.en, part.attributes.zh] : []
+  for (const group of groups) {
+    if (!Array.isArray(group)) continue
+    for (const entry of group) {
+      if (!isRecord(entry)) continue
+      const name = asString(entry.name)
+      if (name === undefined || seen.has(name.toLowerCase())) continue
+      seen.add(name.toLowerCase())
+      out.push({ name, value: asString(entry.value) ?? '' })
+    }
+  }
+  return out
+}
+
 
 /** Infer quantity kinds from an attribute name. */
 function kindsFromAttributeName(name) {
@@ -927,6 +1201,7 @@ export function candidateMatches(item, need) {
     const hit = need.categories.some((category) => text.includes(category.toLowerCase()))
     if (!hit) return { ok: false, matched: [] }
   }
+  if (!attributesMatchNeed(item, need)) return { ok: false, matched: [] }
   const quantities = extractCandidateQuantities(item)
   const matched = []
   for (const requirement of need.requirements) {
@@ -1164,6 +1439,284 @@ function reasonsFor(candidate, context) {
 /** Identity constraints that must not be relaxed when looking for substitutes. */
 const IDENTITY_REQUIREMENT_KINDS = new Set(['capacitance', 'resistance', 'inductance', 'pins'])
 
+/** Normalise a `codes` array: uppercase C-codes, deduplicated, capped at 20. */
+function normalizeCodeList(input) {
+  const codes = []
+  const seen = new Set()
+  for (const value of Array.isArray(input) ? input : []) {
+    const code = normalizeCode(value)
+    if (code === undefined || seen.has(code)) continue
+    seen.add(code)
+    codes.push(code)
+    if (codes.length >= 20) break
+  }
+  return codes
+}
+
+/**
+ * Exact-code status, in the order that matters to an agent:
+ * - unknown_code          neither JLCPCB nor the LCSC product page knows it
+ * - not_in_smt_library     exists in LCSC/retail but not in the JLCPCB SMT library
+ * - out_of_stock           in the SMT library but every known stock is 0
+ * - unknown_stock          identity exists but no stock number was reported
+ * - ok                     in the library with stock
+ * @param {Record<string, unknown> | undefined} part
+ */
+function exactStatusOf(part) {
+  if (!isRecord(part)) return 'lookup_failed'
+  const identity = isRecord(part.identity) ? part.identity : undefined
+  if (part.status === 'NOT-FOUND' || identity === undefined) return 'unknown_code'
+  const libraryType = asString(part.libraryType) ?? asString(identity.libraryType)
+  const available = isRecord(part.stock) ? asInteger(part.stock.available) : undefined
+  if (libraryType === undefined) return 'not_in_smt_library'
+  if (available === 0) return 'out_of_stock'
+  if (available === undefined) return 'unknown_stock'
+  return 'ok'
+}
+
+/**
+ * Exact LCSC-code lookup (one code or a batch). Unlike the requirement pipeline
+ * this never drops a requested code because it is out of stock: the row is
+ * returned with `status`, identity, stock and links, so the caller can tell a
+ * typo apart from an out-of-stock part.
+ * @param {ReturnType<typeof createLcscService>} service
+ * @param {string[]} codes
+ * @param {Record<string, unknown>} args
+ * @param {{ signal?: AbortSignal }} [options]
+ */
+export async function findExactParts(service, codes, args, options = {}) {
+  const assembly = args.assembly === 'smt' ? 'smt' : 'hand'
+  const quantity = clampInteger(args.quantity, 1, 100000, 1)
+  const boards = clampInteger(args.boards, 1, 100000, 1)
+  const orderQty = quantity * boards
+  const includeUsd = args.include_usd !== false
+  const includeCny = args.include_cny === true || (args.include_cny === undefined && assembly === 'hand')
+  const usdToCnyFactor = asNumber(service.settings?.usdToCnyFactor) ?? 6.0
+  // A batch of 20 codes must not trigger 20 headless-Chrome renders; above 8
+  // codes the CNY column is an explicitly-labelled USD×factor estimate.
+  const wantCny = includeCny && codes.length <= 8
+  const notes = []
+  const hints = []
+
+  const lookups = await mapLimit(codes, 3, async (code) => {
+    if (typeof service.part !== 'function') return { code, error: 'exact lookup requires the data service' }
+    try {
+      return { code, part: await service.part(code, { includeCny: wantCny, signal: options.signal }) }
+    } catch (error) {
+      if (options.signal?.aborted) throw options.signal.reason instanceof Error ? options.signal.reason : new Error('aborted')
+      return { code, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  const candidates = lookups.map(({ code, part, error }) => {
+    if (error !== undefined || part === undefined) {
+      return {
+        lcsc: code,
+        status: 'lookup_failed',
+        notes: [`lookup failed: ${error ?? 'no data returned'}`],
+      }
+    }
+    const status = exactStatusOf(part)
+    const identity = isRecord(part.identity) ? part.identity : {}
+    const attributes = flattenPartAttributes(part)
+    const itemLike = {
+      attributes,
+      package: identity.package,
+      description: identity.description,
+      model: identity.model,
+    }
+    const size = itemSize(itemLike)
+    const tiers = Array.isArray(part.prices?.usd?.tiers) ? part.prices.usd.tiers : []
+    const tier = pickTier(tiers, orderQty)
+    const bulkUsd = bulkTierUsd({ priceUsdTiers: tiers })
+    const cnyUnit = asNumber(part.prices?.cny?.unit)
+    const cnyEstimate = cnyUnit === undefined ? estimateCnyFromUsd(bulkUsd, usdToCnyFactor) : undefined
+    const priceUsd = tier === undefined
+      ? null
+      : {
+          currency: 'USD',
+          unit: money(tier.unit),
+          tier: tier.label,
+          source: 'jlcpcb-smt',
+          tiers: tiers.slice(0, 8).map((entry) => ({ qty: entry.qty, unit: money(entry.unit) })),
+        }
+    const priceCny = cnyUnit !== undefined
+      ? {
+          currency: 'CNY',
+          unit: money(cnyUnit),
+          source: part.prices?.cny?.source ?? 'lcsc_cn_render',
+          estimated: false,
+        }
+      : cnyEstimate === undefined
+        ? null
+        : {
+            currency: 'CNY',
+            unit: cnyEstimate,
+            source: 'usd_x_factor',
+            estimated: true,
+            factor: usdToCnyFactor,
+            note: '参考估算（批量档 USD × 系数），非实际报价',
+          }
+    const stockSmt = asInteger(part.stock?.jlcpcb?.count) ?? null
+    const stockRetail = asInteger(part.stock?.domestic?.count) ?? asInteger(part.stock?.intl?.count) ?? null
+    const stockAvailable = asInteger(part.stock?.available) ?? null
+    const stock = assembly === 'smt' ? stockSmt : (stockRetail ?? stockSmt)
+    const primaryPrice = assembly === 'smt'
+      ? priceUsd
+      : (priceCny !== null && priceCny.estimated !== true ? priceCny : (priceUsd ?? priceCny))
+    const dataWarnings = []
+    if (stockRetail === 0 && (stockSmt ?? 0) > 0) dataWarnings.push('retail_out_of_stock_smt_ok')
+    if ((stockRetail ?? 0) > 0 && stockSmt === 0) dataWarnings.push('smt_out_of_stock_retail_ok')
+    if (status === 'out_of_stock') dataWarnings.push('out_of_stock')
+    return {
+      lcsc: code,
+      status,
+      model: asString(identity.model),
+      brand: asString(identity.brand),
+      package: asString(identity.package),
+      category: asString(identity.category),
+      library: asString(part.libraryType) ?? asString(identity.libraryType) ?? null,
+      stock,
+      stock_available: stockAvailable,
+      stock_retail: stockRetail,
+      stock_smt: stockSmt,
+      stock_asof: new Date().toISOString(),
+      stock_scope: assembly,
+      stock_scope_note: assembly === 'smt'
+        ? 'SMT 库存（嘉立创 PCBA 备料仓），与立创商城零售库存独立'
+        : '立创商城零售库存（DIY 配单）；SMT 库存另列',
+      coverage: stockAvailable !== null && orderQty > 0 ? Math.min(1, Math.round((stockAvailable / orderQty) * 100) / 100) : undefined,
+      price: primaryPrice === null ? undefined : { currency: primaryPrice.currency, unit: primaryPrice.unit, source: primaryPrice.source },
+      price_usd: priceUsd,
+      price_cny: priceCny,
+      used_tier: tier?.label ?? null,
+      cny_price: cnyUnit === undefined ? null : money(cnyUnit),
+      cny_estimate: priceCny === null || priceCny.estimated !== true
+        ? null
+        : { unit: priceCny.unit, factor: usdToCnyFactor, basis: 'highest-volume USD tier × factor', note: '参考估算，非实时汇率/非实际报价' },
+      specs: [],
+      attributes,
+      size,
+      datasheet_url: asString(part.datasheetUrl),
+      product_url: asString(part.urls?.lcsc),
+      url: asString(part.urls?.lcsc),
+      data_warnings: dataWarnings.length === 0 ? undefined : dataWarnings,
+      notes: part.status === 'NOT-FOUND' ? ['part not found in JLCPCB/LCSC lookups'] : undefined,
+    }
+  })
+
+  const summary = {
+    total: candidates.length,
+    ok: candidates.filter((candidate) => candidate.status === 'ok').length,
+    out_of_stock: candidates.filter((candidate) => candidate.status === 'out_of_stock').length,
+    not_in_smt_library: candidates.filter((candidate) => candidate.status === 'not_in_smt_library').length,
+    unknown_stock: candidates.filter((candidate) => candidate.status === 'unknown_stock').length,
+    unknown_code: candidates.filter((candidate) => candidate.status === 'unknown_code').length,
+    lookup_failed: candidates.filter((candidate) => candidate.status === 'lookup_failed').length,
+  }
+
+  for (const candidate of candidates) {
+    if (candidate.status === 'unknown_code') {
+      hints.push(`${candidate.lcsc}: 在 JLCPCB SMT 库和立创商品页都查不到（不是缺货）；请核对编号格式（C + 4~11 位数字），不要继续用原始接口穷举。`)
+    } else if (candidate.status === 'not_in_smt_library') {
+      hints.push(`${candidate.lcsc}: 不在嘉立创 SMT 元件库（不能 PCBA 贴片），但立创零售/商品页有记录；价格库存为零售口径，可手焊或按型号另找 SMT 替代。`)
+    } else if (candidate.status === 'out_of_stock') {
+      const modelText = candidate.model === undefined ? '' : `，型号 ${candidate.model}`
+      hints.push(`${candidate.lcsc}: 库内存在但库存为 0${modelText}；可用 find_lcsc_parts(need="${candidate.model ?? candidate.lcsc}", exclude_lcsc=["${candidate.lcsc}"]) 找同型号/同品类替代。`)
+    } else if (candidate.status === 'unknown_stock') {
+      hints.push(`${candidate.lcsc}: 库存字段缺失（可能只有零售数据），下单前请复核。`)
+    } else if (candidate.status === 'lookup_failed') {
+      hints.push(`${candidate.lcsc}: 查询失败（${candidate.notes?.[0] ?? 'unknown'}），可稍后重试这一个编号。`)
+    }
+  }
+  if (includeCny && !wantCny && codes.length > 8) {
+    notes.push(`批量 ${codes.length} 个编号：实时 CNY 只取前 8 个，其余为 USD × ${usdToCnyFactor} 的估算（标 estimated=true）。`)
+  }
+  if (args.base_only === true) {
+    const nonBase = candidates.filter((candidate) => candidate.library !== undefined && candidate.library !== 'base')
+    if (nonBase.length > 0) notes.push(`base_only=true 但精确查询保留了 ${nonBase.length} 个非基础库编号（精确编号不做过滤，只标注）。`)
+  }
+  notes.push('exact 模式：一个编号一行，按 status 区分「编号错 / 不在 SMT 库 / 缺货 / 有货」；不会因为 stock=0 而消失。')
+  notes.push('数据源：JLCPCB SMT 元件库 + 立创商城商品页；不等于立创全部零售 SKU。')
+
+  const result = {
+    need: codes.join(', '),
+    mode: 'exact',
+    query_codes: codes,
+    exact: true,
+    exact_summary: summary,
+    assembly,
+    quantity,
+    boards,
+    order_qty: orderQty,
+    require_stock: ['lcsc', 'smt'].includes(args.require_stock) ? args.require_stock : 'any',
+    include_usd: includeUsd,
+    include_cny: includeCny,
+    stock_scope_note: assembly === 'smt'
+      ? '默认按嘉立创 SMT 库存；DIY 配单请传 require_stock="lcsc"'
+      : '默认按立创商城零售库存；PCBA 请传 require_stock="smt"',
+    currency: [includeUsd ? 'USD' : undefined, includeCny ? 'CNY(retail)' : undefined].filter(Boolean).join(' + '),
+    currency_info: {
+      price_columns: [...(includeUsd ? ['usd'] : []), ...(includeCny ? ['cny'] : [])],
+      note: 'USD 与 CNY 不互相换算；CNY 为立创商城零售 1pc 价。',
+    },
+    relaxed: false,
+    relax_stage: 0,
+    candidates,
+    data_warnings: [...new Set(candidates.flatMap((candidate) => candidate.data_warnings ?? []))],
+    hints,
+    notes,
+    fetched_at: new Date().toISOString(),
+  }
+  if (!includeUsd) {
+    for (const candidate of result.candidates) {
+      for (const key of ['price', 'price_usd', 'used_tier']) delete candidate[key]
+    }
+  }
+  if (!includeCny) {
+    for (const candidate of result.candidates) {
+      for (const key of ['price_cny', 'cny_estimate', 'cny_price']) delete candidate[key]
+    }
+  }
+  return clean(result)
+}
+
+/**
+ * Pull up to `maxScan` rows of one keyword/category from the SMT API.
+ * Page size 1000 is honoured by the public endpoint (verified 2026-11-24), so a
+ * 4605-row category is 5 requests instead of 47.
+ * @param {ReturnType<typeof createLcscService>} service
+ * @param {string} keyword
+ * @param {{ maxScan: number, pageSize?: number, signal?: AbortSignal }} options
+ * @returns {Promise<{ items: Record<string, unknown>[], total: number, scanned: number, truncated: boolean }>}
+ */
+async function scanCategoryPool(service, keyword, options) {
+  const pageSize = clampInteger(options.pageSize ?? 1000, 1, 1000)
+  const maxScan = clampInteger(options.maxScan, 200, 5000)
+  const items = []
+  let total = 0
+  let page = 1
+  for (;;) {
+    const result = await service.searchRaw(keyword, {
+      pageSize,
+      currentPage: page,
+      // 1000-row pages can exceed the default 8s request timeout.
+      timeoutMs: 20000,
+      signal: options.signal,
+    })
+    total = Math.max(total, asInteger(result.total) ?? 0)
+    if (result.items.length === 0) break
+    for (const item of result.items) {
+      if (items.length >= maxScan) break
+      items.push(item)
+    }
+    if (items.length >= maxScan || page >= 50 || result.items.length < pageSize) break
+    page += 1
+  }
+  return { items, total, scanned: items.length, truncated: items.length < total }
+}
+
+
 /** Pin/contact count reported by the JLCPCB attributes, if available. */
 function candidatePinCount(item) {
   for (const attribute of attributesOf(item)) {
@@ -1183,13 +1736,25 @@ function candidatePinCount(item) {
  * @param {{ signal?: AbortSignal }} [options]
  */
 export async function findParts(service, args, options = {}) {
+  const requestedCodes = normalizeCodeList(args.codes)
+  const category = asString(args.category)
   const needText = asString(args.need)
-  if (needText === undefined) throw new Error('find_lcsc_parts requires a non-empty `need` string')
+  if (requestedCodes.length === 0 && category === undefined && needText === undefined) {
+    throw new Error('find_lcsc_parts requires `need` (natural language), or `codes` (LCSC codes), or `category` (category browse)')
+  }
+  if (requestedCodes.length > 0) {
+    if (typeof service.part !== 'function') throw new Error('find_lcsc_parts `codes` requires the LCSC data service')
+    return findExactParts(service, requestedCodes, args, options)
+  }
+
   const assembly = args.assembly === 'smt' ? 'smt' : 'hand'
   const quantity = clampInteger(args.quantity, 1, 100000, 1)
   const boards = clampInteger(args.boards, 1, 100000, 1)
-  const limit = clampInteger(args.limit, 1, MAX_CANDIDATES, DEFAULT_LIMIT)
-  const sort = ['cost', 'stock'].includes(args.sort) ? args.sort : 'balanced'
+  const browse = category !== undefined
+  const limit = clampInteger(args.limit, 1, browse ? 20 : MAX_CANDIDATES, DEFAULT_LIMIT)
+  const sort = ['cost', 'stock', 'size'].includes(args.sort)
+    ? args.sort
+    : browse ? 'size' : 'balanced'
   const baseOnly = args.base_only === true
   const requireStock = ['lcsc', 'smt'].includes(args.require_stock) ? args.require_stock : 'any'
   const includeUsd = args.include_usd !== false
@@ -1200,7 +1765,22 @@ export async function findParts(service, args, options = {}) {
       .map((code) => normalizeCode(code))
       .filter(Boolean),
   )
-  const need = parseNeed(needText)
+  const filters = isRecord(args.filters) ? args.filters : undefined
+  const maxScan = clampInteger(args.max_scan, 200, 5000, 2000)
+  const need = parseNeed(needText ?? category ?? '')
+  if (need.exact === true && need.directCode !== undefined && typeof service.part === 'function') {
+    const code = normalizeCode(need.directCode)
+    if (code !== undefined) return findExactParts(service, [code], args, options)
+  }
+  if (browse) {
+    // Category mode is a filter/sort query, not natural-language parameter
+    // matching: keep only the keyword. The item category is still shown.
+    need.searchKeyword = category
+    need.categories = []
+    need.requirements = []
+    need.attributeFilters = []
+    need.exact = undefined
+  }
   const orderQty = quantity * boards
   const feeUsd = asNumber(service.settings?.extendedPartFeeUsd) ?? EXTENDED_PART_FEE_USD
   const usdToCnyFactor = asNumber(service.settings?.usdToCnyFactor) ?? 6.0
@@ -1215,6 +1795,12 @@ export async function findParts(service, args, options = {}) {
   }
   const notes = []
   const hints = []
+  /** @type {{ category: string, scanned: number, total: number, truncated: boolean, filters: Record<string, unknown> | null, matched?: number, sort: string } | undefined} */
+  let browseMeta
+  /** @type {{ name: string, values: string[], actual: string | null, matched_count: number }[] | undefined} */
+  let filterReport
+  let categoryEmpty = false
+  let attributeEmpty = false
 
   /** @type {Map<string, Record<string, unknown>>} */
   const pool = new Map()
@@ -1227,45 +1813,111 @@ export async function findParts(service, args, options = {}) {
   }
 
   // ---- Phase 1: candidate recall -------------------------------------------
-  const queries = []
-  if (need.exact) {
-    queries.push({ keyword: need.searchKeyword })
-  } else if (assembly === 'smt') {
-    // Search the base library first so free-to-load parts are not drowned out.
-    queries.push({ keyword: need.searchKeyword, libraryType: 'base' })
-    queries.push({ keyword: need.searchKeyword })
-  } else {
-    queries.push({ keyword: need.searchKeyword })
-  }
-  for (const query of queries) {
-    const result = await service.searchRaw(query.keyword, {
-      pageSize: SEARCH_PAGE_SIZE,
-      libraryType: query.libraryType,
-      signal: options.signal,
-    })
-    absorb(result)
-  }
-  // Degradation chain for recall: simplified category terms -> English tokens
-  // in the raw text -> package+category -> raw text. This keeps Chinese
-  // colloquial requirements ("MEMS 麦克风", "USB Type-C 16P 母座") searchable.
-  if (pool.size === 0 && !need.exact) {
-    for (const fallbackKeyword of recallFallbackKeywords(need)) {
-      if (pool.size > 0) break
-      notes.push(`关键词「${need.searchKeyword}」无结果，回退到「${fallbackKeyword}」。`)
-      absorb(await service.searchRaw(fallbackKeyword, { pageSize: SEARCH_PAGE_SIZE, signal: options.signal }))
+  if (browse) {
+    const scan = await scanCategoryPool(service, need.searchKeyword, { maxScan, signal: options.signal })
+    absorb({ total: scan.total, items: scan.items })
+    browseMeta = {
+      category: need.searchKeyword,
+      scanned: scan.scanned,
+      total: scan.total,
+      truncated: scan.truncated,
+      filters: filters ?? null,
+      sort,
     }
-  }
-  if (pool.size === 0 && need.exact) {
-    // The code/model search found nothing; the text may still be a model with
-    // punctuation that the API search does not match verbatim.
-    absorb(await service.searchRaw(need.raw, { pageSize: SEARCH_PAGE_SIZE, signal: options.signal }))
+    if (scan.truncated) {
+      notes.push(`品类浏览只扫描了前 ${scan.scanned}/${scan.total} 条（max_scan=${maxScan}）；目标可能不在已扫描区间，可把 max_scan 提到 5000。`)
+    }
+    if (scan.total > 0 && scan.items.length === 0) notes.push('该品类关键词没有返回条目。')
+  } else {
+    const queries = []
+    if (need.exact) {
+      queries.push({ keyword: need.searchKeyword })
+    } else if (assembly === 'smt') {
+      // Search the base library first so free-to-load parts are not drowned out.
+      queries.push({ keyword: need.searchKeyword, libraryType: 'base' })
+      queries.push({ keyword: need.searchKeyword })
+    } else {
+      queries.push({ keyword: need.searchKeyword })
+    }
+    for (const query of queries) {
+      const result = await service.searchRaw(query.keyword, {
+        pageSize: SEARCH_PAGE_SIZE,
+        libraryType: query.libraryType,
+        signal: options.signal,
+      })
+      absorb(result)
+    }
+    // Degradation chain for recall: simplified category terms -> English tokens
+    // in the raw text -> package+category -> raw text. This keeps Chinese
+    // colloquial requirements ("MEMS 麦克风", "USB Type-C 16P 母座") searchable.
+    if (pool.size === 0 && !need.exact) {
+      for (const fallbackKeyword of recallFallbackKeywords(need)) {
+        if (pool.size > 0) break
+        notes.push(`关键词「${need.searchKeyword}」无结果，回退到「${fallbackKeyword}」。`)
+        absorb(await service.searchRaw(fallbackKeyword, { pageSize: SEARCH_PAGE_SIZE, signal: options.signal }))
+      }
+    }
+    if (pool.size === 0 && need.exact) {
+      // The code/model search found nothing; the text may still be a model with
+      // punctuation that the API search does not match verbatim.
+      absorb(await service.searchRaw(need.raw, { pageSize: SEARCH_PAGE_SIZE, signal: options.signal }))
+    }
+    // Chinese requirements often produce an ASCII-only keyword ("3.3V GPIO")
+    // that misses the English category word. If the current pool has no item
+    // of the requested category, retry once with the category word itself; the
+    // alternative is the calling agent scraping the API on its own.
+    if (!need.exact && need.categories.length > 0) {
+      const hasCategory = [...pool.values()].some((item) => candidateMatchesCategory(item, need))
+      if (!hasCategory) {
+        const categoryKeyword = need.categories[0]
+        notes.push(`当前关键词「${need.searchKeyword}」没有召回「${categoryKeyword}」品类，改用品类词再检索一次。`)
+        absorb(await service.searchRaw(categoryKeyword, { pageSize: SEARCH_PAGE_SIZE, signal: options.signal }))
+      }
+      // Attribute words from the requirement ("无源/压电/贴片") are stronger
+      // keywords than the original sentence: "buzzer passive" finds passive
+      // piezo SMD parts that "3.3V GPIO" never surfaces.
+      const attributeFilters = Array.isArray(need.attributeFilters) ? need.attributeFilters : []
+      if (attributeFilters.length > 0) {
+        const hasAttributeMatch = [...pool.values()].some(
+          (item) => candidateMatchesCategory(item, need) && attributesMatchNeed(item, need),
+        )
+        if (!hasAttributeMatch) {
+          const categoryKeyword = need.categories[0]
+          const tried = new Set()
+          for (const filter of attributeFilters.slice(0, 2)) {
+            const keyword = `${categoryKeyword} ${String(filter.value).toLowerCase()}`.trim()
+            if (keyword === '' || tried.has(keyword)) continue
+            tried.add(keyword)
+            notes.push(`按属性词再检索一次：「${keyword}」。`)
+            absorb(await service.searchRaw(keyword, { pageSize: SEARCH_PAGE_SIZE, signal: options.signal }))
+            if ([...pool.values()].some((item) => candidateMatchesCategory(item, need) && attributesMatchNeed(item, need))) break
+          }
+        }
+      }
+    }
   }
 
   // ---- Phase 2: strict filter, then staged relaxation ----------------------
+  if (browse && filters !== undefined) {
+    const discoverable = [...pool.values()].filter((item) => !exclude.has(String(item.code)))
+    filterReport = filterDiscovery(discoverable, filters).map((entry) => ({
+      ...entry,
+      matched_count: discoverable.filter((item) => matchFilters(item, { [entry.name]: filters[entry.name] }).ok).length,
+    }))
+    const deadFilters = filterReport.filter((entry) => entry.matched_count === 0)
+    if (deadFilters.length > 0) {
+      hints.push(
+        `filters 里有 ${deadFilters.length} 条在已扫描的 ${browseMeta?.scanned ?? 0} 条里匹配不到：` +
+        deadFilters.map((entry) => `${entry.name}=${JSON.stringify(filters[entry.name])}（可用值：${entry.values.slice(0, 8).join(' / ') || '该属性为空，已回退按封装/描述文本匹配'}）`).join('；') +
+        '。不要重新探测上游接口，直接按 filter_report 调整。',
+      )
+    }
+  }
   const usablePool = () =>
     [...pool.values()]
       .filter((item) => !exclude.has(String(item.code)))
       .filter((item) => (asInteger(item.stock) ?? 0) > 0)
+      .filter((item) => filters === undefined || !browse || matchFilters(item, filters).ok)
   const scoreWith = (needForFilter) =>
     usablePool()
       .map((item) => scoreCandidate(item, needForFilter, context))
@@ -1275,7 +1927,7 @@ export async function findParts(service, args, options = {}) {
   let relaxStage = 0
   let droppedRequirements = []
   let scored = scoreWith(need)
-  if (scored.length === 0 && !need.exact && need.requirements.length > 0) {
+  if (scored.length === 0 && !need.exact && !browse) {
     // Stage 1: keep identity (value/package) constraints, relax ratings.
     const identity = need.requirements.filter((requirement) => IDENTITY_REQUIREMENT_KINDS.has(requirement.kind))
     if (identity.length !== need.requirements.length) {
@@ -1301,16 +1953,35 @@ export async function findParts(service, args, options = {}) {
         notes.push('严格匹配无结果：已仅按封装/品类筛候选，参数需人工核对（见每行 mismatch_reasons）。')
       }
     }
-    // Stage 3: last resort, everything in the recall pool.
+    // Stage 3: last resort, but NEVER across categories. Returning a WiFi
+    // module for a buzzer query misleads the agent more than an empty result.
     if (scored.length === 0) {
-      scored = usablePool().map((item) => ({
-        ...scoreCandidate(item, need, context),
-        match: { ok: true, matched: [] },
-      }))
-      if (scored.length > 0) {
-        relaxed = true
-        relaxStage = 3
-        notes.push('没有满足条件的候选；以下为最接近的候选，不匹配原因见 mismatch_reasons。')
+      const categoryPool = usablePool().filter((item) => candidateMatchesCategory(item, need))
+      const attributePool = categoryPool.filter((item) => attributesMatchNeed(item, need))
+      const attributeFilters = Array.isArray(need.attributeFilters) ? need.attributeFilters : []
+      if (attributePool.length > 0) {
+        scored = attributePool.map((item) => ({
+          ...scoreCandidate(item, need, context),
+          match: { ok: true, matched: [] },
+        }))
+        if (scored.length > 0) {
+          relaxed = true
+          relaxStage = 3
+          notes.push('没有完全满足条件的同品类候选；以下为同品类中较接近的候选，不匹配原因见 mismatch_reasons。')
+        }
+      } else if (categoryPool.length > 0 && attributeFilters.length > 0) {
+        attributeEmpty = true
+        hints.push(
+          `「${need.categories.join(' / ')}」品类有 ${categoryPool.length} 个在库料，但没有同时满足 ` +
+          `${attributeFilters.map((filter) => `${filter.name}=${filter.value}`).join(' / ')} 的；` +
+          '可用 category + filters 浏览该品类的属性分布，或放宽其中一项。',
+        )
+      } else if (need.categories.length > 0) {
+        categoryEmpty = true
+        hints.push(
+          `JLC SMT 库里没有「${need.categories.join(' / ')}」品类的在库料（数据源是嘉立创 SMT 元件库，不等于立创全部零售 SKU）。` +
+          '不要继续穷举立创接口：改用英文品类词/型号/LCSC 编号，或用 category 参数做品类浏览，已知编号可直接 download_lcsc_datasheet 取手册。',
+        )
       }
     }
   }
@@ -1332,6 +2003,21 @@ export async function findParts(service, args, options = {}) {
   }
 
   let ranked = rankCandidates(scored, context, orderQty)
+
+  if (sort === 'size') {
+    ranked = [...ranked].sort((left, right) => {
+      const leftSize = itemSize(left.item)
+      const rightSize = itemSize(right.item)
+      if (leftSize.has_size !== rightSize.has_size) return leftSize.has_size ? -1 : 1
+      if (leftSize.has_size) {
+        const areaDiff = (leftSize.area_mm2 ?? Number.POSITIVE_INFINITY) - (rightSize.area_mm2 ?? Number.POSITIVE_INFINITY)
+        if (areaDiff !== 0) return areaDiff
+      }
+      const stockDiff = (asInteger(right.item.stock) ?? 0) - (asInteger(left.item.stock) ?? 0)
+      if (stockDiff !== 0) return stockDiff
+      return (left.unitEffectiveUsd ?? Number.POSITIVE_INFINITY) - (right.unitEffectiveUsd ?? Number.POSITIVE_INFINITY)
+    })
+  }
 
   // ---- Phase 3: real CNY prices (domestic store via Chrome) ----------------
   /** @type {Map<string, Record<string, unknown>>} */
@@ -1393,7 +2079,8 @@ export async function findParts(service, args, options = {}) {
   }
 
   // Hand/DIY ranking: among equally-relevant parts, prefer LCSC retail stock.
-  if (assembly === 'hand' && includeCny && ranked.length > 1) {
+  // `sort="size"` must keep the size order; stock only breaks area ties there.
+  if (assembly === 'hand' && includeCny && ranked.length > 1 && sort !== 'size') {
     const stocked = []
     const rest = []
     for (const candidate of ranked) {
@@ -1406,6 +2093,7 @@ export async function findParts(service, args, options = {}) {
   }
 
   // ---- Phase 4: build output ----------------------------------------------
+  if (browseMeta !== undefined) browseMeta.matched = ranked.length
   const candidates = ranked.slice(0, limit).map((candidate) => {
     const code = String(candidate.item.code)
     const cny = cnyByCode.get(code)
@@ -1487,6 +2175,14 @@ export async function findParts(service, args, options = {}) {
         ? null
         : { unit: priceCny.unit, factor: usdToCnyFactor, basis: 'highest-volume USD tier × factor', note: '参考估算，非实时汇率/非实际报价' },
       specs: pickSpecs(candidate.item),
+      // The upstream row already carries every attribute and link; returning
+      // them here means the agent can decide without downloading the datasheet
+      // just to read L/W/H, SPL, frequency, etc.
+      attributes: attributesOf(candidate.item),
+      size: itemSize(candidate.item),
+      datasheet_url: asString(candidate.item.datasheetUrl),
+      product_url: asString(candidate.item.url) ?? `https://www.lcsc.com/product-detail/${candidate.item.code}.html`,
+      status: stockSmt > 0 ? 'ok' : 'out_of_stock',
       score: candidate.score,
       reasons: reasonsFor(candidate, context),
       mismatch_reasons: relaxStage >= 2 && need.requirements.length > 0 ? mismatchReasons(candidate.item, need) : undefined,
@@ -1495,9 +2191,27 @@ export async function findParts(service, args, options = {}) {
   })
 
   if (candidates.length === 0) {
-    hints.push(
-      '没有找到候选。建议：改用型号/LCSC 编号（如 SMF5.0A / TP4054 / C307331）；或减少参数；或把中文品类换成英文（capacitor / resistor / LDO / connector）。',
-    )
+    if (browse) {
+      const dead = (filterReport ?? []).filter((entry) => entry.matched_count === 0)
+      if (dead.length > 0) {
+        hints.push(
+          `category="${need.searchKeyword}" 在已扫描的 ${browseMeta?.scanned ?? 0} 条里没有满足 filters 的料；` +
+          `按 filter_report 调整（${dead.map((entry) => `${entry.name} 可用值：${entry.values.slice(0, 8).join(' / ') || '无（已按封装文本匹配）'}`).join('；')}）。`,
+        )
+      } else {
+        hints.push(
+          `category="${need.searchKeyword}" 在 JLC SMT 库没有可买到的候选（数据源只覆盖嘉立创 SMT 元件库，不等于立创全部零售 SKU）。` +
+          '可换英文品类词、放宽 filters，或直接用已知 LCSC 编号精确查询；不要反复探测立创原始接口。',
+        )
+      }
+      if (browseMeta?.truncated === true) {
+        hints.push(`本次只扫描 ${browseMeta.scanned}/${browseMeta.total} 条；若目标更靠后，把 max_scan 提高到 5000 重试。`)
+      }
+    } else if (!categoryEmpty && !attributeEmpty) {
+      hints.push(
+        '没有找到候选。建议：改用型号/LCSC 编号（如 SMF5.0A / TP4054 / C307331）；或减少参数；或把中文品类换成英文（capacitor / resistor / LDO / connector）。',
+      )
+    }
   }
   if (need.exact) {
     notes.push(`按${need.directCode !== undefined ? ' LCSC 编号' : '型号'}精确查询（${need.exactValue}），未做参数解析。`)
@@ -1508,6 +2222,20 @@ export async function findParts(service, args, options = {}) {
     notes.push('assembly=hand：不考虑嘉立创上料费与基础库偏好；价格优先展示立创商城人民币零售价，USD 并列参考。')
   } else {
     notes.push(`assembly=smt：扩展库按每料号 $${feeUsd}/单上料费摊销；基础库优先度体现在排序里。`)
+  }
+  if (browse) {
+    notes.push(
+      `category 浏览：关键词「${need.searchKeyword}」，扫描 ${browseMeta?.scanned ?? 0}/${browseMeta?.total ?? 0} 条` +
+      `${browseMeta?.truncated === true ? '（已截断）' : ''}，匹配 ${browseMeta?.matched ?? 0} 条，排序 ${sort}。`,
+    )
+    notes.push('数据源：JLCPCB SMT 元件库（base/expand），不是立创全部零售 SKU；电声/机电件覆盖较薄，英文品类词召回最好。')
+  }
+  if (categoryEmpty) {
+    notes.push('已阻止跨品类降级：没有把其它品类的料当成“最接近候选”返回。')
+  }
+  const intentText = `${needText ?? ''} ${category ?? ''}`
+  if (!browse && sort !== 'size' && /最小|尽量小|小型|smallest|compact|tiny/i.test(intentText)) {
+    hints.push('检测到尺寸偏好：需求模式只在同品类候选内排序，可加 sort="size"；要真正找全品类最小，请用 category + filters + sort="size" + max_scan=5000。')
   }
 
   if (!includeUsd) {
@@ -1525,8 +2253,12 @@ export async function findParts(service, args, options = {}) {
     notes.push('注意：部分候选「立创零售仓缺货、嘉立创 SMT 仓有货」——不是停产；DIY 配单需看 stock_retail，PCBA 可看 stock_smt。')
   }
   return {
-    need: needText,
+    need: needText ?? category,
+    mode: browse ? 'browse' : (need.exact ? 'exact' : 'requirement'),
     exact: need.exact,
+    query_codes: undefined,
+    browse: browseMeta,
+    filter_report: filterReport,
     assembly,
     quantity,
     boards,
@@ -2594,34 +3326,86 @@ export async function auditBom(service, args, options = {}) {
 /* -------------------------------------------------------------------------- */
 
 /** @param {Record<string, unknown>} value */
+/** One compact attribute string for a rendered candidate (empty values skipped). */
+function attributeSummary(candidate, maxItems = 14) {
+  if (!isRecord(candidate) || !Array.isArray(candidate.attributes)) return ''
+  const parts = []
+  for (const attribute of candidate.attributes) {
+    if (!isRecord(attribute)) continue
+    const name = asString(attribute.name)
+    const value = asString(attribute.value)
+    if (name === undefined || value === undefined || value === '-' || value === '') continue
+    parts.push(`${name}=${value}`)
+    if (parts.length >= maxItems) break
+  }
+  const text = parts.join('; ')
+  return text.length > 460 ? `${text.slice(0, 457)}…` : text
+}
+
+/** @param {Record<string, unknown>} value */
 export function renderFindText(value) {
   const candidates = Array.isArray(value.candidates) ? value.candidates : []
-  const header =
-    `Find "${value.need}" [${value.assembly}${value.require_stock && value.require_stock !== 'any' ? `/stock=${value.require_stock}` : ''}] qty ${value.quantity}/board x ${value.boards} board(s) [${value.currency ?? 'USD + CNY'}]` +
-    (value.exact === true ? ' (exact part query)' : '') +
-    (value.relaxed === true ? ` (relaxed stage ${value.relax_stage})` : '') +
-    ` => ${candidates.length} candidate(s)`
+  const mode = asString(value.mode) ?? (value.exact === true ? 'exact' : 'requirement')
+  const scope = value.require_stock && value.require_stock !== 'any' ? `/stock=${value.require_stock}` : ''
+  let header = `Find "${value.need}" [${mode}${value.assembly ? ` ${value.assembly}` : ''}${scope}] qty ${value.quantity}/board x ${value.boards} board(s) [${value.currency ?? 'USD + CNY'}]`
+  if (mode === 'browse' && isRecord(value.browse)) {
+    const browse = value.browse
+    header += ` category="${browse.category}" scanned=${browse.scanned}/${browse.total}${browse.truncated === true ? ' truncated' : ''} matched=${browse.matched ?? '?'} sort=${browse.sort}`
+    if (isRecord(browse.filters)) header += ` filters=${JSON.stringify(browse.filters)}`
+  }
+  if (isRecord(value.exact_summary)) {
+    const summary = value.exact_summary
+    header += ` | ok=${summary.ok} out_of_stock=${summary.out_of_stock} not_in_smt=${summary.not_in_smt_library} unknown_code=${summary.unknown_code}`
+  }
+  if (value.relaxed === true) header += ` (relaxed stage ${value.relax_stage})`
+  header += ` => ${candidates.length} candidate(s)`
   const lines = [header]
   for (const candidate of candidates) {
     if (!isRecord(candidate)) continue
     const suppressedUsd = value.include_usd === false
     const suppressedCny = value.include_cny === false
-    const priceUsd = !suppressedUsd && isRecord(candidate.price_usd) ? `USD ${candidate.price_usd.unit} @${candidate.price_usd.tier}` : ''
+    const priceUsd = !suppressedUsd && isRecord(candidate.price_usd)
+      ? `USD ${candidate.price_usd.unit}${candidate.price_usd.tier ? ` @${candidate.price_usd.tier}` : ''}`
+      : ''
     const priceCny = !suppressedCny && isRecord(candidate.price_cny)
       ? `CNY ${candidate.price_cny.unit}${candidate.price_cny.estimated === true ? '(est.)' : ''}`
       : ''
-    lines.push(
-      `- ${candidate.lcsc} | ${candidate.model ?? '?'} | ${candidate.package ?? '?'} | lib ${candidate.library} | ` +
-      `stock smt ${candidate.stock_smt ?? '?'} / retail ${candidate.stock_retail ?? '?'} | ` +
-      [priceUsd, priceCny].filter(Boolean).join(' | ') + ` | score ${candidate.score}`,
-    )
+    const status = asString(candidate.status)
+    const statusTag = status !== undefined && status !== 'ok' ? `[${status}] ` : ''
+    const sizeText = formatSize(candidate.size)
+    const parts = [
+      `${statusTag}${candidate.lcsc ?? '?'}`,
+      candidate.model ?? '?',
+      candidate.package ?? '?',
+      sizeText,
+      candidate.library ? `lib ${candidate.library}` : undefined,
+      `stock smt ${candidate.stock_smt ?? '?'} / retail ${candidate.stock_retail ?? '?'}`,
+      [priceUsd, priceCny].filter(Boolean).join(' | '),
+      typeof candidate.score === 'number' && !(mode === 'browse' && isRecord(value.browse) && value.browse.sort === 'size')
+        ? `score ${candidate.score}`
+        : undefined,
+    ].filter(Boolean)
+    lines.push(`- ${parts.join(' | ')}`)
+    const attributes = attributeSummary(candidate)
+    if (attributes !== '') lines.push(`  attrs: ${attributes}`)
+    const links = []
+    if (asString(candidate.datasheet_url) !== undefined) links.push(`ds ${candidate.datasheet_url}`)
+    if (asString(candidate.product_url) !== undefined) links.push(`product ${candidate.product_url}`)
+    if (links.length > 0) lines.push(`  ${links.join(' | ')}`)
     if (Array.isArray(candidate.data_warnings) && candidate.data_warnings.length > 0) {
       lines.push(`  ⚠ ${candidate.data_warnings.join(', ')}`)
     }
+    if (Array.isArray(candidate.notes) && candidate.notes.length > 0) lines.push(`  note: ${candidate.notes.join('; ')}`)
     if (Array.isArray(candidate.reasons) && candidate.reasons.length > 0) lines.push(`  ${candidate.reasons.join('; ')}`)
     if (Array.isArray(candidate.mismatch_reasons) && candidate.mismatch_reasons.length > 0) {
       lines.push(`  不匹配原因: ${candidate.mismatch_reasons.join('; ')}`)
     }
+  }
+  if (Array.isArray(value.filter_report) && value.filter_report.length > 0) {
+    lines.push('filter_report: ' + value.filter_report.map((entry) => {
+      if (!isRecord(entry)) return ''
+      return `${entry.name} matched=${entry.matched_count} values=[${(Array.isArray(entry.values) ? entry.values : []).slice(0, 8).join(' / ')}]`
+    }).filter(Boolean).join(' | '))
   }
   for (const hint of Array.isArray(value.hints) ? value.hints : []) lines.push(`hint: ${hint}`)
   for (const note of Array.isArray(value.notes) ? value.notes : []) lines.push(`note: ${note}`)
@@ -2760,16 +3544,17 @@ export function renderDatasheetText(value) {
 /* -------------------------------------------------------------------------- */
 
 const FIND_DESCRIPTION =
-  'Find LCSC / JLCPCB components that match a real requirement (package, capacitance, voltage rating, current, resistance, tolerance, dimensions, …) ' +
-  'and return up to 8 candidates ranked by practical cost-effectiveness: unit price at the actual order quantity, stock coverage, parameter match, and ' +
-  'basic-vs-extended JLCPCB library. ' +
-  'Part numbers and LCSC codes are detected first and queried exactly (e.g. "SMF5.0A", "AO3401A", "TP4054", "C307331"), so digit-letter patterns are never misread as values; ' +
-  'otherwise the requirement is parsed, filtered, and relaxed in stages when nothing matches (each relaxed candidate carries mismatch reasons). ' +
-  'Default assembly="hand" for DIY parts you buy and solder yourself (library type ignored; LCSC domestic CNY retail price via Chrome render when reachable, USD reference otherwise). ' +
-  'Set assembly="smt" only when the board will be assembled by JLCPCB: extended-library parts then add a USD 3 feeder fee per part number per order, amortized per board. ' +
-  'Every candidate reports stock_smt AND stock_lcsc, price_usd AND price_cny side by side (never mixed), the used price tier, and package/pin count. ' +
-  'When the real CNY price is unavailable, a clearly-labelled reference CNY estimate (bulk-tier USD × configurable factor, default 6.0) is included; USD stays the actual reference. ' +
-  'This is NOT a generic keyword search tool: it parses requirements, filters candidates and explains the ranking.'
+  'Find LCSC / JLCPCB components by requirement, by exact LCSC code(s), or browse a category with attribute filters and size sorting. ' +
+  'DATA SOURCE (important): search covers the JLCPCB SMT component library (base/expand), NOT the whole LCSC retail catalogue. ' +
+  'Passives and common ICs are well covered; audio/electro-mechanical parts (buzzers, speakers, connectors) are thin. Use English category words for recall ("buzzer", not 蜂鸣器) and exact LCSC codes for known parts. ' +
+  'THREE MODES: ' +
+  '(1) requirement — `need` is parsed into package/values/ratings, filtered and only relaxed within the same category (never returns an unrelated category as "closest"; if the category is absent it says so); ' +
+  '(2) exact — `need` = one LCSC code, or `codes` = up to 20 LCSC codes. Every requested code returns a row with `status`: ok / out_of_stock / not_in_smt_library / unknown_stock / unknown_code, even when stock is 0, so a typo and an out-of-stock part are distinguishable; ' +
+  '(3) category browse — set `category` (e.g. "buzzer") with optional `filters` (upstream attribute names, case-insensitive, e.g. {"Technology":"Piezoelectric","Mounting Type":"SMD"}), `sort` = size / cost / stock, `max_scan` (default 2000, max 5000) and `limit` up to 20. The response reports scanned/total/truncated and a filter_report with the values actually present, so the caller never needs to scrape the LCSC API itself. ' +
+  'Every candidate returns full `attributes`, parsed `size` (L/W/H or Ø, area), `datasheet_url`, `product_url`, stock_smt/stock_retail, price_usd/price_cny (never mixed) and library type. ' +
+  'Default assembly="hand" (DIY; real LCSC domestic CNY via Chrome when available, labelled USD estimate otherwise). ' +
+  'Set assembly="smt" only for JLCPCB assembly: extended-library parts add USD 3 per part number per order, amortized per board. ' +
+  'When a category/filter cannot be satisfied, the result says exactly which filter failed and which values exist — do not fall back to probing raw JLCPCB/LCSC endpoints.'
 
 const AUDIT_DESCRIPTION =
   'Audit an existing BOM against the JLCPCB parts library and the LCSC domestic store: per line USD price (tier shown, taken at qty x boards), stock_smt, stock_lcsc, ' +
@@ -2799,12 +3584,30 @@ export function createToolDefinitions(service, options = {}) {
       parameters: {
         type: 'object',
         additionalProperties: false,
-        required: ['need'],
+        // One of need / codes / category is required at runtime; expressing the
+        // disjunction in this tool schema would be model-hostile, so the three
+        // parameters stay optional and execute() gives a precise error.
+        required: [],
         properties: {
           need: {
             type: 'string',
-            description: 'Requirement in natural language (Chinese or English), e.g. "0402 100nF 50V X7R capacitor", "3.3V LDO SOT-23-5 500mA", "10kΩ 0402 resistor", "TP4054", "C1581".',
+            description: 'Requirement in natural language (Chinese or English), an exact LCSC code, or a part number. Examples: "0402 100nF 50V X7R capacitor", "3.3V LDO SOT-23-5 500mA", "SMF5.0A", "C1581". Use English category words for electro-mechanical parts.',
           },
+          codes: {
+            type: 'array',
+            items: { type: 'string' },
+            maxItems: 20,
+            description: 'Exact mode: 1–20 LCSC codes (e.g. ["C22359711","C20181991"]). Each code returns a row with status ok / out_of_stock / not_in_smt_library / unknown_stock / unknown_code, even at zero stock.',
+          },
+          category: {
+            type: 'string',
+            description: 'Category-browse mode: a category keyword, English recommended (e.g. "buzzer", "resistor", "LDO"). Scans max_scan rows and applies filters; use this for "smallest / cheapest / loudest in a category" questions instead of scraping JLCPCB/LCSC yourself.',
+          },
+          filters: {
+            type: 'object',
+            description: 'Category-browse attribute filters: upstream attribute name → string or array (case-insensitive; equals or contains). Example: {"Technology":"Piezoelectric","Driver Circuitry":"Passive","Mounting Type":"SMD"}. "Mounting Type" falls back to the package text when the attribute is "-". Unknown/no-match filters return a filter_report with the actual available values.',
+          },
+          max_scan: { type: 'integer', minimum: 200, maximum: 5000, description: 'Category-browse only: maximum rows to scan (default 2000; use 5000 for the full category). Response reports scanned/total/truncated.' },
           assembly: {
             type: 'string',
             enum: ['hand', 'smt'],
@@ -2812,8 +3615,8 @@ export function createToolDefinitions(service, options = {}) {
           },
           quantity: { type: 'integer', minimum: 1, maximum: 100000, description: 'Parts needed per board (default 1).' },
           boards: { type: 'integer', minimum: 1, maximum: 100000, description: 'Number of boards to build (default 1; used for price tiers and SMT fee amortization).' },
-          sort: { type: 'string', enum: ['balanced', 'cost', 'stock'], description: 'Ranking preference (default balanced).' },
-          limit: { type: 'integer', minimum: 1, maximum: 8, description: 'Candidates to return (default 5, max 8).' },
+          sort: { type: 'string', enum: ['balanced', 'cost', 'stock', 'size'], description: 'Ranking: balanced / cost / stock / size (parsed L/W/H or Ø area; items without size go last). Default balanced, or size in category-browse mode.' },
+          limit: { type: 'integer', minimum: 1, maximum: 20, description: 'Candidates to return (default 5; max 8 for requirement/exact mode, max 20 for category browse).' },
           include_usd: { type: 'boolean', description: 'Include USD price columns (default true). Set false for CNY-only output; USD is then suppressed entirely (no $ columns).' },
           include_cny: { type: 'boolean', description: 'Fetch real LCSC domestic CNY retail prices for the top candidates via headless Chrome (default true in hand mode, false in smt mode; 24h cache). When unavailable, a marked reference estimate is shown. Set false for USD-only output.' },
           exclude_lcsc: { type: 'array', items: { type: 'string' }, description: 'LCSC codes to exclude, e.g. when looking for an alternative to a part you already have.' },
@@ -2828,6 +3631,11 @@ export function createToolDefinitions(service, options = {}) {
           required: ['need', 'assembly', 'candidates', 'notes'],
           properties: {
             need: { type: 'string' },
+            mode: { type: 'string' },
+            query_codes: { type: 'array', items: { type: 'string' } },
+            exact_summary: { type: 'object' },
+            browse: { type: 'object' },
+            filter_report: { type: 'array', items: { type: 'object' } },
             assembly: { type: 'string' },
             quantity: { type: 'integer' },
             boards: { type: 'integer' },

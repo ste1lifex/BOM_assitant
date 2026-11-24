@@ -916,6 +916,9 @@ export function createLcscService(options = {}) {
       cache.dedupe(key, async () => {
         const payload = await requestJson(JLC_SEARCH_URL, {
           ...requestOptions,
+          // Category browsing needs a larger page (1000 rows can exceed the
+          // default 8s request budget); callers may widen just this request.
+          timeoutMs: clampInteger(options.timeoutMs ?? requestOptions.timeoutMs, 1000, 60000),
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -943,14 +946,17 @@ export function createLcscService(options = {}) {
    * filter. Used by the requirement-driven finder, which needs a wide candidate
    * pool (up to 100 per page) instead of the small `search()` preview.
    * @param {string} keyword
-   * @param {{ pageSize?: number, currentPage?: number, libraryType?: 'base'|'expand'|'all', signal?: AbortSignal }} [options]
+   * @param {{ pageSize?: number, currentPage?: number, libraryType?: 'base'|'expand'|'all', timeoutMs?: number, signal?: AbortSignal }} [options]
    * @returns {Promise<{ total: number, items: Record<string, unknown>[] }>}
    */
   async function searchRaw(keyword, options = {}) {
     const text = asString(keyword)
     if (text === undefined || text === '') throw new Error('searchRaw requires a non-empty keyword string')
-    const pageSize = clampInteger(options.pageSize ?? 100, 1, 100)
-    const currentPage = clampInteger(options.currentPage ?? 1, 1, 10)
+    // The public SMT API accepts pageSize=1000 and currentPage beyond 10
+    // (verified 2026-11-24: pageSize 1000 / currentPage 47 both work). The old
+    // 100/10 caps made category-wide browsing impossible without raw requests.
+    const pageSize = clampInteger(options.pageSize ?? 100, 1, 1000)
+    const currentPage = clampInteger(options.currentPage ?? 1, 1, 50)
     const libraryType =
       options.libraryType === 'base' || options.libraryType === 'expand' ? options.libraryType : undefined
     const key = `jlc:raw:${pageSize}:${currentPage}:${libraryType ?? 'all'}:${text.toLowerCase()}`

@@ -55,7 +55,7 @@ function check(label, condition, detail) {
 async function download(code, options = {}) {
   const started = Date.now()
   const result = await downloadLcscDatasheet(
-    { lcsc: code, out_dir: OUT_DIR, ...options },
+    { lcsc: code, out_dir: OUT_DIR, overwrite: true, ...options },
     { service, cnAdapter, timeoutMs: 90000 },
   )
   results.push({ code, ms: Date.now() - started, ...result })

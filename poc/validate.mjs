@@ -44,6 +44,8 @@ import {
   renderAuditText,
   renderDatasheetText,
   renderFindText,
+  itemSize,
+  matchFilters,
   scoreCandidate,
 } from './lcsc-dsh-plugin/index.js'
 
@@ -392,7 +394,18 @@ check('find tool present', definitions.some((d) => d.name === 'find_lcsc_parts')
 check('audit tool present', definitions.some((d) => d.name === 'audit_lcsc_bom'))
 check('datasheet tool present', definitions.some((d) => d.name === 'download_lcsc_datasheet'))
 const findDef = definitions.find((d) => d.name === 'find_lcsc_parts')
-check('find requires need', findDef.parameters.required.includes('need'))
+check(
+  'find accepts need/codes/category (no single required field)',
+  Array.isArray(findDef.parameters.required) && findDef.parameters.required.length === 0,
+  findDef.parameters.required,
+)
+check(
+  'find exposes codes/category/filters/max_scan',
+  ['codes', 'category', 'filters', 'max_scan'].every((key) => key in findDef.parameters.properties),
+  Object.keys(findDef.parameters.properties),
+)
+check('find sort includes size', findDef.parameters.properties.sort.enum.includes('size'))
+check('find limit allows 20 (browse)', findDef.parameters.properties.limit.maximum === 20, findDef.parameters.properties.limit.maximum)
 check('find defaults documented (hand first)', findDef.parameters.properties.assembly.enum[0] === 'hand')
 const auditDef = definitions.find((d) => d.name === 'audit_lcsc_bom')
 check('audit requires bom', auditDef.parameters.required.includes('bom'))
@@ -1108,6 +1121,303 @@ check('datasheet renderer shows path + size', datasheetText.includes('F:/x.pdf')
 
 fs.rmSync(tmpRoot, { recursive: true, force: true })
 fs.rmSync(dsOut, { recursive: true, force: true })
+
+/* -------------------------------------------------------------------------- */
+/* 13. v0.5.0: exact status, size/filter browse, no cross-category fallback   */
+/* -------------------------------------------------------------------------- */
+
+section('v0.5.0 exact status / size / filters / browse')
+
+/** Minimal JLC-style item used by the browse and category-guard fixtures. */
+function jlcItem(overrides) {
+  return {
+    code: 'C100',
+    model: 'MODEL',
+    brand: 'BRAND',
+    category: 'Buzzers',
+    package: 'SMD,5x5mm',
+    description: '',
+    stock: 100,
+    libraryType: 'expand',
+    priceUsdTiers: [{ qty: 1, unit: 1 }],
+    attributes: [],
+    url: 'https://www.lcsc.com/product-detail/C100.html',
+    datasheetUrl: 'https://www.lcsc.com/datasheet/C100.pdf',
+    ...overrides,
+  }
+}
+
+check(
+  'size from Diameter(φD) + Height',
+  (() => {
+    const size = itemSize(jlcItem({ attributes: [{ name: 'Diameter(φD)', value: '23mm' }, { name: 'Height', value: '10.3mm' }] }))
+    return size.has_size === true && size.diameter_mm === 23 && Math.abs(size.area_mm2 - 415.476) < 0.01
+  })(),
+  itemSize(jlcItem({ attributes: [{ name: 'Diameter(φD)', value: '23mm' }, { name: 'Height', value: '10.3mm' }] })),
+)
+check(
+  'size falls back to package "SMD,5x5mm"',
+  (() => {
+    const size = itemSize(jlcItem({ attributes: [], package: 'SMD,5x5mm' }))
+    return size.has_size === true && size.length_mm === 5 && size.width_mm === 5 && size.area_mm2 === 25 && size.source === 'package'
+  })(),
+  itemSize(jlcItem({ attributes: [], package: 'SMD,5x5mm' })),
+)
+check('size absent when nothing parses', itemSize(jlcItem({ attributes: [], package: 'SOT-23-5' })).has_size === false)
+
+const filterItem = jlcItem({
+  attributes: [{ name: 'Technology', value: 'Piezoelectric' }, { name: 'Mounting Type', value: '-' }],
+  package: 'SMD,9x9mm',
+})
+check('filter matches attribute case-insensitively', matchFilters(filterItem, { Technology: 'piezoelectric' }).ok === true)
+check(
+  'filter falls back to package text when attribute is "-"',
+  matchFilters(filterItem, { 'Mounting Type': 'SMD' }).ok === true,
+  matchFilters(filterItem, { 'Mounting Type': 'SMD' }),
+)
+check(
+  'meaningful attribute mismatch is not rescued by package text',
+  (() => {
+    const wave = jlcItem({ attributes: [{ name: 'Mounting Type', value: 'Lead Wire' }], package: 'SMD,9x11mm' })
+    return matchFilters(wave, { 'Mounting Type': 'SMD' }).ok === false
+  })(),
+  matchFilters(jlcItem({ attributes: [{ name: 'Mounting Type', value: 'Lead Wire' }], package: 'SMD,9x11mm' }), { 'Mounting Type': 'SMD' }),
+)
+check(
+  'filter failure reports actual value',
+  (() => {
+    const result = matchFilters(filterItem, { Technology: 'Magnetic' })
+    return result.ok === false && result.failed[0]?.actual === 'Piezoelectric'
+  })(),
+  matchFilters(filterItem, { Technology: 'Magnetic' }),
+)
+
+const exactStub = {
+  settings: { usdToCnyFactor: 6 },
+  async part(code) {
+    if (code === 'C1001') {
+      return {
+        code,
+        status: 'OUT-OF-STOCK',
+        identity: { model: 'M-OUT', brand: 'B', package: 'SMD,5x5mm', category: 'Buzzers' },
+        libraryType: 'expand',
+        stock: { available: 0, intl: { count: 0 }, jlcpcb: { count: 0 } },
+        prices: { usd: { tiers: [{ qty: 1, unit: 1.5 }] } },
+        attributes: { en: [{ name: 'Length', value: '5mm' }, { name: 'Width', value: '5mm' }], zh: [] },
+        datasheetUrl: 'https://ds/C1.pdf',
+        urls: { lcsc: 'https://lcsc/C1.html' },
+      }
+    }
+    if (code === 'C1002') {
+      return {
+        code,
+        status: 'OK',
+        identity: { model: 'M-OK', brand: 'B', package: 'SMD,9x9mm', category: 'Buzzers' },
+        libraryType: 'base',
+        stock: { available: 5, intl: { count: 5 }, jlcpcb: { count: 9 } },
+        prices: { usd: { tiers: [{ qty: 1, unit: 2 }, { qty: 10, unit: 1.2 }] } },
+        attributes: { en: [{ name: 'Length', value: '9mm' }, { name: 'Width', value: '9mm' }], zh: [] },
+        datasheetUrl: 'https://ds/C2.pdf',
+        urls: { lcsc: 'https://lcsc/C2.html' },
+      }
+    }
+    if (code === 'C1003') {
+      return {
+        code,
+        status: 'OK',
+        identity: { model: 'M-RETAIL', package: 'SMD' },
+        stock: { available: 3, intl: { count: 3 } },
+        prices: { usd: { tiers: [] } },
+        attributes: { en: [], zh: [] },
+        urls: { lcsc: 'https://lcsc/C3.html' },
+      }
+    }
+    return { code, status: 'NOT-FOUND' }
+  },
+}
+const exactResult = await findParts(exactStub, { codes: ['C1001', 'C1002', 'C1003', 'C1004'], include_cny: false })
+check('exact batch returns one row per requested code', exactResult.candidates.length === 4, exactResult.candidates.map((row) => row.lcsc))
+check('exact statuses distinguish all four cases', (() => {
+  const statuses = exactResult.candidates.map((row) => `${row.lcsc}:${row.status}`).join(',')
+  return statuses === 'C1001:out_of_stock,C1002:ok,C1003:not_in_smt_library,C1004:unknown_code'
+})(), exactResult.candidates.map((row) => `${row.lcsc}:${row.status}`))
+check('exact summary counts statuses', exactResult.exact_summary.ok === 1 && exactResult.exact_summary.out_of_stock === 1 && exactResult.exact_summary.not_in_smt_library === 1 && exactResult.exact_summary.unknown_code === 1, exactResult.exact_summary)
+check('exact mode keeps out-of-stock row identity + links', exactResult.candidates[0].model === 'M-OUT' && exactResult.candidates[0].datasheet_url === 'https://ds/C1.pdf' && exactResult.candidates[0].product_url === 'https://lcsc/C1.html')
+check('exact mode computes tier price without NaN', exactResult.candidates[0].price_usd?.unit === 1.5, exactResult.candidates[0].price_usd)
+check('exact row carries parsed size and attributes', exactResult.candidates[0].size?.area_mm2 === 25 && exactResult.candidates[0].attributes.length === 2)
+check('exact hints explain unknown code', exactResult.hints.some((hint) => hint.includes('C1004') && hint.includes('核对编号')), exactResult.hints)
+
+const browseItems = [
+  jlcItem({
+    code: 'C10',
+    model: 'BIG',
+    attributes: [
+      { name: 'Technology', value: 'Piezoelectric' },
+      { name: 'Mounting Type', value: '-' },
+      { name: 'Length', value: '9mm' },
+      { name: 'Width', value: '9mm' },
+      { name: 'Height', value: '2mm' },
+    ],
+    package: 'SMD,9x9mm',
+    stock: 100,
+    priceUsdTiers: [{ qty: 1, unit: 1 }],
+  }),
+  jlcItem({
+    code: 'C11',
+    model: 'SMALL',
+    attributes: [
+      { name: 'Technology', value: 'Piezoelectric' },
+      { name: 'Mounting Type', value: '-' },
+      { name: 'Length', value: '5mm' },
+      { name: 'Width', value: '5mm' },
+      { name: 'Height', value: '2mm' },
+    ],
+    package: 'SMD,5x5mm',
+    stock: 10,
+    priceUsdTiers: [{ qty: 1, unit: 0.5 }],
+  }),
+  jlcItem({
+    code: 'C12',
+    model: 'MAGNETIC',
+    attributes: [
+      { name: 'Technology', value: 'Magnetic' },
+      { name: 'Mounting Type', value: '-' },
+      { name: 'Length', value: '4mm' },
+      { name: 'Width', value: '4mm' },
+    ],
+    package: 'SMD,4x4mm',
+    stock: 50,
+    priceUsdTiers: [{ qty: 1, unit: 0.2 }],
+  }),
+]
+const browseStub = {
+  settings: { usdToCnyFactor: 6 },
+  async searchRaw() {
+    return { total: browseItems.length, items: browseItems }
+  },
+  async part() {
+    throw new Error('browse must not call part()')
+  },
+}
+const browseResult = await findParts(browseStub, {
+  category: 'buzzer',
+  filters: { Technology: 'Piezoelectric', 'Mounting Type': 'SMD' },
+  sort: 'size',
+  limit: 5,
+  include_cny: false,
+  max_scan: 2000,
+})
+check('browse mode returns metadata', browseResult.mode === 'browse' && browseResult.browse.scanned === 3 && browseResult.browse.total === 3 && browseResult.browse.truncated === false, browseResult.browse)
+check('browse filters drop non-matching items', browseResult.candidates.length === 2 && !browseResult.candidates.some((row) => row.lcsc === 'C12'), browseResult.candidates.map((row) => row.lcsc))
+check('browse sort=size puts 5mm before 9mm', browseResult.candidates[0].lcsc === 'C11' && browseResult.candidates[1].lcsc === 'C10', browseResult.candidates.map((row) => row.lcsc))
+check('browse candidates carry attributes + datasheet + product links', browseResult.candidates[0].attributes.length >= 3 && browseResult.candidates[0].datasheet_url !== undefined && browseResult.candidates[0].product_url !== undefined)
+check('browse filter_report counts matches', browseResult.filter_report?.find((entry) => entry.name === 'Mounting Type')?.matched_count === 3, browseResult.filter_report)
+
+const deadFilter = await findParts(browseStub, {
+  category: 'buzzer',
+  filters: { Technology: 'Electret' },
+  include_cny: false,
+})
+check('dead filter yields 0 candidates + filter_report', deadFilter.candidates.length === 0 && (deadFilter.filter_report?.[0]?.values ?? []).includes('Piezoelectric'), deadFilter.filter_report)
+check('dead filter hint tells the agent to use filter_report', deadFilter.hints.some((hint) => hint.includes('filter_report')), deadFilter.hints)
+
+const rfOnlyStub = {
+  settings: { usdToCnyFactor: 6 },
+  async searchRaw() {
+    return {
+      total: 1,
+      items: [jlcItem({ code: 'C198', model: 'HLK-B40', category: 'Bluetooth Modules', package: 'SMD,14x9mm', attributes: [] })],
+    }
+  },
+}
+const categoryGuard = await findParts(rfOnlyStub, { need: 'buzzer', include_cny: false })
+check('no cross-category fallback when category has no match', categoryGuard.candidates.length === 0, categoryGuard.candidates.map((row) => `${row.lcsc}:${row.category}`))
+check('category-empty hint names the data-source limit', categoryGuard.hints.some((hint) => hint.includes('JLC SMT 库里没有') && hint.includes('不等于立创全部零售')), categoryGuard.hints)
+
+const renderText = renderFindText({
+  need: 'buzzer',
+  mode: 'browse',
+  assembly: 'hand',
+  quantity: 1,
+  boards: 1,
+  include_usd: true,
+  include_cny: false,
+  currency: 'USD',
+  browse: { category: 'buzzer', scanned: 3, total: 3, truncated: false, matched: 2, sort: 'size', filters: { Technology: 'Piezoelectric' } },
+  candidates: [{
+    lcsc: 'C11',
+    status: 'out_of_stock',
+    model: 'SMALL',
+    package: 'SMD,5x5mm',
+    library: 'expand',
+    stock_smt: 0,
+    stock_retail: 0,
+    price_usd: { unit: 0.5, tier: '1+' },
+    size: { length_mm: 5, width_mm: 5, height_mm: 2, area_mm2: 25, has_size: true },
+    attributes: [{ name: 'Technology', value: 'Piezoelectric' }],
+    datasheet_url: 'https://ds/C11.pdf',
+    product_url: 'https://lcsc/C11.html',
+  }],
+})
+check('renderer shows browse header', renderText.includes('category="buzzer"') && renderText.includes('scanned=3/3'), renderText)
+check('renderer shows status/size/attrs/links', renderText.includes('[out_of_stock]') && renderText.includes('5×5×2 mm') && renderText.includes('attrs: Technology=Piezoelectric') && renderText.includes('ds https://ds/C11.pdf'), renderText)
+
+check(
+  'buzzer text parses attribute filters (passive/piezo/SMD)',
+  (() => {
+    const need = parseNeed('无源压电贴片蜂鸣器')
+    return need.attributeFilters.some((filter) => filter.name === 'Technology' && filter.value === 'Piezoelectric') &&
+      need.attributeFilters.some((filter) => filter.name === 'Driver Circuitry' && filter.value === 'Passive') &&
+      need.attributeFilters.some((filter) => filter.name === 'Mounting Type' && filter.value === 'SMD')
+  })(),
+  parseNeed('无源压电贴片蜂鸣器').attributeFilters,
+)
+check('non-audio text does not get attribute filters', parseNeed('无源晶振 贴片').attributeFilters.length === 0, parseNeed('无源晶振 贴片').attributeFilters)
+
+const activeBuzzer = jlcItem({
+  code: 'C201',
+  model: 'ACTIVE-THT',
+  package: 'Plugin,D=12mm',
+  stock: 100,
+  attributes: [
+    { name: 'Technology', value: 'Electromagnetic' },
+    { name: 'Driver Circuitry', value: 'Active Buzzer (Built-in Driving Circuit)' },
+    { name: 'Mounting Type', value: 'Through-Hole' },
+  ],
+})
+const passivePiezo = jlcItem({
+  code: 'C202',
+  model: 'PASSIVE-SMD',
+  package: 'SMD,5x5mm',
+  stock: 100,
+  attributes: [
+    { name: 'Technology', value: 'Piezoelectric' },
+    { name: 'Driver Circuitry', value: 'Passive (Externally Driven)' },
+    { name: 'Mounting Type', value: 'Surface-mount (SMD)' },
+    { name: 'Length', value: '5mm' },
+    { name: 'Width', value: '5mm' },
+  ],
+})
+const audioStub = {
+  settings: { usdToCnyFactor: 6 },
+  async searchRaw() {
+    return { total: 2, items: [activeBuzzer, passivePiezo] }
+  },
+}
+const audioFind = await findParts(audioStub, { need: '无源压电贴片蜂鸣器', include_cny: false })
+check('requirement text filters active/THT out of buzzer results', audioFind.candidates.length === 1 && audioFind.candidates[0].lcsc === 'C202', audioFind.candidates.map((row) => `${row.lcsc}:${row.status}`))
+
+const activeOnlyStub = {
+  settings: { usdToCnyFactor: 6 },
+  async searchRaw() {
+    return { total: 1, items: [activeBuzzer] }
+  },
+}
+const audioMiss = await findParts(activeOnlyStub, { need: '无源压电贴片蜂鸣器', include_cny: false })
+const sizeSorted = await findParts(browseStub, { need: 'buzzer', include_cny: false, sort: 'size', limit: 5 })
+check('requirement mode honors sort=size', sizeSorted.candidates.map((row) => row.lcsc).join(',') === 'C12,C11,C10', sizeSorted.candidates.map((row) => row.lcsc))
+
+check('attribute mismatch gives 0 rows + actionable hint', audioMiss.candidates.length === 0 && audioMiss.hints.some((hint) => hint.includes('没有同时满足')), audioMiss.hints)
 
 /* -------------------------------------------------------------------------- */
 /* Result                                                                     */
