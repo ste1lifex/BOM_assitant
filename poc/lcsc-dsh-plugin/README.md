@@ -11,7 +11,7 @@
 ## 卖点
 
 - **需求直接变料**：封装/容值/耐压/电流/精度/尺寸 → 参数过滤 + 分级降级；型号和 LCSC 编号优先精确匹配（`SMF5.0A`/`AO3401A`/`TP4054` 不会被误读成数值）。
-- **精确编号状态化**：一个或最多 20 个 LCSC 编号一次查完，每行明确 `ok / out_of_stock / not_in_smt_library / unknown_stock / unknown_code`；缺货不会消失，编号错和缺货不再混为一谈。
+- **精确编号状态化**：一个或最多 20 个 LCSC 编号一次查完，每行明确 `ok / out_of_stock / not_in_smt_library / unknown_stock / unknown_code`；缺货不会消失，编号错和缺货不再混为一谈。`status` 按请求的 `assembly` 渠道判定（hand 看零售、smt 看 SMT 库），`stock_smt` / `stock_retail` 始终并列，`stock_retail_source` 标明零售库存来自 `item.szlcsc.com`（cn）还是 `lcsc.com`（intl）。
 - **品类浏览**：`category="buzzer" + filters + sort="size"`，一次调用完成“某品类里最小/最便宜/最响”的查询；扫描 4605 条蜂鸣器只需 5 次 1000 条分页，返回 `scanned/total/truncated` 和 `filter_report`（不匹配时直接告诉你可用属性值）。
 - **结果自带属性/链接**：每条候选回吐完整 `attributes`、解析后的 `size`（L×W×H 或 Ø、面积）、`datasheet_url`、`product_url`，不用先下 PDF 才能判断尺寸/声压/频率。
 - **数据手册一键落盘**：给一个 LCSC 编号 + 目标目录，自动跟完 `lcsc.com` 查看器 / `wmsc` 跳转 / `jlcpcb` 链接，最终存成 `C1581_0402F104M500NT.pdf`，校验 `%PDF-` 并返回路径/大小/SHA-256；国际站没有时用国内站 `atta.szlcsc.com` 兜底。
@@ -59,7 +59,7 @@
 | 参数 | 默认 | 说明 |
 |---|---|---|
 | `need` | — | 中文/英文需求、型号或单个 LCSC 编号 |
-| `codes` | — | 精确模式：1–20 个 LCSC 编号；每行带 `status`（`ok` / `out_of_stock` / `not_in_smt_library` / `unknown_stock` / `unknown_code`），不会因 `stock=0` 消失 |
+| `codes` | — | 精确模式：1–20 个 LCSC 编号；每行带 `status`（按 `assembly` 渠道：`ok` / `out_of_stock` / `not_in_smt_library` / `unknown_stock` / `unknown_code`），不会因 `stock=0` 消失；`stock_retail_source` 标注零售数字来源 |
 | `category` | — | 品类浏览模式：品类关键词（英文推荐，如 `buzzer` / `resistor` / `LDO`）。触发分页扫描 + 属性筛选，专治“最小/最便宜/最响” |
 | `filters` | — | 品类浏览的属性过滤：上游属性名 → 值（大小写不敏感，等值或包含）；如 `{"Technology":"Piezoelectric","Mounting Type":"SMD"}`。属性为 `-` 时自动回退到封装/描述文本匹配 |
 | `max_scan` | 2000 | 品类浏览最多扫多少条（200–5000）；返回 `scanned/total/truncated`，不够可提到 5000 |
@@ -186,7 +186,7 @@ chromePath: 'D:\Apps\Chrome\Application\chrome.exe'
 ## 测试
 
 ```bash
-node poc/validate.mjs              # 245 项离线单测（无网络/无 Chrome）
+node poc/validate.mjs              # 247 项离线单测（无网络/无 Chrome）
 node poc/test-improvements.mjs     # 联网验收（BOM v0.6 100 片 + 人民币 golden 数据）
 node poc/test-datasheet.mjs        # 联网验收：4 种手册解析路径 + 国内站兜底 + 非法编号
 ```

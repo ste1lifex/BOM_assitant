@@ -32,7 +32,7 @@ research/
   lcsc-probe/                        # 数据源探针脚本
 poc/
   lcsc-dsh-plugin/                   # 可安装 DSH bundle（index.js 工具层 + data.js 数据层 + cn.js 国内站适配器 + datasheet.js 手册下载，零依赖）
-  validate.mjs                       # 离线测试（245 项）
+  validate.mjs                       # 离线测试（247 项）
   test-improvements.mjs              # 0.3.0 联网验收（BOM v0.6 + 人民币 golden 数据）
   test-datasheet.mjs                 # 0.4.0 联网验收：5 种手册解析路径 + 国内站兜底
   test-recording-card.mjs            # 早期集成脚本（BOM v0.5）
@@ -42,7 +42,7 @@ poc/
 ## 快速开始
 
 ```bash
-# 离线测试（245 项）
+# 离线测试（247 项）
 node poc/validate.mjs
 
 # 用 Recording_card BOM 联网实测
@@ -84,7 +84,7 @@ node poc/test-datasheet.mjs
   - 双库存（stock_smt / stock_lcsc）+ 双价格（USD / CNY）并列不混算
   - 真实人民币价：Chrome 无头渲染国内站 + 24h 缓存（C1581 ¥0.0239、C7434398 ¥1.097 已验证；失败自动降级估算）
   - 批量摊销表（20/100/300/1000 片）+ 净节省替代建议 + 嘉立创 BOM CSV 导出
-- 测试：`node poc/validate.mjs` 245 项离线全过；`node poc/test-improvements.mjs` 联网验收 OK；`node poc/test-datasheet.mjs` 4 条手册路径 + 国内站兜底 OK
+- 测试：`node poc/validate.mjs` 247 项离线全过；`node poc/test-improvements.mjs` 联网验收 OK；`node poc/test-datasheet.mjs` 4 条手册路径 + 国内站兜底 OK
 - Recording_card BOM v0.6.1（100 片 SMT）：25 smt / 1 hand / 6 dnp，基础库 13 / 扩展库 12；元件 + 上料费合计约 USD 144.60（当日价格）
 - 历史：v0.2.0 时 BOM v0.5（28 个唯一料）基础库 12 / 扩展库 16，SMT 5 片打样上料费 16×$3=$48
 - **数据边界/使用注意**（价格口径、库存时效、Chrome 依赖、上料费假设、替代料局限）统一写在

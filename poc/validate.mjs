@@ -1232,6 +1232,20 @@ const exactStub = {
         urls: { lcsc: 'https://lcsc/C3.html' },
       }
     }
+    if (code === 'C1005') {
+      return {
+        code,
+        status: 'OK',
+        identity: { model: 'M-MIXED', package: 'SMD' },
+        libraryType: 'expand',
+        // SMT has stock, retail is 0: the conservative `available` is 0, but
+        // status must follow the requested assembly channel.
+        stock: { available: 0, jlcpcb: { count: 50 }, intl: { count: 0 }, domestic: { count: 0 } },
+        prices: { usd: { tiers: [{ qty: 1, unit: 1 }] } },
+        attributes: { en: [], zh: [] },
+        urls: { lcsc: 'https://lcsc/C5.html' },
+      }
+    }
     return { code, status: 'NOT-FOUND' }
   },
 }
@@ -1246,6 +1260,22 @@ check('exact mode keeps out-of-stock row identity + links', exactResult.candidat
 check('exact mode computes tier price without NaN', exactResult.candidates[0].price_usd?.unit === 1.5, exactResult.candidates[0].price_usd)
 check('exact row carries parsed size and attributes', exactResult.candidates[0].size?.area_mm2 === 25 && exactResult.candidates[0].attributes.length === 2)
 check('exact hints explain unknown code', exactResult.hints.some((hint) => hint.includes('C1004') && hint.includes('核对编号')), exactResult.hints)
+
+const exactHandMixed = await findParts(exactStub, { codes: ['C1005'], include_cny: false })
+const exactSmtMixed = await findParts(exactStub, { codes: ['C1005'], include_cny: false, assembly: 'smt' })
+check(
+  'exact status follows the requested channel (retail 0 / SMT 50)',
+  exactHandMixed.candidates[0].status === 'out_of_stock' &&
+    exactSmtMixed.candidates[0].status === 'ok' &&
+    exactHandMixed.candidates[0].stock_smt === 50 &&
+    exactHandMixed.candidates[0].stock_retail === 0,
+  { hand: exactHandMixed.candidates[0], smt: exactSmtMixed.candidates[0] },
+)
+check(
+  'exact mode labels the retail stock source',
+  exactHandMixed.candidates[0].stock_retail_source === 'item.szlcsc.com',
+  exactHandMixed.candidates[0].stock_retail_source,
+)
 
 const browseItems = [
   jlcItem({

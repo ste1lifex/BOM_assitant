@@ -1454,25 +1454,15 @@ function normalizeCodeList(input) {
 }
 
 /**
- * Exact-code status, in the order that matters to an agent:
+ * Exact-code status is computed per requested channel (`assembly`):
  * - unknown_code          neither JLCPCB nor the LCSC product page knows it
- * - not_in_smt_library     exists in LCSC/retail but not in the JLCPCB SMT library
- * - out_of_stock           in the SMT library but every known stock is 0
- * - unknown_stock          identity exists but no stock number was reported
- * - ok                     in the library with stock
- * @param {Record<string, unknown> | undefined} part
+ * - not_in_smt_library    exists in LCSC/retail but not in the JLCPCB SMT library
+ * - out_of_stock          the requested channel has 0 stock (the other channel may still have stock; see data_warnings)
+ * - unknown_stock         identity exists but the requested channel has no stock number
+ * - ok                    the requested channel has stock
+ * `stock_smt` and `stock_retail` are always reported together; `stock_available`
+ * remains the conservative minimum across known sources.
  */
-function exactStatusOf(part) {
-  if (!isRecord(part)) return 'lookup_failed'
-  const identity = isRecord(part.identity) ? part.identity : undefined
-  if (part.status === 'NOT-FOUND' || identity === undefined) return 'unknown_code'
-  const libraryType = asString(part.libraryType) ?? asString(identity.libraryType)
-  const available = isRecord(part.stock) ? asInteger(part.stock.available) : undefined
-  if (libraryType === undefined) return 'not_in_smt_library'
-  if (available === 0) return 'out_of_stock'
-  if (available === undefined) return 'unknown_stock'
-  return 'ok'
-}
 
 /**
  * Exact LCSC-code lookup (one code or a batch). Unlike the requirement pipeline
@@ -1516,8 +1506,8 @@ export async function findExactParts(service, codes, args, options = {}) {
         notes: [`lookup failed: ${error ?? 'no data returned'}`],
       }
     }
-    const status = exactStatusOf(part)
-    const identity = isRecord(part.identity) ? part.identity : {}
+    const hasIdentity = isRecord(part.identity)
+    const identity = hasIdentity ? part.identity : {}
     const attributes = flattenPartAttributes(part)
     const itemLike = {
       attributes,
@@ -1559,15 +1549,31 @@ export async function findExactParts(service, codes, args, options = {}) {
           }
     const stockSmt = asInteger(part.stock?.jlcpcb?.count) ?? null
     const stockRetail = asInteger(part.stock?.domestic?.count) ?? asInteger(part.stock?.intl?.count) ?? null
+    const stockRetailSource = asInteger(part.stock?.domestic?.count) !== undefined
+      ? 'item.szlcsc.com'
+      : asInteger(part.stock?.intl?.count) !== undefined
+        ? 'lcsc.com'
+        : undefined
     const stockAvailable = asInteger(part.stock?.available) ?? null
     const stock = assembly === 'smt' ? stockSmt : (stockRetail ?? stockSmt)
+    const libraryType = asString(part.libraryType) ?? asString(identity.libraryType)
+    const channelStock = assembly === 'smt' ? stockSmt : stockRetail
+    const status = part.status === 'NOT-FOUND' || !hasIdentity
+      ? 'unknown_code'
+      : libraryType === undefined
+        ? 'not_in_smt_library'
+        : channelStock === 0
+          ? 'out_of_stock'
+          : channelStock === null
+            ? 'unknown_stock'
+            : 'ok'
     const primaryPrice = assembly === 'smt'
       ? priceUsd
       : (priceCny !== null && priceCny.estimated !== true ? priceCny : (priceUsd ?? priceCny))
     const dataWarnings = []
     if (stockRetail === 0 && (stockSmt ?? 0) > 0) dataWarnings.push('retail_out_of_stock_smt_ok')
     if ((stockRetail ?? 0) > 0 && stockSmt === 0) dataWarnings.push('smt_out_of_stock_retail_ok')
-    if (status === 'out_of_stock') dataWarnings.push('out_of_stock')
+    if (status === 'out_of_stock') dataWarnings.push(assembly === 'smt' ? 'smt_out_of_stock' : 'retail_out_of_stock')
     return {
       lcsc: code,
       status,
@@ -1579,6 +1585,7 @@ export async function findExactParts(service, codes, args, options = {}) {
       stock,
       stock_available: stockAvailable,
       stock_retail: stockRetail,
+      stock_retail_source: stockRetailSource,
       stock_smt: stockSmt,
       stock_asof: new Date().toISOString(),
       stock_scope: assembly,
@@ -2154,6 +2161,7 @@ export async function findParts(service, args, options = {}) {
       preferred: candidate.item.preferred === true ? true : null,
       stock,
       stock_retail: stockLcsc,
+      stock_retail_source: stockLcsc === null || stockLcsc === undefined ? undefined : 'item.szlcsc.com',
       stock_smt: stockSmt,
       stock_global: null,
       stock_lcsc: stockLcsc,
@@ -2854,6 +2862,7 @@ export async function auditBom(service, args, options = {}) {
       billable: countsForUsd,
       stock: stockForMode,
       stock_retail: stockLcsc,
+      stock_retail_source: stockLcsc === null || stockLcsc === undefined ? undefined : 'item.szlcsc.com',
       stock_smt: stockSmt,
       stock_global: null,
       stock_lcsc: stockLcsc,
@@ -3379,7 +3388,7 @@ export function renderFindText(value) {
       candidate.package ?? '?',
       sizeText,
       candidate.library ? `lib ${candidate.library}` : undefined,
-      `stock smt ${candidate.stock_smt ?? '?'} / retail ${candidate.stock_retail ?? '?'}`,
+      `stock smt ${candidate.stock_smt ?? '?'} / retail ${candidate.stock_retail ?? '?'}${candidate.stock_retail_source === 'item.szlcsc.com' ? '(cn)' : candidate.stock_retail_source === 'lcsc.com' ? '(intl)' : ''}`,
       [priceUsd, priceCny].filter(Boolean).join(' | '),
       typeof candidate.score === 'number' && !(mode === 'browse' && isRecord(value.browse) && value.browse.sort === 'size')
         ? `score ${candidate.score}`
@@ -3471,7 +3480,7 @@ export function renderAuditText(value) {
     ].filter(Boolean).join(' ')
     lines.push(
       `${row.lcsc} x${row.qty}${designators} | ${row.place ?? '?'} | ${row.status} | lib ${row.library ?? '?'} | ` +
-      `stock smt ${row.stock_smt ?? '?'} / retail ${row.stock_retail ?? '?'} | ` +
+      `stock smt ${row.stock_smt ?? '?'} / retail ${row.stock_retail ?? '?'}${row.stock_retail_source === 'item.szlcsc.com' ? '(cn)' : row.stock_retail_source === 'lcsc.com' ? '(intl)' : ''} | ` +
       [priceUsd, priceCny].filter(Boolean).join(' | ') +
       (structured === '' ? '' : ` {${structured}}`) + `${flags}${alternative}`,
     )
@@ -3549,7 +3558,7 @@ const FIND_DESCRIPTION =
   'Passives and common ICs are well covered; audio/electro-mechanical parts (buzzers, speakers, connectors) are thin. Use English category words for recall ("buzzer", not 蜂鸣器) and exact LCSC codes for known parts. ' +
   'THREE MODES: ' +
   '(1) requirement — `need` is parsed into package/values/ratings, filtered and only relaxed within the same category (never returns an unrelated category as "closest"; if the category is absent it says so); ' +
-  '(2) exact — `need` = one LCSC code, or `codes` = up to 20 LCSC codes. Every requested code returns a row with `status`: ok / out_of_stock / not_in_smt_library / unknown_stock / unknown_code, even when stock is 0, so a typo and an out-of-stock part are distinguishable; ' +
+  '(2) exact — `need` = one LCSC code, or `codes` = up to 20 LCSC codes. Every requested code returns a row with `status`: ok / out_of_stock / not_in_smt_library / unknown_stock / unknown_code, even when stock is 0. `status` is evaluated for the requested `assembly` channel (hand = retail, smt = SMT library); `stock_smt` and `stock_retail` are both reported, and `stock_retail_source` says whether retail came from item.szlcsc.com (cn) or lcsc.com (intl); ' +
   '(3) category browse — set `category` (e.g. "buzzer") with optional `filters` (upstream attribute names, case-insensitive, e.g. {"Technology":"Piezoelectric","Mounting Type":"SMD"}), `sort` = size / cost / stock, `max_scan` (default 2000, max 5000) and `limit` up to 20. The response reports scanned/total/truncated and a filter_report with the values actually present, so the caller never needs to scrape the LCSC API itself. ' +
   'Every candidate returns full `attributes`, parsed `size` (L/W/H or Ø, area), `datasheet_url`, `product_url`, stock_smt/stock_retail, price_usd/price_cny (never mixed) and library type. ' +
   'Default assembly="hand" (DIY; real LCSC domestic CNY via Chrome when available, labelled USD estimate otherwise). ' +
